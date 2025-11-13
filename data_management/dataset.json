@@ -3,7 +3,7 @@
     "project": {
         "name": "SpineFoundation",
         "description": "Registry of datasets and how to fetch them",
-        "owner": "your-name-or-organization"
+        "owner": "Neuropoly"
     },
     "datasets": [
         {
