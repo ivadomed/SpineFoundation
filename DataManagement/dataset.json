@@ -1,0 +1,30 @@
+{
+    "manifestVersion": "1.0",
+    "project": {
+        "name": "SpineFoundation",
+        "description": "Registry of datasets and how to fetch them",
+        "owner": "your-name-or-organization"
+    },
+    "datasets": [
+        {
+            "id": "dataset-1",
+            "name": "data-multi-subject",
+            "description": "Short description of the dataset",
+            "version": "v1.0",
+            "source": {
+                "url": "https://github.com/spine-generic/data-multi-subject",
+                "method": "git clone https://github.com/spine-generic/data-multi-subject && cd data-multi-subject && git annex init && git annex get ."
+                }
+        },
+        {
+            "id": "dataset-2",
+            "name": "whole-spine",
+            "description": "Short description of the dataset",
+            "version": "v1.0",
+            "source": {
+                "url": "https://openneuro.org/datasets/ds005616/versions/1.1.2",
+                "method": "datalad install https://openneuro.org/datasets/ds005616/versions/1.1.2 && cd ds005616 && datalad get ."
+                }
+        }
+    ]
+}
