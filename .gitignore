@@ -1,6 +1,10 @@
+# environement specific files 
+*env*
+
 # MRI specific 
 *.nii
 *.nii.gz
+data*
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
