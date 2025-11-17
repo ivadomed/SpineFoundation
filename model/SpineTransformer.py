@@ -13,7 +13,7 @@ from monai.networks.blocks.transformerblock import TransformerBlock
 
 
 
-class SpineTransformer(nn.Module):
+class SpineEncoder(nn.Module):
     """
     SpineTransformer model for medical image analysis.
 
