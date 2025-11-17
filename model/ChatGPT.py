@@ -272,17 +272,17 @@ def main():
     print(files)
     transforms = Compose([
         LoadImaged(keys=["image"]),
-        EnsureChannelFirstd(keys=["image"]),
+        EnsureChannelFirstd(keys=["image"]), 
         ResizeWithPadOrCropd(keys=["image"], spatial_size=img_size),
-        ScaleIntensityd(keys=["image"]),
-        SpatialPadd(keys=["image"], spatial_size=img_size),
-        Resized(keys=["image"], spatial_size=img_size),
-        RandFlipd(keys=["image"], spatial_axis=0, prob=0.2),
-        RandAffined(keys=["image"], rotate_range=0.1, prob=0.2),
+        ScaleIntensityd(keys=["image"]), 
+        #SpatialPadd(keys=["image"], spatial_size=img_size), #J'ai  l'impression que c'est redondant avec ResizeWithPadOrCropd
+        #Resized(keys=["image"], spatial_size=img_size), #En contradiction avec ResizeWithPadOrCropd, ici de l'interpolation est faite pour déformer l'image à spatial_size   
+        RandFlipd(keys=["image"], spatial_axis=0, prob=0.2), 
+        RandAffined(keys=["image"], rotate_range=0.1, prob=0.2),  
     ])
 
     ds = Dataset(files, transforms)
-    loader = DataLoader(ds, batch_size=2, shuffle=True, num_workers=4)
+    loader = DataLoader(ds, batch_size=2, shuffle=True, num_workers=4) 
 
     # Model
     model = MAE3D(
