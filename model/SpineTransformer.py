@@ -39,7 +39,7 @@ class SpineEncoder(nn.Module):
                  num_layers=12,
                  mlp_dim=3072,
                  dropout_rate=0.1):
-        super(SpineTransformer, self).__init__()
+        super().__init__()
 
         self.patch_embedding = PatchEmbeddingBlock(
             in_channels=in_channels,
@@ -60,9 +60,7 @@ class SpineEncoder(nn.Module):
                 num_heads=num_heads,
                 dropout_rate=dropout_rate
             ) for _ in range(num_layers)
-        ])
-
-        
+        ]) 
 
     def forward(self, x):
         x = self.patch_embedding(x)
@@ -73,54 +71,64 @@ class SpineEncoder(nn.Module):
 
     
 
-class MAE3D(nn.Module):
-    """
-    3D Masked Autoencoder (MAE) for MRI.
-    Implements the *true MAE* behavior:
-    - Encoder sees only visible tokens.
-    - Decoder reconstructs using visible + mask tokens.
-    """
+class SpineDecoder(nn.Module):
     def __init__(
         self,
-        img_size=(128, 128, 128),
-        patch_size=(16, 16, 16),
-        in_chans=1,
-        embed_dim=256,
-        encoder_depth=8,
-        encoder_heads=8,
-        decoder_embed_dim=128,
-        decoder_depth=4,
-        decoder_heads=4,
+        num_patches: int,
+        embed_dim: int = 256,
+        decoder_embed_dim: int = 128,
+        depth: int = 4,
+        num_heads: int = 4,
+        patch_size: tuple = (16, 16, 16),
+        in_channels: int = 1,
     ):
         super().__init__()
 
-        self.img_size = img_size
-        self.patch_size = patch_size
-        self.in_chans = in_chans
+        self.decoder_embed = nn.Linear(embed_dim, decoder_embed_dim)    
+        self.mask_token = nn.Parameter(torch.zeros(1, 1, decoder_e  mbed_dim))
+        self.decoder_pos_embed = nn.Parameter(torch.zeros(1, num_patches, decoder_embed_dim))
 
-        # Patch embedding
-        self.patch_embed = PatchEmbed3D(in_chans, patch_size, embed_dim, img_size)
-        self.num_patches = self.patch_embed.num_patches
+        self.blocks = nn.ModuleList(
+            [
+                TransformerBlock(
+                    hidden_size=decoder_embed_dim,
+                    mlp_dim=4 * decoder_embed_dim,
+                    num_heads=num_heads,
+                )
+                for _ in range(depth)
+            ]
+        )
 
-        # Positional embeddings
-        self.pos_embed = nn.Parameter(torch.zeros(1, self.num_patches, embed_dim))
 
-        # Encoder
-        self.encoder = Transformer(embed_dim, encoder_depth, encoder_heads)
 
-        # Decoder
-        self.decoder_embed = nn.Linear(embed_dim, decoder_embed_dim)
-        self.mask_token = nn.Parameter(torch.zeros(1, 1, decoder_embed_dim))
-        self.decoder_pos_embed = nn.Parameter(torch.zeros(1, self.num_patches, decoder_embed_dim))
+        self.norm = nn.LayerNorm(decoder_embed_dim)
+        patch_voxels = patch_size[0] * patch_size[1] * patch_size[2] * in_channels
+        self.pred = nn.Linear(decoder_embed_dim, patch_voxels) #Normalisation puis prédiction de l'image
 
-        self.decoder = Transformer(decoder_embed_dim, decoder_depth, decoder_heads)
-
-        patch_voxels = patch_size[0] * patch_size[1] * patch_size[2] * in_chans
-        self.decoder_pred = nn.Linear(decoder_embed_dim, patch_voxels)
-
-        self._init_weights()
-
-    def _init_weights(self):
-        nn.init.normal_(self.pos_embed, std=0.02)
-        nn.init.normal_(self.decoder_pos_embed, std=0.02)
         nn.init.normal_(self.mask_token, std=0.02)
+        nn.init.normal_(self.decoder_pos_embed, std=0.02)
+
+    def forward(self, x_visible, ids_restore):
+        B, N_vis, _ = x_visible.shape 
+        N = ids_restore.shape[1] #Normalement ~80 % des tokens sont masqués
+
+        x = self.decoder_embed(x_visible)
+        N_mask = N - N_vis
+
+        if N_mask > 0:
+            mask_tokens = self.mask_token.expand(B, N_mask, -1)
+            x = torch.cat([x, mask_tokens], dim=1)
+
+        x = torch.gather(
+            x,
+            1,
+            ids_restore.unsqueeze(-1).expand(-1, -1, x.shape[-1]),
+        )
+
+        x = x + self.decoder_pos_embed
+
+        for blk in self.blocks:
+            x = blk(x)
+
+        x = self.norm(x)
+        return self.pred(x)
