@@ -2,6 +2,7 @@
 This script contains the SpineTransformer model class.
 
 Author: Thomas Dagonneau & Julien Laborde-Peyré
+Architecture inspiration : https://github.com/microsoft/Swin-Transformer/blob/main/models/swin_transformer.py
 """
 
 import torch
@@ -9,6 +10,8 @@ import torch.nn as nn
 
 from monai.networks.blocks.patchembedding import PatchEmbeddingBlock
 from monai.networks.blocks.transformerblock import TransformerBlock
+
+
 
 class SpineTransformer(nn.Module):
     """
@@ -40,36 +43,34 @@ class SpineTransformer(nn.Module):
 
         self.patch_embedding = PatchEmbeddingBlock(
             in_channels=in_channels,
-            embed_dim=embed_dim,
-            patch_size=patch_size,
             img_size=img_size,
-            norm_layer=nn.LayerNorm
+            patch_size=patch_size,
+            hidden_size=embed_dim,
+            num_heads=num_heads,
+            pos_embed="conv",           # ou "perceptron"
+            dropout_rate=dropout_rate,
+            spatial_dims=3,             
         )
+
 
         self.transformer_layers = nn.ModuleList([
             TransformerBlock(
-                embed_dim=embed_dim,
-                num_heads=num_heads,
+                hidden_size=embed_dim,
                 mlp_dim=mlp_dim,
+                num_heads=num_heads,
                 dropout_rate=dropout_rate
             ) for _ in range(num_layers)
         ])
 
-        self.classifier = nn.Sequential(
-            nn.LayerNorm(embed_dim),
-            nn.Linear(embed_dim, out_channels)
-        )
+        
 
     def forward(self, x):
         x = self.patch_embedding(x)
         for layer in self.transformer_layers:
             x = layer(x)
-        x = x.mean(dim=1)  # Global average pooling
-        x = self.classifier(x)
         return x
 
 
-class Transformer(nn.Module):
     
 
 class MAE3D(nn.Module):
