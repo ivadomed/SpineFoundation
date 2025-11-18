@@ -11,6 +11,8 @@ import torch.nn as nn
 from monai.networks.blocks.patchembedding import PatchEmbeddingBlock
 from monai.networks.blocks.transformerblock import TransformerBlock
 
+    
+
 def random_masking(x, mask_ratio):
     B, N, C = x.shape
     num_keep = int(N * (1 - mask_ratio))
@@ -52,7 +54,7 @@ class SpineEncoder(nn.Module):
                  num_heads=12,
                  num_layers=12,
                  mlp_dim=3072,
-                 dropout_rate=0.1):
+                 dropout_rate=0):
         super().__init__()
 
         self.patch_embedding = PatchEmbeddingBlock(in_channels=in_channels,img_size=img_size,patch_size=patch_size,
@@ -169,21 +171,46 @@ class SpineDecoder(nn.Module):
         return recon
 
 
+
 if __name__ == "__main__":
 
     img_size = (32, 32, 32)
     patch_size = (8, 8, 8)
 
     enc = SpineEncoder(in_channels=1, img_size=img_size, patch_size=patch_size,
-                        embed_dim=64, num_heads=4, num_layers=2, mlp_dim=128, dropout_rate=0.0)
-    dec = SpineDecoder(img_size=img_size, patch_size=patch_size, embed_dim=64,
+                        embed_dim=100, num_heads=4, num_layers=2, mlp_dim=128, dropout_rate=0.0)
+    dec = SpineDecoder(img_size=img_size, patch_size=patch_size, embed_dim=100,
                         decoder_embed_dim=32, num_layers=1, num_heads=4, in_channels=1)
+
 
     x = torch.randn(1, 1, *img_size)
     z,ids_restore = enc.forward(x, mask_ratio=0.5)
     recon = dec.forward(z, ids_restore)
-
+    print('\nTaille:')
     print('z', z.shape)
     print('recon', recon.shape)
+
+
+
+    class EncoderDecoder(nn.Module):
+        def __init__(self, encoder, decoder, mask_ratio=0.5):
+            super().__init__()
+            self.encoder = encoder
+            self.decoder = decoder
+            self.mask_ratio = mask_ratio
+
+        def forward(self, x):
+            z, ids_restore = self.encoder(x, mask_ratio=self.mask_ratio)
+            return self.decoder(z, ids_restore)
+
+
+    from torchinfo import summary as torch_summary
+
+    print('\nEncoder summary:')
+    torch_summary(enc, input_size=(1, 1, *img_size))
+
+    print('\nEncoder+Decoder summary:')
+    wrapper = EncoderDecoder(enc, dec, mask_ratio=0.5)
+    torch_summary(wrapper, input_size=(1, 1, *img_size))
 
         
