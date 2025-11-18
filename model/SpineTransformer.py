@@ -2,7 +2,6 @@
 This script contains the SpineTransformer model class.
 
 Author: Thomas Dagonneau & Julien Laborde-Peyré
-Architecture inspiration : https://github.com/microsoft/Swin-Transformer/blob/main/models/swin_transformer.py
 """
 
 import torch
@@ -10,78 +9,8 @@ import torch.nn as nn
 
 from monai.networks.blocks.patchembedding import PatchEmbeddingBlock
 from monai.networks.blocks.transformerblock import TransformerBlock
-
+from SpineEncoder import SpineEncoder
     
-
-def random_masking(x, mask_ratio):
-    B, N, C = x.shape
-    num_keep = int(N * (1 - mask_ratio))
-
-    bruit=torch.rand(B, N, device=x.device)
-    ids_shuffle=torch.argsort(bruit, dim=1) 
-    ids_restore=torch.argsort(ids_shuffle, dim=1)
-
-    ids_keep=ids_shuffle[:, :num_keep] 
-
-    # sélectionner les tokens visibles
-    x_visible = torch.gather(
-        x, 1, ids_keep.unsqueeze(-1).expand(-1, -1, C)
-    )
-
-    return x_visible,ids_restore
-
-class SpineEncoder(nn.Module):
-    """
-    SpineTransformer model for medical image analysis.
-
-    Args:
-        in_channels (int): Number of input channels.
-        out_channels (int): Number of output channels.
-        img_size (tuple): Size of the input image (H, W).
-        patch_size (tuple): Size of the patches (H, W).
-        embed_dim (int): Dimension of the embedding.
-        num_heads (int): Number of attention heads.
-        num_layers (int): Number of transformer layers.
-        mlp_dim (int): Dimension of the MLP in the transformer block.
-        dropout_rate (float): Dropout rate.
-    """
-
-    def __init__(self,
-                 in_channels=1,
-                 img_size=(256, 256, 256),
-                 patch_size=(16, 16, 16),
-                 embed_dim=768,
-                 num_heads=12,
-                 num_layers=12,
-                 mlp_dim=3072,
-                 dropout_rate=0):
-        super().__init__()
-
-        self.patch_embedding = PatchEmbeddingBlock(in_channels=in_channels,img_size=img_size,patch_size=patch_size,
-        hidden_size=embed_dim,num_heads=num_heads,proj_type="conv",dropout_rate=dropout_rate,spatial_dims=3)
-
-        self.transformer_layers = nn.ModuleList([TransformerBlock(
-                hidden_size=embed_dim,
-                mlp_dim=mlp_dim,
-                num_heads=num_heads,
-                dropout_rate=dropout_rate
-            ) for k in range(num_layers)]) 
-
-        self.norm = nn.LayerNorm(embed_dim)
-
-    def forward(self, x, mask_ratio=0):
-        x = self.patch_embedding(x)     # (B, N, embeddim)
-        x_visible, ids_restore =random_masking(x, mask_ratio) 
-
-        z = x_visible
-        for blk in self.transformer_layers:
-            z = blk(z)
-        z = self.norm(z)                        
-        return z, ids_restore
-
-
-    
-
 class SpineDecoder(nn.Module):
     def __init__(
         self,
@@ -170,7 +99,16 @@ class SpineDecoder(nn.Module):
         recon = self.unpatchify(pred)
         return recon
 
+class SpineTransformer(nn.Module):
+        def __init__(self, encoder, decoder, mask_ratio=0.5):
+            super().__init__()
+            self.encoder = encoder
+            self.decoder = decoder
+            self.mask_ratio = mask_ratio
 
+        def forward(self, x):
+            z, ids_restore = self.encoder(x, mask_ratio=self.mask_ratio)
+            return self.decoder(z, ids_restore)
 
 if __name__ == "__main__":
 
@@ -192,16 +130,7 @@ if __name__ == "__main__":
 
 
 
-    class EncoderDecoder(nn.Module):
-        def __init__(self, encoder, decoder, mask_ratio=0.5):
-            super().__init__()
-            self.encoder = encoder
-            self.decoder = decoder
-            self.mask_ratio = mask_ratio
-
-        def forward(self, x):
-            z, ids_restore = self.encoder(x, mask_ratio=self.mask_ratio)
-            return self.decoder(z, ids_restore)
+    
 
 
     from torchinfo import summary as torch_summary
@@ -210,7 +139,7 @@ if __name__ == "__main__":
     torch_summary(enc, input_size=(1, 1, *img_size))
 
     print('\nEncoder+Decoder summary:')
-    wrapper = EncoderDecoder(enc, dec, mask_ratio=0.5)
+    wrapper = SpineTransformer(enc, dec, mask_ratio=0.5)
     torch_summary(wrapper, input_size=(1, 1, *img_size))
 
         
