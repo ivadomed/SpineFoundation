@@ -11,7 +11,22 @@ import torch.nn as nn
 from monai.networks.blocks.patchembedding import PatchEmbeddingBlock
 from monai.networks.blocks.transformerblock import TransformerBlock
 
+def random_masking(x, mask_ratio):
+    B, N, C = x.shape
+    num_keep = int(N * (1 - mask_ratio))
 
+    bruit=torch.rand(B, N, device=x.device)
+    ids_shuffle=torch.argsort(bruit, dim=1) 
+    ids_restore=torch.argsort(ids_shuffle, dim=1)
+
+    ids_keep=ids_shuffle[:, :num_keep] 
+
+    # sélectionner les tokens visibles
+    x_visible = torch.gather(
+        x, 1, ids_keep.unsqueeze(-1).expand(-1, -1, C)
+    )
+
+    return x_visible,ids_restore
 
 class SpineEncoder(nn.Module):
     """
@@ -31,9 +46,8 @@ class SpineEncoder(nn.Module):
 
     def __init__(self,
                  in_channels=1,
-                 out_channels=2,
-                 img_size=(256, 256),
-                 patch_size=(16, 16),
+                 img_size=(256, 256, 256),
+                 patch_size=(16, 16, 16),
                  embed_dim=768,
                  num_heads=12,
                  num_layers=12,
@@ -41,32 +55,27 @@ class SpineEncoder(nn.Module):
                  dropout_rate=0.1):
         super().__init__()
 
-        self.patch_embedding = PatchEmbeddingBlock(
-            in_channels=in_channels,
-            img_size=img_size,
-            patch_size=patch_size,
-            hidden_size=embed_dim,
-            num_heads=num_heads,
-            pos_embed="conv",           # ou "perceptron"
-            dropout_rate=dropout_rate,
-            spatial_dims=3,             
-        )
+        self.patch_embedding = PatchEmbeddingBlock(in_channels=in_channels,img_size=img_size,patch_size=patch_size,
+        hidden_size=embed_dim,num_heads=num_heads,proj_type="conv",dropout_rate=dropout_rate,spatial_dims=3)
 
-
-        self.transformer_layers = nn.ModuleList([
-            TransformerBlock(
+        self.transformer_layers = nn.ModuleList([TransformerBlock(
                 hidden_size=embed_dim,
                 mlp_dim=mlp_dim,
                 num_heads=num_heads,
                 dropout_rate=dropout_rate
-            ) for _ in range(num_layers)
-        ]) 
+            ) for k in range(num_layers)]) 
 
-    def forward(self, x):
-        x = self.patch_embedding(x)
-        for layer in self.transformer_layers:
-            x = layer(x)
-        return x
+        self.norm = nn.LayerNorm(embed_dim)
+
+    def forward(self, x, mask_ratio=0):
+        x = self.patch_embedding(x)     # (B, N, embeddim)
+        x_visible, ids_restore =random_masking(x, mask_ratio) 
+
+        z = x_visible
+        for blk in self.transformer_layers:
+            z = blk(z)
+        z = self.norm(z)                        
+        return z, ids_restore
 
 
     
@@ -74,30 +83,36 @@ class SpineEncoder(nn.Module):
 class SpineDecoder(nn.Module):
     def __init__(
         self,
-        num_patches: int,
+        img_size=(256, 256,256),
+        patch_size= (16, 16, 16),
         embed_dim: int = 256,
         decoder_embed_dim: int = 128,
-        depth: int = 4,
+        num_layers: int = 4,
         num_heads: int = 4,
-        patch_size: tuple = (16, 16, 16),
         in_channels: int = 1,
     ):
         super().__init__()
 
+        num_patches = img_size[0] // patch_size[0] * img_size[1] // patch_size[1] * img_size[2] // patch_size[2]
+
+        # Pour la reconstruction
+        self.img_size = img_size
+        self.patch_size = patch_size
+        self.in_channels = in_channels
+        self.num_patches = num_patches
+
+
+
         self.decoder_embed = nn.Linear(embed_dim, decoder_embed_dim)    
-        self.mask_token = nn.Parameter(torch.zeros(1, 1, decoder_e  mbed_dim))
+        self.mask_token = nn.Parameter(torch.zeros(1, 1, decoder_embed_dim)) #Represente l'ensemble des tokens masqués
         self.decoder_pos_embed = nn.Parameter(torch.zeros(1, num_patches, decoder_embed_dim))
 
-        self.blocks = nn.ModuleList(
-            [
-                TransformerBlock(
+        self.blocks = nn.ModuleList([TransformerBlock(
                     hidden_size=decoder_embed_dim,
                     mlp_dim=4 * decoder_embed_dim,
                     num_heads=num_heads,
-                )
-                for _ in range(depth)
-            ]
-        )
+                ) for k in range(num_layers)
+        ])
 
 
 
@@ -108,27 +123,67 @@ class SpineDecoder(nn.Module):
         nn.init.normal_(self.mask_token, std=0.02)
         nn.init.normal_(self.decoder_pos_embed, std=0.02)
 
-    def forward(self, x_visible, ids_restore):
-        B, N_vis, _ = x_visible.shape 
-        N = ids_restore.shape[1] #Normalement ~80 % des tokens sont masqués
 
+    def embed(self, x_visible, ids_restore):
+        B, N_vis,embed_dim = x_visible.shape 
+        N = ids_restore.shape[1] #Nombre de patchs total
         x = self.decoder_embed(x_visible)
         N_mask = N - N_vis
 
-        if N_mask > 0:
-            mask_tokens = self.mask_token.expand(B, N_mask, -1)
-            x = torch.cat([x, mask_tokens], dim=1)
+    
+        mask_tokens = self.mask_token.expand(B, N_mask, -1)
+        x = torch.cat([x, mask_tokens], dim=1)
 
-        x = torch.gather(
-            x,
-            1,
-            ids_restore.unsqueeze(-1).expand(-1, -1, x.shape[-1]),
-        )
+        x = torch.gather(x,1,ids_restore.unsqueeze(-1).expand(-1, -1, x.shape[-1])) #remet dans l'ordre correct
 
         x = x + self.decoder_pos_embed
+        return x
+
+    def unpatchify(self, x_patches):
+
+        B, N, pv = x_patches.shape
+        pD, pH, pW = self.patch_size
+        C = self.in_channels
+
+        # Nombre de patchs suivant chaque axe
+        Dp = self.img_size[0] // pD
+        Hp = self.img_size[1] // pH
+        Wp = self.img_size[2] // pW
+
+
+        x = x_patches.view(B, Dp, Hp, Wp, C, pD, pH, pW)
+        x = x.permute(0, 4, 1, 5, 2, 6, 3, 7)
+        x = x.reshape(B, C, Dp * pD, Hp * pH, Wp * pW)
+        return x
+
+    def forward(self, x_visible, ids_restore):
+        
+        x = self.embed(x_visible, ids_restore)
 
         for blk in self.blocks:
             x = blk(x)
 
         x = self.norm(x)
-        return self.pred(x)
+        pred = self.pred(x)  # (B, N, patch_voxels)
+        recon = self.unpatchify(pred)
+        return recon
+
+
+if __name__ == "__main__":
+
+    img_size = (32, 32, 32)
+    patch_size = (8, 8, 8)
+
+    enc = SpineEncoder(in_channels=1, img_size=img_size, patch_size=patch_size,
+                        embed_dim=64, num_heads=4, num_layers=2, mlp_dim=128, dropout_rate=0.0)
+    dec = SpineDecoder(img_size=img_size, patch_size=patch_size, embed_dim=64,
+                        decoder_embed_dim=32, num_layers=1, num_heads=4, in_channels=1)
+
+    x = torch.randn(1, 1, *img_size)
+    z,ids_restore = enc.forward(x, mask_ratio=0.5)
+    recon = dec.forward(z, ids_restore)
+
+    print('z', z.shape)
+    print('recon', recon.shape)
+
+        
