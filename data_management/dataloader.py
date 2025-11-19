@@ -1,5 +1,8 @@
-from typing import Tuple, List, Optional
+"""
+This script contains data loading utilities.
 
+Author: Thomas Dagonneau & Julien Laborde-Peyré
+"""
 import os
 import glob
 import numpy as np
@@ -8,43 +11,35 @@ from torch.utils.data import DataLoader, Dataset, Subset
 
 from monai.data import Dataset as MonaiDataset
 
-from .transforms import get_transforms
+from preprocessing.transforms import get_transforms
 
 
-def makemonaidataset(folders: List[str], img_size: Tuple[int, int, int], augment: bool = False):
+def makemonaidataset(folders, img_size, augment):
     files = []
     for folder in folders:
         for pattern in ['*.nii', '*.nii.gz']:
             files.extend(sorted(glob.glob(os.path.join(folder, pattern))))
 
     if len(files) == 0:
-        raise RuntimeError(f'No volume files found in provided folders: {folders}')
+        raise RuntimeError('No files found')
 
     data_list = [{'image': p} for p in files]
     transforms = get_transforms(img_size, augment=augment)
     return MonaiDataset(data=data_list, transform=transforms)
 
 
-def build_dataloaders(
-    img_size,
-    batch_size,
-    splits=(0.8, 0.1, 0.1),
-    num_workers: int = 2,
-    folders,
-    shuffle_seed= None):
+def build_dataloaders(img_size,batch_size,splits=(0.8, 0.1, 0.1),num_workers= 2,folders,shuffle_seed= None):
 
     t, v, te = splits
-
-    if folders is None:
-        raise RuntimeError('build_dataloaders requires `folders` argument in this configuration')
 
     vol_files = []
     for folder in folders:
         for pattern in ['*.nii', '*.nii.gz']:
             vol_files.extend(sorted(glob.glob(os.path.join(folder, pattern))))
+
     total = len(vol_files)
     if total == 0:
-        raise RuntimeError(f'No volume files found in provided folders: {folders}')
+        raise RuntimeError('No files found')
 
     indices = list(range(total))
     if shuffle_seed is not None:
@@ -55,12 +50,12 @@ def build_dataloaders(
     n_train = int(total * t)
     n_val = int(total * v)
     n_test = total - n_train - n_val
-
-    monai_ds = makemonaidataset(folders, img_size=img_size, augment=True)
-
     train_indices = indices[:n_train]
     val_indices = indices[n_train:n_train + n_val]
     test_indices = indices[n_train + n_val:]
+
+    monai_ds = makemonaidataset(folders, img_size=img_size, augment=True)
+
 
     train_ds = Subset(monai_ds, train_indices)
     val_ds = Subset(monai_ds, val_indices)

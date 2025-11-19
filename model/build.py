@@ -1,4 +1,8 @@
+"""
+This script centralises model building.
 
+Author: Thomas Dagonneau & Julien Laborde-Peyré
+"""
 import importlib
 
 

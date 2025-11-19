@@ -1,5 +1,5 @@
 """
-This script contains the SpineTransformer model class.
+This script contains the SpineMAE model class.
 
 Author: Thomas Dagonneau & Julien Laborde-Peyré
 """
@@ -12,16 +12,8 @@ from monai.networks.blocks.transformerblock import TransformerBlock
 from SpineFoundation.model.SpineEncoder import SpineEncoder
     
 class SpineDecoder(nn.Module):
-    def __init__(
-        self,
-        img_size=(256, 256,256),
-        patch_size= (16, 16, 16),
-        embed_dim: int = 256,
-        decoder_embed_dim: int = 128,
-        num_layers: int = 4,
-        num_heads: int = 4,
-        in_channels: int = 1,
-    ):
+    def __init__(self,img_size=(256, 256,256),patch_size=(16, 16, 16),embed_dim=256,
+        decoder_embed_dim=128,num_layers= 4,num_heads= 4,in_channels= 1,mlp_dim=3072):
         super().__init__()
 
         num_patches = img_size[0] // patch_size[0] * img_size[1] // patch_size[1] * img_size[2] // patch_size[2]
@@ -39,11 +31,9 @@ class SpineDecoder(nn.Module):
         self.decoder_pos_embed = nn.Parameter(torch.zeros(1, num_patches, decoder_embed_dim))
 
         self.blocks = nn.ModuleList([TransformerBlock(
-                    hidden_size=decoder_embed_dim,
-                    mlp_dim=4 * decoder_embed_dim,
+                    hidden_size=decoder_embed_dim,mlp_dim=mlp_dim,
                     num_heads=num_heads,
-                ) for k in range(num_layers)
-        ])
+                ) for k in range(num_layers)])
 
 
 

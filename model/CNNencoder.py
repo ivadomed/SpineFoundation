@@ -1,3 +1,8 @@
+"""
+This script contains a resolution adaptive CNN feature extractor.
+
+Author: Thomas Dagonneau & Julien Laborde-Peyré
+"""
 import torch
 import torch.nn as nn
 import torch.nn.functional as F

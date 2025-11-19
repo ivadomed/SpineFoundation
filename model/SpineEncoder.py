@@ -1,3 +1,8 @@
+"""
+This script contains the SpineEncoder model class.
+
+Author: Thomas Dagonneau & Julien Laborde-Peyré
+"""
 import torch
 import torch.nn as nn
 
@@ -24,30 +29,8 @@ def random_masking(x, mask_ratio):
     return x_visible,ids_restore
 
 class SpineEncoder(nn.Module):
-    """
-    SpineTransformer model for medical image analysis.
-
-    Args:
-        in_channels (int): Number of input channels.
-        out_channels (int): Number of output channels.
-        img_size (tuple): Size of the input image (H, W).
-        patch_size (tuple): Size of the patches (H, W).
-        embed_dim (int): Dimension of the embedding.
-        num_heads (int): Number of attention heads.
-        num_layers (int): Number of transformer layers.
-        mlp_dim (int): Dimension of the MLP in the transformer block.
-        dropout_rate (float): Dropout rate.
-    """
-
-    def __init__(self,
-                 in_channels=1,
-                 img_size=(256, 256, 256),
-                 patch_size=(16, 16, 16),
-                 embed_dim=768,
-                 num_heads=12,
-                 num_layers=12,
-                 mlp_dim=3072,
-                 dropout_rate=0):
+def __init__(self,in_channels=1,img_size=(256, 256, 256),patch_size=(16, 16, 16),
+            embed_dim=100,num_heads=12,num_layers=12,mlp_dim=3072,dropout_rate=0):
         super().__init__()
 
         self.patch_embedding = PatchEmbeddingBlock(in_channels=in_channels,img_size=img_size,patch_size=patch_size,
