@@ -4,7 +4,8 @@
 # MRI specific 
 *.nii
 *.nii.gz
-data*
+#fichier temporaire
+*temp.sh
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
