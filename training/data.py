@@ -6,10 +6,7 @@ import numpy as np
 import torch
 from torch.utils.data import DataLoader, Dataset
 
-try:
-    import nibabel as nib
-except Exception:
-    nib = None
+import nibabel as nib
 
 
 class RandomVolumeDataset(Dataset):
@@ -36,6 +33,7 @@ def build_dataloaders(img_size,batch_size,splits=(0.8, 0.1, 0.1),total_samples: 
     n_val = int(total_samples * v)
     n_test = total_samples - n_train - n_val
 
+    #A remplacer quand on aura de vraies datas
     train_ds = RandomVolumeDataset(length=n_train, img_size=img_size)
     val_ds = RandomVolumeDataset(length=n_val, img_size=img_size)
     test_ds = RandomVolumeDataset(length=n_test, img_size=img_size)
@@ -44,6 +42,9 @@ def build_dataloaders(img_size,batch_size,splits=(0.8, 0.1, 0.1),total_samples: 
     val_loader = DataLoader(val_ds, batch_size=batch_size, shuffle=False, num_workers=num_workers)
     test_loader = DataLoader(test_ds, batch_size=batch_size, shuffle=False, num_workers=num_workers)
     return train_loader, val_loader, test_loader
+
+
+from SpineFoundation.training.transforms import get_transforms
 
 
 class MultiFolderDataset(Dataset):
@@ -56,44 +57,31 @@ class MultiFolderDataset(Dataset):
     Returns tensors of shape (C, D, H, W).
     """
 
-    SUPPORTED_PATTERNS = ['*.nii', '*.nii.gz', '*.npy', '*.pt', '*.pth']
+    SUPPORTED_PATTERNS = ['*.nii', '*.nii.gz'] #En rajouter ?
 
     def __init__(self, folders: List[str], img_size: Tuple[int, int, int] = (32, 32, 32), in_channels: int = 1, transform=None):
+        
         self.folders = folders
         self.img_size = img_size
         self.in_channels = in_channels
-        self.transform = transform
+        # if no transform provided, build default monai transforms pipeline
+        self.transform = transform if transform is not None else get_transforms(img_size, augment=False)
 
-        self.files: List[str] = []
+        self.files= []
         for folder in folders:
             for pattern in self.SUPPORTED_PATTERNS:
                 self.files.extend(sorted(glob.glob(os.path.join(folder, pattern))))
 
-        if len(self.files) == 0:
-            raise RuntimeError(f"No files found in the provided folders: {folders}")
-
+    
     def __len__(self):
         return len(self.files)
 
-    def _load(self, path: str) -> torch.Tensor:
+    def _load(self, path): 
         p = path.lower()
         if p.endswith('.nii') or p.endswith('.nii.gz'):
-            if nib is None:
-                raise RuntimeError('nibabel is required to load NIfTI files (pip install nibabel)')
             img = nib.load(path)
             arr = img.get_fdata(dtype=np.float32)
             tensor = torch.from_numpy(arr).float()
-        elif p.endswith('.npy'):
-            arr = np.load(path).astype(np.float32)
-            tensor = torch.from_numpy(arr).float()
-        elif p.endswith('.pt') or p.endswith('.pth'):
-            obj = torch.load(path)
-            if isinstance(obj, torch.Tensor):
-                tensor = obj.float()
-            elif isinstance(obj, np.ndarray):
-                tensor = torch.from_numpy(obj).float()
-            else:
-                raise RuntimeError(f'Unsupported object in {path}: {type(obj)}')
         else:
             raise RuntimeError(f'Unsupported file type for {path}')
 

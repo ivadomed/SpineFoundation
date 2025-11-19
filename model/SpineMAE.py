@@ -9,7 +9,7 @@ import torch.nn as nn
 
 from monai.networks.blocks.patchembedding import PatchEmbeddingBlock
 from monai.networks.blocks.transformerblock import TransformerBlock
-from SpineEncoder import SpineEncoder
+from SpineFoundation.model.SpineEncoder import SpineEncoder
     
 class SpineDecoder(nn.Module):
     def __init__(
@@ -99,7 +99,7 @@ class SpineDecoder(nn.Module):
         recon = self.unpatchify(pred)
         return recon
 
-class SpineTransformer(nn.Module):
+class SpineMAE(nn.Module):
         def __init__(self, encoder, decoder, mask_ratio=0.5):
             super().__init__()
             self.encoder = encoder
@@ -139,7 +139,7 @@ if __name__ == "__main__":
     torch_summary(enc, input_size=(1, 1, *img_size))
 
     print('\nEncoder+Decoder summary:')
-    wrapper = SpineTransformer(enc, dec, mask_ratio=0.5)
+    wrapper = SpineMAE(enc, dec, mask_ratio=0.5)
     torch_summary(wrapper, input_size=(1, 1, *img_size))
 
         

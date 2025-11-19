@@ -1,12 +1,12 @@
 
+import importlib
 
 
-
-AVAILABLE_MODELS = [
-	'spine_encoder',
-	'spine_transformer',
-	'cnn3d',
-]
+AVAILABLE_MODELS = {
+    "cnn3d": ("model.CNNencoder", "CNN3DFeatureExtractor"),
+    "spine_encoder": ("model.SpineEncoder", "SpineEncoder"),
+    "spine_mae": ("model.SpineMAE", "SpineMAE"),
+}
 
 
 
@@ -15,24 +15,16 @@ def build_model(name, params=None):
     if key not in AVAILABLE_MODELS:
         raise KeyError(f"Unknown model '{name}'")
 
-    model = name
+    module_path, class_name = AVAILABLE_MODELS[key]
+
     params = params or {}
     if not isinstance(params, dict):
         raise TypeError('params must be a dict of constructor keyword arguments')
 
-    if model == 'cnn3d':
-        from CNNencoder import CNN3DFeatureExtractor
-        return CNN3DFeatureExtractor(**params)
+    module = importlib.import_module(module_path)
+    ModelClass = getattr(module, class_name)
 
-    elif model == 'spine_encoder':
-        from SpineEncoder import SpineEncoder
-        return SpineEncoder(**params)
-
-    elif model == 'spine_transformer':
-        from SpineTransformer import SpineDecoder
-        return SpineDecoder(**params)
-
-
+    return ModelClass(**params)
 
 
 if __name__ == '__main__':
