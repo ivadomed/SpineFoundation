@@ -3,6 +3,7 @@ from typing import Tuple
 import os
 import torch
 import json
+import matplotlib.pyplot as plt
 
 def list_child_folders(path: str):
     print(path)
@@ -50,3 +51,26 @@ def load_json_param(param):
             return json.load(f)
 
     return json.loads(param)
+
+def plot_slices(image):
+    """
+    Plot the image, ground truth and prediction of the mid-sagittal axial slice
+    The orientaion is assumed to RPI
+    """
+
+    # bring everything to numpy 
+    ## added the .float() because of issue : TypeError: Got unsupported ScalarType BFloat16
+    image = image.float().numpy()
+    
+
+    mid_sagittal = image.shape[0]//2
+    # plot X slices before and after the mid-sagittal slice in a grid
+    fig, axs = plt.subplots(1, 6, figsize=(18, 54))
+    fig.suptitle('Original Image')
+    for i in range(6):
+        axs[i].imshow(image[mid_sagittal-3+i,:,:].T, cmap='gray'); axs[i].axis('off') 
+
+    plt.tight_layout()
+    fig.show()
+    
+    return fig
