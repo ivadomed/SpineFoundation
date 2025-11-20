@@ -9,6 +9,8 @@ def parse_args():
 
     p.add_argument('--data-params',type=str,required=True)
 
+    p.add_argument('--training-params',type=str,required=True)
+
     return p.parse_args()
 
 
