@@ -30,20 +30,19 @@ def random_masking(x, mask_ratio):
 
 class SpineEncoder(nn.Module):
     def __init__(self,in_channels=1,img_size=(256, 256, 256),patch_size=(16, 16, 16),
-            embed_dim=100,num_heads=12,num_layers=12,mlp_dim=3072,dropout_rate=0,mask_ratio=0):
+            enc_embed_dim=120,enc_num_heads=12,enc_layers=12,enc_mlp_dim=3072,dropout=0,mask_ratio=0):
         super().__init__()
         self.mask_ratio = mask_ratio    
         self.patch_embedding = PatchEmbeddingBlock(in_channels=in_channels,img_size=img_size,patch_size=patch_size,
-        hidden_size=embed_dim,num_heads=num_heads,proj_type="conv",dropout_rate=dropout_rate,spatial_dims=3)
-
+        hidden_size=enc_embed_dim,num_heads=enc_num_heads,proj_type="conv",dropout_rate=dropout,spatial_dims=3)
         self.transformer_layers = nn.ModuleList([TransformerBlock(
-                hidden_size=embed_dim,
-                mlp_dim=mlp_dim,
-                num_heads=num_heads,
-                dropout_rate=dropout_rate
-            ) for k in range(num_layers)]) 
+                hidden_size=enc_embed_dim,
+                mlp_dim=enc_mlp_dim,
+                num_heads=enc_num_heads,
+                dropout_rate=dropout
+            ) for k in range(enc_layers)]) 
 
-        self.norm = nn.LayerNorm(embed_dim)
+        self.norm = nn.LayerNorm(enc_embed_dim)
 
     def forward(self, x):
         x = self.patch_embedding(x)     # (B, N, embeddim)

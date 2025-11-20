@@ -12,8 +12,8 @@ from monai.networks.blocks.transformerblock import TransformerBlock
 from model.SpineEncoder import SpineEncoder
     
 class SpineDecoder(nn.Module):
-    def __init__(self,img_size=(256, 256,256),patch_size=(16, 16, 16),embed_dim=256,
-        decoder_embed_dim=128,num_layers= 4,num_heads= 4,in_channels=1,mlp_dim=3072):
+    def __init__(self,img_size=(256, 256,256),patch_size=(16, 16, 16),enc_embed_dim=256,
+        dec_embed_dim=128,dec_layers= 4,dec_num_heads= 4,in_channels=1,dec_mlp_dim=3072):
         super().__init__()
 
         num_patches = img_size[0] // patch_size[0] * img_size[1] // patch_size[1] * img_size[2] // patch_size[2]
@@ -26,20 +26,20 @@ class SpineDecoder(nn.Module):
 
 
 
-        self.decoder_embed = nn.Linear(embed_dim, decoder_embed_dim)    
-        self.mask_token = nn.Parameter(torch.zeros(1, 1, decoder_embed_dim)) #Represente l'ensemble des tokens masqués
-        self.decoder_pos_embed = nn.Parameter(torch.zeros(1, num_patches, decoder_embed_dim))
+        self.decoder_embed = nn.Linear(enc_embed_dim, dec_embed_dim)    
+        self.mask_token = nn.Parameter(torch.zeros(1, 1, dec_embed_dim)) #Represente l'ensemble des tokens masqués
+        self.decoder_pos_embed = nn.Parameter(torch.zeros(1, num_patches, dec_embed_dim))
 
         self.blocks = nn.ModuleList([TransformerBlock(
-                    hidden_size=decoder_embed_dim,mlp_dim=mlp_dim,
-                    num_heads=num_heads,
-                ) for k in range(num_layers)])
+                    hidden_size=dec_embed_dim,mlp_dim=dec_mlp_dim,
+                    num_heads=dec_num_heads,
+                ) for k in range(dec_layers)])
 
 
 
-        self.norm = nn.LayerNorm(decoder_embed_dim)
+        self.norm = nn.LayerNorm(dec_embed_dim)
         patch_voxels = patch_size[0] * patch_size[1] * patch_size[2] * in_channels
-        self.pred = nn.Linear(decoder_embed_dim, patch_voxels) #Normalisation puis prédiction de l'image
+        self.pred = nn.Linear(dec_embed_dim, patch_voxels) #Normalisation puis prédiction de l'image
 
         nn.init.normal_(self.mask_token, std=0.02)
         nn.init.normal_(self.decoder_pos_embed, std=0.02)
@@ -91,13 +91,13 @@ class SpineDecoder(nn.Module):
 
 class SpineMAE(nn.Module):
         def __init__(self,in_channels=1,img_size=(256, 256, 256),patch_size=(16, 16, 16),
-            embed_dim=120,num_heads=12,num_layers=12,mlp_dim=3072,dropout_rate=0,mask_ratio=0,
-            decoder_embed_dim=128,decoder_num_layers= 4,decoder_num_heads= 4,decoder_mlp_dim=3072):
+            enc_embed_dim=120,enc_num_heads=12,enc_layers=12,enc_mlp_dim=3072,dropout=0,mask_ratio=0,
+            dec_embed_dim=128,dec_layers= 4,dec_num_heads= 4,dec_mlp_dim=3072):
             super().__init__()
             self.encoder = SpineEncoder(in_channels=1, img_size=img_size, patch_size=patch_size,
-                        embed_dim=embed_dim, num_heads=num_heads, num_layers=num_layers, mlp_dim=mlp_dim, dropout_rate=dropout_rate,mask_ratio=mask_ratio)
-            self.decoder = SpineDecoder(img_size=img_size, patch_size=patch_size, embed_dim=embed_dim,mlp_dim=decoder_mlp_dim,
-                        decoder_embed_dim=decoder_embed_dim, num_layers=decoder_num_layers, num_heads=decoder_num_heads, in_channels=in_channels)
+                        enc_embed_dim=enc_embed_dim, enc_num_heads=enc_num_heads, enc_layers=enc_layers, enc_mlp_dim=enc_mlp_dim, dropout=dropout,mask_ratio=mask_ratio)
+            self.decoder = SpineDecoder(img_size=img_size, patch_size=patch_size, enc_embed_dim=enc_embed_dim,dec_mlp_dim=dec_mlp_dim,
+                        dec_embed_dim=dec_embed_dim, dec_layers=dec_layers, dec_num_heads=dec_num_heads, in_channels=in_channels)
 
         def forward(self, x):
             z, ids_restore = self.encoder.forward(x)
@@ -111,9 +111,9 @@ if __name__ == "__main__":
     patch_size = (8, 8, 8)
 
     enc = SpineEncoder(in_channels=1, img_size=img_size, patch_size=patch_size,
-                        embed_dim=100, num_heads=4, num_layers=2, mlp_dim=128, dropout_rate=0.0)
-    dec = SpineDecoder(img_size=img_size, patch_size=patch_size, embed_dim=100,
-                        decoder_embed_dim=32, num_layers=1, num_heads=4, in_channels=1)
+                        enc_embed_dim=100, enc_num_heads=4, enc_layers=2, enc_mlp_dim=128, dropout=0.0)
+    dec = SpineDecoder(img_size=img_size, patch_size=patch_size, enc_embed_dim=100,dec_mlp_dim=128,
+                        dec_embed_dim=32, dec_layers=1, dec_num_heads=4, in_channels=1)
 
 
     x = torch.randn(1, 1, *img_size)

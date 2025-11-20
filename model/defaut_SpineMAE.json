@@ -1,15 +1,16 @@
 {
+  "model_name": "spine_mae",
   "in_channels": 1,
   "img_size": [256, 256, 256],
   "patch_size": [16, 16, 16],
-  "embed_dim": 120,
-  "num_heads": 12,
-  "num_layers": 12,
-  "mlp_dim": 3072,
-  "dropout_rate": 0,
+  "enc_embed_dim": 120,
+  "enc_num_heads": 12,
+  "enc_layers": 12,
+  "enc_mlp_dim": 3072,
+  "dropout": 0,
   "mask_ratio": 0,
-  "decoder_embed_dim": 128,
-  "decoder_num_layers": 4,
-  "decoder_num_heads": 4,
-  "decoder_mlp_dim": 3072
+  "dec_embed_dim": 128,
+  "dec_layers": 4,
+  "dec_num_heads": 4,
+  "dec_mlp_dim": 3072
 }

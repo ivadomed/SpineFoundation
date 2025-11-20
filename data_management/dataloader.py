@@ -14,29 +14,22 @@ from monai.data import Dataset as MonaiDataset
 from preprocessing.transforms import get_transforms
 
 
-def makemonaidataset(folders, img_size, augment):
-    files = []
-    for folder in folders:
-        for pattern in ['*.nii', '*.nii.gz']:
-            files.extend(sorted(glob.glob(os.path.join(folder, pattern))))
-
-    if len(files) == 0:
-        raise RuntimeError('No files found')
-
+def makemonaidataset(files, img_size, augment):
     data_list = [{'image': p} for p in files]
     transforms = get_transforms(img_size, augment=augment)
     return MonaiDataset(data=data_list, transform=transforms)
 
 
-def build_dataloaders(img_size,batch_size,splits=(0.8, 0.1, 0.1),num_workers=2,folders,shuffle_seed=None):
+def build_dataloaders(img_size,batch_size,folders,splits=(0.8, 0.1, 0.1),num_workers=2,shuffle_seed=None):
 
     t, v, te = splits
-
     vol_files = []
-    for folder in folders:
-        for pattern in ['*.nii', '*.nii.gz']:
-            vol_files.extend(sorted(glob.glob(os.path.join(folder, pattern))))
+    
 
+    for folder in folders:
+        pattern = os.path.join(folder, "sub-*", "anat", "*.nii.gz")
+        vol_files.extend(sorted(glob.glob(os.path.join(pattern), recursive=True)))
+    
     total = len(vol_files)
     if total == 0:
         raise RuntimeError('No files found')
@@ -54,7 +47,7 @@ def build_dataloaders(img_size,batch_size,splits=(0.8, 0.1, 0.1),num_workers=2,f
     val_indices = indices[n_train:n_train + n_val]
     test_indices = indices[n_train + n_val:]
 
-    monai_ds = makemonaidataset(folders, img_size=img_size, augment=True)
+    monai_ds = makemonaidataset(vol_files, img_size=img_size, augment=True)
 
 
     train_ds = Subset(monai_ds, train_indices)

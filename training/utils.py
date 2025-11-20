@@ -2,9 +2,10 @@
 from typing import Tuple
 import os
 import torch
+import json
 
 def list_child_folders(path: str):
-
+    print(path)
     if not os.path.isdir(path):
         raise NotADirectoryError(f"{path} n'est pas un dossier valide")
 
@@ -41,3 +42,11 @@ def count_parameters(model):
     total = sum(p.numel() for p in model.parameters())
     trainable = sum(p.numel() for p in model.parameters() if p.requires_grad)
     return total, trainable
+
+def load_json_param(param):
+
+    if param.endswith(".json") and os.path.isfile(param):
+        with open(param, "r") as f:
+            return json.load(f)
+
+    return json.loads(param)
