@@ -9,11 +9,11 @@ import torch.nn as nn
 
 from monai.networks.blocks.patchembedding import PatchEmbeddingBlock
 from monai.networks.blocks.transformerblock import TransformerBlock
-from SpineFoundation.model.SpineEncoder import SpineEncoder
+from model.SpineEncoder import SpineEncoder
     
 class SpineDecoder(nn.Module):
     def __init__(self,img_size=(256, 256,256),patch_size=(16, 16, 16),embed_dim=256,
-        decoder_embed_dim=128,num_layers= 4,num_heads= 4,in_channels= 1,mlp_dim=3072):
+        decoder_embed_dim=128,num_layers= 4,num_heads= 4,in_channels=1,mlp_dim=3072):
         super().__init__()
 
         num_patches = img_size[0] // patch_size[0] * img_size[1] // patch_size[1] * img_size[2] // patch_size[2]
@@ -90,16 +90,21 @@ class SpineDecoder(nn.Module):
         return recon
 
 class SpineMAE(nn.Module):
-        def __init__(self, encoder, decoder, mask_ratio=0.5):
+        def __init__(self,in_channels=1,img_size=(256, 256, 256),patch_size=(16, 16, 16),
+            embed_dim=120,num_heads=12,num_layers=12,mlp_dim=3072,dropout_rate=0,mask_ratio=0,
+            decoder_embed_dim=128,decoder_num_layers= 4,decoder_num_heads= 4,decoder_mlp_dim=3072):
             super().__init__()
-            self.encoder = encoder
-            self.decoder = decoder
-            self.mask_ratio = mask_ratio
+            self.encoder = SpineEncoder(in_channels=1, img_size=img_size, patch_size=patch_size,
+                        embed_dim=embed_dim, num_heads=num_heads, num_layers=num_layers, mlp_dim=mlp_dim, dropout_rate=dropout_rate,mask_ratio=mask_ratio)
+            self.decoder = SpineDecoder(img_size=img_size, patch_size=patch_size, embed_dim=embed_dim,mlp_dim=decoder_mlp_dim,
+                        decoder_embed_dim=decoder_embed_dim, num_layers=decoder_num_layers, num_heads=decoder_num_heads, in_channels=in_channels)
 
         def forward(self, x):
-            z, ids_restore = self.encoder(x, mask_ratio=self.mask_ratio)
-            return self.decoder(z, ids_restore)
+            z, ids_restore = self.encoder.forward(x)
+            return self.decoder.forward(z, ids_restore)
 
+
+            
 if __name__ == "__main__":
 
     img_size = (32, 32, 32)
@@ -112,7 +117,7 @@ if __name__ == "__main__":
 
 
     x = torch.randn(1, 1, *img_size)
-    z,ids_restore = enc.forward(x, mask_ratio=0.5)
+    z,ids_restore = enc.forward(x)
     recon = dec.forward(z, ids_restore)
     print('\nTaille:')
     print('z', z.shape)
@@ -129,7 +134,7 @@ if __name__ == "__main__":
     torch_summary(enc, input_size=(1, 1, *img_size))
 
     print('\nEncoder+Decoder summary:')
-    wrapper = SpineMAE(enc, dec, mask_ratio=0.5)
+    wrapper = SpineMAE(img_size = (32, 32, 32),patch_size = (8, 8, 8))
     torch_summary(wrapper, input_size=(1, 1, *img_size))
 
         

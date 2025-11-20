@@ -29,10 +29,10 @@ def random_masking(x, mask_ratio):
     return x_visible,ids_restore
 
 class SpineEncoder(nn.Module):
-def __init__(self,in_channels=1,img_size=(256, 256, 256),patch_size=(16, 16, 16),
-            embed_dim=100,num_heads=12,num_layers=12,mlp_dim=3072,dropout_rate=0):
+    def __init__(self,in_channels=1,img_size=(256, 256, 256),patch_size=(16, 16, 16),
+            embed_dim=100,num_heads=12,num_layers=12,mlp_dim=3072,dropout_rate=0,mask_ratio=0):
         super().__init__()
-
+        self.mask_ratio = mask_ratio    
         self.patch_embedding = PatchEmbeddingBlock(in_channels=in_channels,img_size=img_size,patch_size=patch_size,
         hidden_size=embed_dim,num_heads=num_heads,proj_type="conv",dropout_rate=dropout_rate,spatial_dims=3)
 
@@ -45,9 +45,9 @@ def __init__(self,in_channels=1,img_size=(256, 256, 256),patch_size=(16, 16, 16)
 
         self.norm = nn.LayerNorm(embed_dim)
 
-    def forward(self, x, mask_ratio=0):
+    def forward(self, x):
         x = self.patch_embedding(x)     # (B, N, embeddim)
-        x_visible, ids_restore =random_masking(x, mask_ratio) 
+        x_visible, ids_restore =random_masking(x, self.mask_ratio) 
 
         z = x_visible
         for blk in self.transformer_layers:

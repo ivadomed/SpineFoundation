@@ -1,6 +1,5 @@
-
-import argparse
 import os
+import json
 from tqdm import tqdm
 
 import torch
@@ -8,158 +7,164 @@ import torch.nn as nn
 from torch.optim import AdamW
 from torch.cuda.amp import GradScaler, autocast
 
-from SpineFoundation.model.build import build_model, list_models
-from SpineFoundation.training.data import build_dataloaders
-from SpineFoundation.training.utils import patchify, save_checkpoint, load_checkpoint
-import json
+from .model.build import build_model
+from .training.data import build_dataloaders
+from .training.utils import patchify, save_checkpoint, load_checkpoint
 
 
-def train(args):
-    device = torch.device('cuda' if (torch.cuda.is_available() and not args.no_cuda) else 'cpu')
+class Trainer:
+    def __init__(self, args):
+        self.args = args
+        self.device = torch.device('cuda' if (torch.cuda.is_available() and not args.no_cuda) else 'cpu')
+
+        model_params = dict(
+            in_channels=args.in_channels,
+            img_size=args.img_size,
+            patch_size=args.patch_size,
+            embed_dim=args.embed_dim,
+            num_heads=args.num_heads,
+            num_layers=args.enc_layers,
+            mlp_dim=args.enc_mlp_dim,
+            dropout_rate=args.dropout,
+            mask_ratio=args.mask_ratio,
+            decoder_embed_dim=args.dec_embed_dim,
+            decoder_num_layers=args.dec_layers,
+            decoder_num_heads=args.dec_num_heads,
+            decoder_mlp_dim=args.dec_mlp_dim)
+
+        data_params = dict(
+            img_size=args.img_size,
+            patch_size=args.patch_size,
+            batch_size=args.batch_size,
+            num_workers=args.num_workers,
+            train_ratio=args.train_ratio,
+            val_ratio=args.val_ratio,
+            test_ratio=args.test_ratio,
+            seed=args.seed,
+            work_dir=args.work_dir)
+
+        if args.data_params:
+            try:
+                user_data = json.loads(args.data_params)
+                data_params.update(user_data)
+            except Exception as e:
+                raise RuntimeError(f'Failed to parse --data-params: {e}')
+
+        if args.model_params:
+            try:
+                user_params = json.loads(args.model_params)
+                model_params.update(user_params)
+            except Exception as e:
+                raise RuntimeError(f'Failed to parse --model-params: {e}')
+
+        self.model = build_model(args.model_name, model_params)
+        self.model.to(self.device)
 
 
-    enc_params = dict(
-        in_channels=args.in_channels,
-        img_size=args.img_size,
-        patch_size=args.patch_size,
-        embed_dim=args.embed_dim,
-        num_heads=args.num_heads,
-        num_layers=args.enc_layers,
-        mlp_dim=args.enc_mlp_dim,
-        dropout_rate=args.dropout,
-    )
-    dec_params = dict(
-        img_size=args.img_size,
-        patch_size=args.patch_size,
-        embed_dim=args.embed_dim,
-        decoder_embed_dim=args.dec_embed_dim,
-        num_layers=args.dec_layers,
-        num_heads=args.dec_num_heads,
-        in_channels=args.in_channels,
-    )
+        self.optimizer = AdamW(self.model.parameters(),lr=args.lr,weight_decay=args.weight_decay,)
+        self.scaler = GradScaler(enabled=args.amp)
+        self.criterion = nn.L1Loss()
+        folders = list_child_folders(args.data_path)
+        splits=(data_params["train_ratio"], data_params["val_ratio"], data_params["test_ratio"])
+        self.train_loader, self.val_loader, self.test_loader = build_dataloaders(
+                                                                img_size=data_params["img_size"],
+                                                                batch_size=data_params["batch_size"],
+                                                                num_workers=data_params["num_workers"],
+                                                                shuffle_seed=data_params["seed"],
+                                                                splits=splits,
+                                                            )
+        
+        self.start_epoch = 0
+        self.best_val = float('inf')
+        if args.resume:
+            ckpt = load_checkpoint(args.resume, self.device)
+            self.model.load_state_dict(ckpt['model'])
+            self.optimizer.load_state_dict(ckpt['optimizer'])
+            self.start_epoch = ckpt.get('epoch', 0) + 1
+            self.best_val = ckpt.get('val_loss', float('inf'))
+            print(f"Resumed from {args.resume} at epoch {self.start_epoch}")
 
-    # merge with JSON params if provided
-    if args.encoder_params:
-        try:
-            user_enc = json.loads(args.encoder_params)
-            if not isinstance(user_enc, dict):
-                raise ValueError('encoder_params must be a JSON object')
-            enc_params.update(user_enc)
-        except Exception as e:
-            raise RuntimeError(f'Failed to parse --encoder-params: {e}')
-    if args.decoder_params:
-        try:
-            user_dec = json.loads(args.decoder_params)
-            if not isinstance(user_dec, dict):
-                raise ValueError('decoder_params must be a JSON object')
-            dec_params.update(user_dec)
-        except Exception as e:
-            raise RuntimeError(f'Failed to parse --decoder-params: {e}')
 
-    encoder = build_model(args.encoder_name, enc_params)
-    decoder = build_model(args.decoder_name, dec_params)
+    def train_step(self, batch):
+        self.model.train()
 
-    encoder.to(device)
-    decoder.to(device)
+        x = batch.to(self.device)
+        if x.ndim == 4:  # (B, D, H, W) -> (B, 1, D, H, W)
+            x = x.unsqueeze(1)
 
-    params = list(encoder.parameters()) + list(decoder.parameters())
-    opt = AdamW(params, lr=args.lr, weight_decay=args.weight_decay)
-    scaler = GradScaler(enabled=args.amp)
-    criterion = nn.L1Loss()
+        with autocast(enabled=self.args.amp):
+            pred = self.model(x)
 
-    train_loader, val_loader = build_dataloaders(args.img_size, args.batch_size, num_workers=args.num_workers)
+            target = x
 
-    start_epoch = 0
-    if args.resume:
-        ckpt = load_checkpoint(args.resume, device)
-        encoder.load_state_dict(ckpt['encoder'])
-        decoder.load_state_dict(ckpt['decoder'])
-        opt.load_state_dict(ckpt['optimizer'])
-        start_epoch = ckpt.get('epoch', 0) + 1
+            loss = self.criterion(pred, target)
 
-    best_val = float('inf')
-    for epoch in range(start_epoch, args.epochs):
-        encoder.train(); decoder.train()
+        self.optimizer.zero_grad()
+        self.scaler.scale(loss).backward()
+        self.scaler.step(self.optimizer)
+        self.scaler.update()
+
+        return loss.item()
+
+    def train_one_epoch(self, epoch: int):
         running_loss = 0.0
-        pbar = tqdm(train_loader, desc=f"Train Epoch {epoch}")
-        for batch in pbar:
-            x = batch.to(device).unsqueeze(1) if batch.ndim == 4 else batch.to(device)
-            with autocast(enabled=args.amp):
-                z, ids_restore = encoder(x, mask_ratio=args.mask_ratio)
-                pred = decoder.forward(z, ids_restore, return_patches=True)
-                target = patchify(x, args.patch_size)
-                loss = criterion(pred, target)
+        pbar = tqdm(self.train_loader, desc=f"Train Epoch {epoch}")
+        for i, batch in enumerate(pbar, start=1):
+            loss = self.train_step(batch)
+            running_loss += loss
+            pbar.set_postfix({'loss': running_loss / i})
 
-            opt.zero_grad()
-            scaler.scale(loss).backward()
-            scaler.step(opt)
-            scaler.update()
+    def validate(self, epoch: int):
+        self.model.eval()
+        total = 0.0
+        count = 0
 
-            running_loss += loss.item()
-            pbar.set_postfix({'loss': running_loss / (pbar.n + 1)})
+        with torch.no_grad():
+            for batch in self.val_loader:
+                x = batch.to(self.device)
+                if x.ndim == 4:
+                    x = x.unsqueeze(1)
 
-        # validation
-        val_loss = validate(encoder, decoder, val_loader, criterion, device, args)
-        is_best = val_loss < best_val
-        best_val = min(best_val, val_loss)
+                with autocast(enabled=self.args.amp):
+                    pred = self.model(x)
+                    if pred.shape == x.shape:
+                        target = x
+                    else:
+                        target = patchify(x, self.args.patch_size)
 
-        ckpt = {'epoch': epoch, 'encoder': encoder.state_dict(), 'decoder': decoder.state_dict(), 'optimizer': opt.state_dict(), 'val_loss': val_loss}
-        save_checkpoint(ckpt, os.path.join(args.work_dir, f'ckpt_epoch_{epoch}.pt'))
-        if is_best:
-            save_checkpoint(ckpt, os.path.join(args.work_dir, 'best.ckpt'))
+                    loss = self.criterion(pred, target)
 
+                total += loss.item() * x.shape[0]
+                count += x.shape[0]
 
-def validate(encoder, decoder, val_loader, criterion, device, args):
-    encoder.eval(); decoder.eval()
-    total = 0.0; count = 0
-    with torch.no_grad():
-        for batch in val_loader:
-            x = batch.to(device).unsqueeze(1) if batch.ndim == 4 else batch.to(device)
-            z, ids_restore = encoder(x, mask_ratio=args.mask_ratio)
-            pred = decoder.forward(z, ids_restore, return_patches=True)
-            target = patchify(x, args.patch_size)
-            loss = criterion(pred, target)
-            total += loss.item() * x.shape[0]
-            count += x.shape[0]
-    avg = total / max(1, count)
-    print(f"Validation loss: {avg:.6f}")
-    return avg
+        avg = total / max(1, count)
+        print(f"Validation loss (epoch {epoch}): {avg:.6f}")
+        return avg
 
+   
+    def fit(self):
+        for epoch in range(self.start_epoch, self.args.epochs):
+            self.train_one_epoch(epoch)
+            val_loss = self.validate(epoch)
 
-def parse_args():
-    import argparse
-    p = argparse.ArgumentParser()
-    p.add_argument('--encoder-name', type=str, default='spine_encoder', help='Model name for encoder (registry)')
-    p.add_argument('--decoder-name', type=str, default='spine_decoder', help='Model name for decoder (registry)')
-    p.add_argument('--encoder-params', type=str, default='', help='JSON string of encoder constructor params')
-    p.add_argument('--decoder-params', type=str, default='', help='JSON string of decoder constructor params')
-    p.add_argument('--img-size', nargs=3, type=int, default=(32,32,32))
-    p.add_argument('--patch-size', nargs=3, type=int, default=(8,8,8))
-    p.add_argument('--in-channels', type=int, default=1)
-    p.add_argument('--embed-dim', type=int, default=64)
-    p.add_argument('--enc-layers', type=int, default=2)
-    p.add_argument('--enc-mlp-dim', type=int, default=128)
-    p.add_argument('--num-heads', type=int, default=4)
-    p.add_argument('--dec-embed-dim', type=int, default=32)
-    p.add_argument('--dec-layers', type=int, default=1)
-    p.add_argument('--dec-num-heads', type=int, default=4)
-    p.add_argument('--epochs', type=int, default=5)
-    p.add_argument('--batch-size', type=int, default=4)
-    p.add_argument('--lr', type=float, default=1e-4)
-    p.add_argument('--weight-decay', type=float, default=1e-2)
-    p.add_argument('--mask-ratio', type=float, default=0.5)
-    p.add_argument('--dropout', type=float, default=0.0)
-    p.add_argument('--amp', action='store_true')
-    p.add_argument('--no-cuda', action='store_true')
-    p.add_argument('--resume', type=str, default='')
-    p.add_argument('--work-dir', type=str, default='./training_runs')
-    p.add_argument('--num-workers', type=int, default=2)
-    return p.parse_args()
+            is_best = val_loss < self.best_val
+            self.best_val = min(self.best_val, val_loss)
+
+            ckpt = {
+                'epoch': epoch,
+                'model': self.model.state_dict(),
+                'optimizer': self.optimizer.state_dict(),
+                'val_loss': val_loss,
+            }
+
+            save_checkpoint(
+                ckpt,
+                os.path.join(self.args.work_dir, f'ckpt_epoch_{epoch}.pt'),
+            )
+            if is_best:
+                save_checkpoint(
+                    ckpt,
+                    os.path.join(self.args.work_dir, 'best.ckpt'),
+                )
 
 
-if __name__ == '__main__':
-    args = parse_args()
-    args.img_size = tuple(map(int, args.img_size))
-    args.patch_size = tuple(map(int, args.patch_size))
-    os.makedirs(args.work_dir, exist_ok=True)
-    train(args)

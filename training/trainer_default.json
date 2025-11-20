@@ -1,0 +1,11 @@
+{
+  "img_size": [256, 256, 256],
+  "patch_size": [16, 16, 16],
+  "batch_size": 2,
+  "num_workers": 4,
+  "train_ratio": 0.8,
+  "val_ratio": 0.1,
+  "test_ratio": 0.1,
+  "seed": 28,
+  "work_dir": "./training/ckpt"
+}

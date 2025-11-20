@@ -28,7 +28,7 @@ def makemonaidataset(folders, img_size, augment):
     return MonaiDataset(data=data_list, transform=transforms)
 
 
-def build_dataloaders(img_size,batch_size,splits=(0.8, 0.1, 0.1),num_workers= 2,folders,shuffle_seed= None):
+def build_dataloaders(img_size,batch_size,splits=(0.8, 0.1, 0.1),num_workers=2,folders,shuffle_seed=None):
 
     t, v, te = splits
 

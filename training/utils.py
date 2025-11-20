@@ -1,14 +1,20 @@
-"""Utility functions for training: patchify/unpatchify, checkpoint helpers, small model helpers."""
+
 from typing import Tuple
 import os
 import torch
 
+def list_child_folders(path: str):
+
+    if not os.path.isdir(path):
+        raise NotADirectoryError(f"{path} n'est pas un dossier valide")
+
+    return [
+        os.path.join(path, name) for name in os.listdir(path)
+        if os.path.isdir(os.path.join(path, name))
+    ]
+
 
 def patchify(x: torch.Tensor, patch_size: Tuple[int, int, int]) -> torch.Tensor:
-    """Convert (B, C, D, H, W) -> (B, N, patch_voxels). Should match `unpatchify` in model.
-
-    The implementation mirrors the unpatchify ordering used in the model.
-    """
     B, C, D, H, W = x.shape
     pD, pH, pW = patch_size
     assert D % pD == 0 and H % pH == 0 and W % pW == 0

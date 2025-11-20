@@ -5,7 +5,7 @@
 *.nii
 *.nii.gz
 #fichier temporaire
-*temp.sh
+temp*
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
