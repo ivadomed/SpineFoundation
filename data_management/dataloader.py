@@ -11,7 +11,7 @@ from torch.utils.data import DataLoader, Dataset, Subset
 
 from monai.data import Dataset as MonaiDataset
 
-from preprocessing.transforms import get_transforms
+from training.transforms import get_transforms
 
 
 def makemonaidataset(files, img_size, augment):
