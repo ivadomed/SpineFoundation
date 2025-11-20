@@ -9,7 +9,7 @@ from torch.cuda.amp import GradScaler, autocast
 
 from model.build import build_model
 from data_management.dataloader import build_dataloaders
-from .utils import patchify, save_checkpoint, load_checkpoint, load_json_param, list_child_folders
+from .utils import patchify, save_checkpoint, load_checkpoint, load_json_param, list_child_folders, plot_6_middle_slices
 
 
 class Trainer:
@@ -18,6 +18,7 @@ class Trainer:
 
         model_params = load_json_param(args.model_params)
         data_params = load_json_param(args.data_params)
+        training_params = load_json_param(args.training_params)
 
         self.model_params = model_params
         self.data_params = data_params
@@ -52,7 +53,12 @@ class Trainer:
         self.no_cuda = data_params["no_cuda"]
         self.resume = data_params["resume"]
 
+
+        self.wandb = training_params["wandb"]
+        self.log_image_interval = training_params["log_image_interval"]
+
         self.device = torch.device('cuda' if (torch.cuda.is_available() and not self.no_cuda) else 'cpu') 
+
         
         self.model = build_model(self.model_name, data_params.pop("model_name", None)
 )
@@ -86,7 +92,7 @@ class Trainer:
             print(f"Resumed from {self.resume} at epoch {self.start_epoch}")
 
 
-    def train_step(self, batch):
+    def train_step(self, batch, iteration: int):
         self.model.train()
 
         x = batch["image"].to(self.device)
@@ -98,6 +104,16 @@ class Trainer:
 
             target = x
 
+            if iteration % self.log_image_interval == 0:
+                
+                fig = plot_6_middle_slices(
+                        image=x[0, 0].cpu(),
+                        gt=target[0, 0].cpu(),
+                        pred=pred[0, 0].cpu(),
+                    )
+                wandb.log({"Train/Images": wandb.Image(fig)})
+                plt.close(fig)
+            
             loss = self.criterion(pred, target)
 
         self.optimizer.zero_grad()
@@ -111,9 +127,10 @@ class Trainer:
         running_loss = 0.0
         pbar = tqdm(self.train_loader, desc=f"Train Epoch {epoch}")
         for i, batch in enumerate(pbar, start=1):
-            loss = self.train_step(batch)
+            loss = self.train_step(batch, i)
             running_loss += loss
             pbar.set_postfix({'loss': running_loss / i})
+        return running_loss / len(self.train_loader)
 
     def validate(self, epoch: int):
         self.model.eval()
@@ -144,8 +161,33 @@ class Trainer:
 
    
     def fit(self):
+
+        if self.wandb:
+            import wandb
+            wandb.init(project="SpineMAE", config={
+                "model_name": self.model_name,
+                "in_channels": self.in_channels,
+                "img_size": self.img_size,
+                "patch_size": self.patch_size,
+                "enc_embed_dim": self.enc_embed_dim,
+                "enc_num_heads": self.enc_num_heads,
+                "enc_layers": self.enc_layers,
+                "enc_mlp_dim": self.enc_mlp_dim,
+                "dropout": self.dropout,
+                "mask_ratio": self.mask_ratio,
+                "dec_embed_dim": self.dec_embed_dim,
+                "dec_layers": self.dec_layers,
+                "dec_num_heads": self.dec_num_heads,
+                "dec_mlp_dim": self.dec_mlp_dim,
+                "batch_size": self.batch_size,
+                "lr": self.lr,
+                "weight_decay": self.weight_decay,
+                "epochs": self.epochs,
+            })
+            wandb.watch(self.model, log="all")
+
         for epoch in range(self.start_epoch, self.epochs):
-            self.train_one_epoch(epoch)
+            train_loss = self.train_one_epoch(epoch)
             val_loss = self.validate(epoch)
 
             is_best = val_loss < self.best_val
@@ -167,5 +209,15 @@ class Trainer:
                     ckpt,
                     os.path.join(self.work_dir, 'best.ckpt'),
                 )
+
+            if self.wandb:
+                wandb.log({
+                    'Train/Loss': train_loss,
+                    'Val/Loss': val_loss,
+                    'Epoch': epoch,
+                })
+        if self.wandb:
+            wandb.finish()
+            
 
 
