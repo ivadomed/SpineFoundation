@@ -113,16 +113,14 @@ def plot_6_middle_slices(image: torch.Tensor, gt: torch.Tensor, pred: torch.Tens
 
         # Row 1: Ground Truth
         ax_gt = axs[1, col_idx]
-        # Use a distinct colormap like 'jet' or 'viridis' for segmentation masks (GT/Pred) if they are masks.
-        # Assuming GT is a segmentation mask (using 'viridis' for a color effect, replace with 'gray' if it's grayscale)
-        ax_gt.imshow(slice_gt, cmap='viridis') 
+        ax_gt.imshow(slice_gt, cmap='gray') 
         ax_gt.axis('off')
         if col_idx == 0:
             ax_gt.set_title(row_labels[1], fontsize=12, loc='left')
 
         # Row 2: Prediction
         ax_pred = axs[2, col_idx]
-        ax_pred.imshow(slice_pred, cmap='viridis') # Use the same colormap as GT for consistency
+        ax_pred.imshow(slice_pred, cmap='gray') 
         ax_pred.axis('off')
         if col_idx == 0:
             ax_pred.set_title(row_labels[2], fontsize=12, loc='left')
