@@ -7,6 +7,9 @@ import torch.nn as nn
 from torch.optim import AdamW
 from torch.cuda.amp import GradScaler, autocast
 
+import wandb
+import matplotlib.pyplot as plt
+
 from model.build import build_model
 from data_management.dataloader import build_dataloaders
 from .utils import patchify, save_checkpoint, load_checkpoint, load_json_param, list_child_folders, plot_6_middle_slices
@@ -163,7 +166,6 @@ class Trainer:
     def fit(self):
 
         if self.wandb:
-            import wandb
             wandb.init(project="SpineMAE", config={
                 "model_name": self.model_name,
                 "in_channels": self.in_channels,

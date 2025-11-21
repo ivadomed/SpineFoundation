@@ -63,9 +63,9 @@ def plot_6_middle_slices(image: torch.Tensor, gt: torch.Tensor, pred: torch.Tens
 
     # 1. Bring everything to numpy and float
     # Ensure all inputs are converted to float and numpy arrays for plotting
-    image_np = image.float().cpu().numpy()
-    gt_np = gt.float().cpu().numpy()
-    pred_np = pred.float().cpu().numpy()
+    image_np = image.float().cpu().detach().numpy()
+    gt_np = gt.float().cpu().detach().numpy()
+    pred_np = pred.float().cpu().detach().numpy()
 
     # 2. Determine the central slice and starting index
     depth = image_np.shape[0]
