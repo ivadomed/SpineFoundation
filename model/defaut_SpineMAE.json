@@ -18,5 +18,5 @@
   "dec_embed_dim": 128,
   "dec_layers": 4,
   "dec_num_heads": 4,
-  "dec_mlp_dim": 3072
+  "dec_mlp_dim": 512
 }
