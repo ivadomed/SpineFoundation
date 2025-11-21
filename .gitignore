@@ -1,6 +1,17 @@
 # environement specific files 
 *env*
 
+#Model specific files
+*.pt 
+*.pth
+*.h5
+*.ckpt
+ckpt*
+
+#Wandb specific files
+wandb/*
+wandb-*
+
 # MRI specific 
 *.nii
 *.nii.gz
