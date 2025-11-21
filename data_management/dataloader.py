@@ -14,13 +14,13 @@ from monai.data import Dataset as MonaiDataset
 from training.transforms import get_transforms
 
 
-def makemonaidataset(files, img_size, augment):
+def makemonaidataset(files, img_size, img_resolution, augment):
     data_list = [{'image': p} for p in files]
-    transforms = get_transforms(img_size, augment=augment)
+    transforms = get_transforms(img_size, img_resolution, augment=augment)
     return MonaiDataset(data=data_list, transform=transforms)
 
 
-def build_dataloaders(img_size,batch_size,folders,splits=(0.8, 0.1, 0.1),num_workers=2,shuffle_seed=None):
+def build_dataloaders(img_size, img_resolution, batch_size,folders,splits=(0.8, 0.1, 0.1),num_workers=2,shuffle_seed=None):
 
     t, v, te = splits
     vol_files = []
@@ -47,7 +47,7 @@ def build_dataloaders(img_size,batch_size,folders,splits=(0.8, 0.1, 0.1),num_wor
     val_indices = indices[n_train:n_train + n_val]
     test_indices = indices[n_train + n_val:]
 
-    monai_ds = makemonaidataset(vol_files, img_size=img_size, augment=True)
+    monai_ds = makemonaidataset(vol_files, img_size=img_size, img_resolution=img_resolution, augment=True)
 
 
     train_ds = Subset(monai_ds, train_indices)
