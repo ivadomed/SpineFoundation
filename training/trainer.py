@@ -5,7 +5,7 @@ from tqdm import tqdm
 import torch
 import torch.nn as nn
 from torch.optim import AdamW
-from torch.cuda.amp import GradScaler, autocast
+from torch.amp import GradScaler, autocast
 
 import wandb
 import matplotlib.pyplot as plt
@@ -62,7 +62,7 @@ class Trainer:
         self.log_image_interval = training_params["log_image_interval"]
 
         self.device = torch.device('cuda' if (torch.cuda.is_available() and not self.no_cuda) else 'cpu') 
-
+        print(f"Using device: {self.device}")
         
         self.model = build_model(self.model_name, data_params.pop("model_name", None)
 )
@@ -70,7 +70,7 @@ class Trainer:
 
 
         self.optimizer = AdamW(self.model.parameters(),lr=self.lr,weight_decay=self.weight_decay,)
-        self.scaler = GradScaler(enabled=self.amp)
+        self.scaler = GradScaler(device=self.device, enabled=self.amp)
         self.criterion = nn.L1Loss()
 
         folders = list_child_folders(self.data_path)
@@ -104,7 +104,7 @@ class Trainer:
         if x.ndim == 4:  # (B, D, H, W) -> (B, 1, D, H, W)
             x = x.unsqueeze(1)
 
-        with autocast(enabled=self.amp):
+        with autocast(device_type=self.device.type, enabled=self.amp):
             pred = self.model(x)
 
             target = x
