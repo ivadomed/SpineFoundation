@@ -27,7 +27,7 @@ def build_dataloaders(img_size, img_resolution, batch_size,folders,splits=(0.8, 
     
 
     for folder in folders:
-        pattern = os.path.join(folder, "sub-*", "anat", "*.nii.gz")
+        pattern = os.path.join(folder, "sub-*", "**", "anat", "*.nii.gz")
         vol_files.extend(sorted(glob.glob(os.path.join(pattern), recursive=True)))
     vol_files=[f for f in vol_files if "ax" not in f.lower() and "cor" not in f.lower() and "preproc" not in f.lower()]
     total = len(vol_files)
@@ -39,7 +39,7 @@ def build_dataloaders(img_size, img_resolution, batch_size,folders,splits=(0.8, 
         rng = np.random.RandomState(shuffle_seed)
         rng.shuffle(indices)
 
-
+    print(f"Total files found: {total}. Splitting into train/val/test with ratios {t}/{v}/{te}.")
     n_train = int(total * t)
     n_val = int(total * v)
     n_test = total - n_train - n_val

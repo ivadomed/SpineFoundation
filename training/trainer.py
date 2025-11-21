@@ -57,15 +57,17 @@ class Trainer:
         self.no_cuda = data_params["no_cuda"]
         self.resume = data_params["resume"]
 
+        self.global_step = 0
 
         self.wandb = training_params["wandb"]
         self.log_image_interval = training_params["log_image_interval"]
 
         self.device = torch.device('cuda' if (torch.cuda.is_available() and not self.no_cuda) else 'cpu') 
         print(f"Using device: {self.device}")
+        model_params.pop("model_name", None)
+        model_params.pop("img_resolution", None)
         
-        self.model = build_model(self.model_name, data_params.pop("model_name", None)
-)
+        self.model = build_model(self.model_name, model_params)
         self.model.to(self.device)
 
 
@@ -97,7 +99,8 @@ class Trainer:
             print(f"Resumed from {self.resume} at epoch {self.start_epoch}")
 
 
-    def train_step(self, batch, iteration: int):
+    def train_step(self, batch, iteration: int,epoch: int):
+        self.global_step += 1
         self.model.train()
 
         x = batch["image"].to(self.device)
@@ -109,16 +112,17 @@ class Trainer:
 
             target = x
 
-            if iteration % self.log_image_interval == 0:
-                
+            if self.wandb and iteration % self.log_image_interval == 0:
                 fig = plot_6_middle_slices(
-                        image=x[0, 0].cpu(),
-                        gt=target[0, 0].cpu(),
-                        pred=pred[0, 0].cpu(),
-                    )
-                wandb.log({"Train/Images": wandb.Image(fig)})
+                    image=x[0, 0].cpu(),
+                    gt=target[0, 0].cpu(),
+                    pred=pred[0, 0].cpu(),
+                )
+                wandb.log(
+                    {"Train/Images": wandb.Image(fig)},
+                    step=self.global_step,
+                )
                 plt.close(fig)
-            
             loss = self.criterion(pred, target)
 
         self.optimizer.zero_grad()
@@ -132,7 +136,7 @@ class Trainer:
         running_loss = 0.0
         pbar = tqdm(self.train_loader, desc=f"Train Epoch {epoch}")
         for i, batch in enumerate(pbar, start=1):
-            loss = self.train_step(batch, i)
+            loss = self.train_step(batch, i,epoch)
             running_loss += loss
             pbar.set_postfix({'loss': running_loss / i})
         return running_loss / len(self.train_loader)
@@ -148,7 +152,7 @@ class Trainer:
                 if x.ndim == 4:
                     x = x.unsqueeze(1)
 
-                with autocast(enabled=self.amp):
+                with autocast(device_type=self.device.type, enabled=self.amp):
                     pred = self.model(x)
                     if pred.shape == x.shape:
                         target = x
@@ -219,7 +223,7 @@ class Trainer:
                     'Train/Loss': train_loss,
                     'Val/Loss': val_loss,
                     'Epoch': epoch,
-                })
+                }, step=self.global_step)
         if self.wandb:
             wandb.finish()
             

@@ -18,7 +18,7 @@ def get_transforms(img_size, resolution, augment= True, prob_flip= 0.2, prob_aff
     base = [
         LoadImaged(keys=["image"]),
         EnsureChannelFirstd(keys=["image"]),
-        Orientationd(keys=["image"], axcodes="RPI"),
+        Orientationd(keys=["image"], axcodes="RPI",labels=None),
         Spacingd(keys=["image"], pixdim=resolution, mode=("bilinear")),
         ResizeWithPadOrCropd(keys=["image"], spatial_size=img_size),
         ScaleIntensityd(keys=["image"]),

@@ -27,7 +27,7 @@ def build_model(name, params=None):
 
     module = importlib.import_module(module_path)
     ModelClass = getattr(module, class_name)
-
+    print(f"Building model '{name}' with params: {params}")
     return ModelClass(**params)
 
 
