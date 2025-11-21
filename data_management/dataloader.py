@@ -29,7 +29,7 @@ def build_dataloaders(img_size, img_resolution, batch_size,folders,splits=(0.8, 
     for folder in folders:
         pattern = os.path.join(folder, "sub-*", "anat", "*.nii.gz")
         vol_files.extend(sorted(glob.glob(os.path.join(pattern), recursive=True)))
-    
+    vol_files=[f for f in vol_files if "ax" not in f.lower() and "cor" not in f.lower() and "preproc" not in f.lower()]
     total = len(vol_files)
     if total == 0:
         raise RuntimeError('No files found')

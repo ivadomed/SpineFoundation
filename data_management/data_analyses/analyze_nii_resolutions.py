@@ -36,9 +36,10 @@ def analyze_files(files):
                 z_idx = int(np.argmax(zo_arr))
                 # keep the other two indices in their original order for x and y
                 xy_indices = [i for i in range(3) if i != z_idx]
-                sx = float(zo_arr[xy_indices[0]])
-                sy = float(zo_arr[xy_indices[1]])
-                sz = float(zo_arr[z_idx])
+                # round spacings to 1e-4 precision
+                sx = round(float(zo_arr[xy_indices[0]]), 4)
+                sy = round(float(zo_arr[xy_indices[1]]), 4)
+                sz = round(float(zo_arr[z_idx]), 4)
             else:
                 # fallback if weird header
                 zooms = list(zo) + [np.nan, np.nan, np.nan]
@@ -65,7 +66,7 @@ def analyze_files(files):
                 "spacing_x": sx,
                 "spacing_y": sy,
                 "spacing_z": sz,
-                "spacing": f"{sx:.6g}x{sy:.6g}x{sz:.6g}",
+                "spacing": f"{sx:.4f}x{sy:.4f}x{sz:.4f}",
                 "shape_x": shx,
                 "shape_y": shy,
                 "shape_z": shz,
@@ -106,15 +107,31 @@ def summarize_df(df: pd.DataFrame):
         if col in df:
             arr = valid[col].dropna().values
             if arr.size:
-                summary[f"spacing_{ax}_mean"] = float(np.mean(arr))
-                summary[f"spacing_{ax}_std"] = float(np.std(arr))
-                summary[f"spacing_{ax}_min"] = float(np.min(arr))
-                summary[f"spacing_{ax}_max"] = float(np.max(arr))
+                summary[f"spacing_{ax}_mean"] = round(float(np.mean(arr)), 4)
+                summary[f"spacing_{ax}_median"] = round(float(np.median(arr)), 4)
+                summary[f"spacing_{ax}_std"] = round(float(np.std(arr)), 4)
+                summary[f"spacing_{ax}_min"] = round(float(np.min(arr)), 4)
+                summary[f"spacing_{ax}_max"] = round(float(np.max(arr)), 4)
             else:
                 summary[f"spacing_{ax}_mean"] = None
 
     # shapes
-    shape_counts = valid["shape"].value_counts()
+    # shape statistics (use rows where shape is not null)
+    shape_valid = df[~df["shape"].isnull()]
+    for ax in ["x", "y", "z"]:
+        col = f"shape_{ax}"
+        if col in df:
+            arr = shape_valid[col].dropna().values
+            if arr.size:
+                summary[f"shape_{ax}_mean"] = round(float(np.mean(arr)), 4)
+                summary[f"shape_{ax}_median"] = round(float(np.median(arr)), 4)
+                summary[f"shape_{ax}_std"] = round(float(np.std(arr)), 4)
+                summary[f"shape_{ax}_min"] = int(np.min(arr))
+                summary[f"shape_{ax}_max"] = int(np.max(arr))
+            else:
+                summary[f"shape_{ax}_mean"] = None
+
+    shape_counts = shape_valid["shape"].value_counts() if not shape_valid.empty else pd.Series(dtype=int)
     summary["most_common_shapes"] = shape_counts.head(10).to_dict()
 
     return summary
@@ -135,6 +152,22 @@ def plot_histograms(df: pd.DataFrame, outdir: str):
                 plt.title(f"Voxel spacing distribution ({ax})")
                 plt.grid(True)
                 out = os.path.join(outdir, f"hist_spacing_{ax}.png")
+                plt.savefig(out, bbox_inches="tight")
+                plt.close()
+
+    # Histograms for shape (number of voxels per axis)
+    for ax in ["x", "y", "z"]:
+        col = f"shape_{ax}"
+        if col in df:
+            arr = df[col].dropna().values
+            if arr.size:
+                plt.figure()
+                plt.hist(arr, bins=40)
+                plt.xlabel(f"Shape {ax} (voxels)")
+                plt.ylabel("Count")
+                plt.title(f"Image shape distribution ({ax})")
+                plt.grid(True)
+                out = os.path.join(outdir, f"hist_shape_{ax}.png")
                 plt.savefig(out, bbox_inches="tight")
                 plt.close()
 
@@ -167,8 +200,33 @@ def main():
     print(f"Found {len(files)} NIfTI files in {folder}")
 
     df = analyze_files(files)
+    # Compute and print statistics for spacing and shape
+    summary = summarize_df(df)
+    # Count non-square images (shape_x != shape_y)
+    if "shape_x" in df and "shape_y" in df:
+        shape_mask = (~df["shape_x"].isnull()) & (~df["shape_y"].isnull())
+        n_with_shape = int(shape_mask.sum())
+        n_non_square = int((df.loc[shape_mask, "shape_x"] != df.loc[shape_mask, "shape_y"]).sum())
+        pct_non_square = 100.0 * n_non_square / max(1, n_with_shape)
+        print(f"\nNon-square images: {n_non_square} / {n_with_shape} ({pct_non_square:.2f}%) where shape_x != shape_y")
+    else:
+        n_non_square = None
+    print("\nSpacing statistics (mm):")
+    for ax in ["x", "y", "z"]:
+        mean_k = f"spacing_{ax}_mean"
+        med_k = f"spacing_{ax}_median"
+        std_k = f"spacing_{ax}_std"
+        if mean_k in summary and summary.get(mean_k) is not None:
+                print(f"  {ax}: mean={summary.get(mean_k):.4f}, median={summary.get(med_k):.4f}, std={summary.get(std_k):.4f}")
 
-   
+    print("\nShape statistics (voxels):")
+    for ax in ["x", "y", "z"]:
+        mean_k = f"shape_{ax}_mean"
+        med_k = f"shape_{ax}_median"
+        std_k = f"shape_{ax}_std"
+        if mean_k in summary and summary.get(mean_k) is not None:
+            print(f"  {ax}: mean={summary.get(mean_k):.4f}, median={summary.get(med_k):.4f}, std={summary.get(std_k):.4f}")
+
     if args.plots:
         plot_histograms(df, args.plots)
         print(f"Saved plots to: {args.plots}")
