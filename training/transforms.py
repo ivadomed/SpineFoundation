@@ -8,14 +8,18 @@ from monai.transforms import (
     ScaleIntensityd,
     RandFlipd,
     RandAffined,
+    Spacingd,
+    Orientationd
 )
 
 
-def get_transforms(img_size,augment= True, prob_flip= 0.2, prob_affine= 0.2):
+def get_transforms(img_size, resolution, augment= True, prob_flip= 0.2, prob_affine= 0.2):
 
     base = [
         LoadImaged(keys=["image"]),
         EnsureChannelFirstd(keys=["image"]),
+        Orientationd(keys=["image"], axcodes="RPI"),
+        Spacingd(keys=["image"], pixdim=resolution, mode=("bilinear")),
         ResizeWithPadOrCropd(keys=["image"], spatial_size=img_size),
         ScaleIntensityd(keys=["image"]),
     ]
