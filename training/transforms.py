@@ -27,3 +27,4 @@ def get_transforms(img_size,augment= True, prob_flip= 0.2, prob_affine= 0.2):
         ])
 
     return Compose(base)
+
