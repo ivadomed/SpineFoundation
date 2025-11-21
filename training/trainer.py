@@ -29,6 +29,7 @@ class Trainer:
         self.model_name=model_params["model_name"]
         self.in_channels=model_params["in_channels"]
         self.img_size=model_params["img_size"]
+        self.img_resolution=model_params["img_resolution"]
         self.patch_size=model_params["patch_size"]
         self.enc_embed_dim=model_params["enc_embed_dim"]
         self.enc_num_heads=model_params["enc_num_heads"]
@@ -77,6 +78,7 @@ class Trainer:
         splits=(self.train_ratio, self.val_ratio, self.test_ratio)
         self.train_loader, self.val_loader, self.test_loader = build_dataloaders(
                                                                 img_size=self.img_size,
+                                                                img_resolution=self.img_resolution,
                                                                 batch_size=self.batch_size,
                                                                 folders=folders,
                                                                 num_workers=self.num_workers,
