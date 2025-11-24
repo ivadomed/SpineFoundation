@@ -48,13 +48,15 @@ class Trainer:
         self.val_ratio = data_params["val_ratio"]
         self.test_ratio = data_params["test_ratio"]
         self.seed = data_params["seed"]
-        self.work_dir = data_params["work_dir"]
-        self.epochs = data_params["epochs"]
+
+
         self.data_path = data_params["data_path"]
         
 
         self.global_step = 0
-
+        
+        self.epochs = training_params["epochs"]
+        self.work_dir = training_params["work_dir"]
         self.wandb = training_params["wandb"]
         self.log_image_interval = training_params["log_image_interval"]
         self.lr = training_params["lr"]
@@ -63,7 +65,7 @@ class Trainer:
         self.no_cuda = training_params["no_cuda"]
         self.resume = training_params["resume"]
 
-        
+
         self.device = torch.device('cuda' if (torch.cuda.is_available() and not self.no_cuda) else 'cpu') 
         print(f"Using device: {self.device}")
         model_params.pop("model_name", None)
