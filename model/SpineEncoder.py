@@ -8,6 +8,7 @@ import torch.nn as nn
 
 from monai.networks.blocks.patchembedding import PatchEmbeddingBlock
 from monai.networks.blocks.transformerblock import TransformerBlock
+import wandb
 
     
 
@@ -21,7 +22,6 @@ def random_masking(x, mask_ratio):
 
     ids_keep=ids_shuffle[:, :num_keep] 
 
-    # sélectionner les tokens visibles
     x_visible = torch.gather(
         x, 1, ids_keep.unsqueeze(-1).expand(-1, -1, C)
     )
