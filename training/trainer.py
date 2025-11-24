@@ -12,8 +12,8 @@ import matplotlib.pyplot as plt
 
 from model.build import build_model
 from data_management.dataloader import build_dataloaders
-from .utils import patchify, save_checkpoint, load_checkpoint, load_json_param, list_child_folders, plot_6_middle_slices
-
+from .utils import patchify, save_checkpoint, load_checkpoint, load_json_param, list_child_folders, plot_6_middle_slices, plot_6_uniform_slices
+from .loss import MSEwloss
 
 class Trainer:
     def __init__(self, args):
@@ -73,7 +73,7 @@ class Trainer:
 
         self.optimizer = AdamW(self.model.parameters(),lr=self.lr,weight_decay=self.weight_decay,)
         self.scaler = GradScaler(device=self.device, enabled=self.amp)
-        self.criterion = nn.L1Loss()
+        self.criterion = MSEwloss()
 
         folders = list_child_folders(self.data_path)
 
@@ -88,11 +88,6 @@ class Trainer:
                                                                 splits=splits,
                                                             )
         batch = next(iter(self.train_loader))
-
-        for i, batch in enumerate(self.train_loader):
-            labels = batch.get("label", None)
-            print(f"Batch {i} labels:", labels)
-
 
         self.start_epoch = 0
         self.best_val = float('inf')
@@ -110,16 +105,17 @@ class Trainer:
         self.model.train()
 
         x = batch["image"].to(self.device)
+        mask = batch["label"].to(self.device)
+
         if x.ndim == 4:  # (B, D, H, W) -> (B, 1, D, H, W)
             x = x.unsqueeze(1)
 
         with autocast(device_type=self.device.type, enabled=self.amp):
             pred = self.model(x)
-
             target = x
 
             if self.wandb and self.global_step % self.log_image_interval == 0:
-                fig = plot_6_middle_slices(
+                fig = plot_6_uniform_slices(
                     image=x[0, 0].cpu(),
                     gt=target[0, 0].cpu(),
                     pred=pred[0, 0].cpu(),
@@ -129,7 +125,7 @@ class Trainer:
                     step=self.global_step,
                 )
                 plt.close(fig)
-            loss = self.criterion(pred, target)
+            loss = self.criterion(pred, target, weight=mask)
 
         self.optimizer.zero_grad()
         self.scaler.scale(loss).backward()
@@ -155,6 +151,7 @@ class Trainer:
         with torch.no_grad():
             for batch in self.val_loader:
                 x = batch["image"].to(self.device)
+                mask = batch["label"].to(self.device)
                 if x.ndim == 4:
                     x = x.unsqueeze(1)
 
@@ -165,7 +162,7 @@ class Trainer:
                     else:
                         target = patchify(x, self.patch_size)
 
-                    loss = self.criterion(pred, target)
+                    loss = self.criterion(pred, target, weight=mask)
 
                 total += loss.item() * x.shape[0]
                 count += x.shape[0]

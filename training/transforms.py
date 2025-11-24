@@ -16,18 +16,18 @@ from monai.transforms import (
 def get_transforms(img_size, resolution, augment= True, prob_flip= 0.2, prob_affine= 0.2):
 
     base = [
-        LoadImaged(keys=["image"]),
-        EnsureChannelFirstd(keys=["image"]),
-        Orientationd(keys=["image"], axcodes="RPI",labels=None),
-        Spacingd(keys=["image"], pixdim=resolution, mode=("bilinear")),
-        ResizeWithPadOrCropd(keys=["image"], spatial_size=img_size),
+        LoadImaged(keys=["image", "label"]),
+        EnsureChannelFirstd(keys=["image", "label"]),
+        Orientationd(keys=["image", "label"], axcodes="RPI",labels=None),
+        Spacingd(keys=["image", "label"], pixdim=resolution, mode=("bilinear")),
+        ResizeWithPadOrCropd(keys=["image", "label"], spatial_size=img_size),
         ScaleIntensityd(keys=["image"]),
     ]
 
     if augment:
         base.extend([
-            RandFlipd(keys=["image"], spatial_axis=0, prob=prob_flip),
-            RandAffined(keys=["image"], rotate_range=0.1, prob=prob_affine),
+            RandFlipd(keys=["image", "label"], spatial_axis=0, prob=prob_flip),
+            RandAffined(keys=["image", "label"], rotate_range=0.1, prob=prob_affine),
         ])
 
     return Compose(base)

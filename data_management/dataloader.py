@@ -18,13 +18,17 @@ from training.transforms import get_transforms
 def makemonaidataset(folder, files, img_size, img_resolution, augment):
     data_list = []
     for p in files:
-        label_path = get_mask(folder,p)
-        entry = {'image': p}
-        entry['label'] = label_path
+        label_path = get_mask(folder, p)
+        entry = {
+            'image': p,
+            'label': label_path  
+        }
         data_list.append(entry)
 
+
     transforms = get_transforms(img_size, img_resolution, augment=augment)
-    return MonaiDataset(data=data_list, transform=transforms)
+
+    return MonaiDataset(data=data_list,transform=transforms)
 
 
 def build_dataloaders(folders,img_size, img_resolution, batch_size,splits=(0.8, 0.1, 0.1),num_workers=2,shuffle_seed=None):
@@ -68,7 +72,6 @@ def build_dataloaders(folders,img_size, img_resolution, batch_size,splits=(0.8, 
 
 
 def get_mask(folder, img_file):
-
 
     labels_dir = os.path.join(folder, 'derivatives', 'labels')
 

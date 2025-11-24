@@ -4,9 +4,10 @@ import os
 import torch
 import json
 import matplotlib.pyplot as plt
+import numpy as np
 
 def list_child_folders(path: str):
-    print(path)
+    print("Path utilisé:", path)
     if not os.path.isdir(path):
         raise NotADirectoryError(f"{path} n'est pas un dossier valide")
 
@@ -53,13 +54,6 @@ def load_json_param(param):
     return json.loads(param)
 
 def plot_6_middle_slices(image: torch.Tensor, gt: torch.Tensor, pred: torch.Tensor):
-    """
-    Plot 6 middle slices for the image, ground truth (gt), and prediction (pred)
-    in a 3-row (I, GT, P), 6-column (slices) grid.
-    
-    The orientation is assumed to be RPI, slicing along the first dimension (axial/depth).
-    It is assumed that the input tensors have a shape like (D, H, W).
-    """
 
     # 1. Bring everything to numpy and float
     # Ensure all inputs are converted to float and numpy arrays for plotting
@@ -128,4 +122,68 @@ def plot_6_middle_slices(image: torch.Tensor, gt: torch.Tensor, pred: torch.Tens
     plt.tight_layout(rect=[0, 0.03, 1, 0.95]) # Adjust layout to make room for suptitle
     plt.show() # Use plt.show() instead of fig.show() in a script environment
     
+    return fig
+
+def plot_6_uniform_slices(image: torch.Tensor, gt: torch.Tensor, pred: torch.Tensor):
+
+    # 1. Convertir en numpy
+    image_np = image.float().cpu().detach().numpy()
+    gt_np = gt.float().cpu().detach().numpy()
+    pred_np = pred.float().cpu().detach().numpy()
+
+    depth = image_np.shape[0]
+
+    if depth < 8:
+        raise ValueError(f"Image trop petite ({depth} slices). Min = 8 pour une division en 8.")
+
+    # 2. Mask 75% de l’image input (MAE-style)
+    #    → Chaque voxel a 75% de chance d’être mis à zéro
+    mask = np.random.rand(*image_np.shape) > 0.75
+    masked_image_np = image_np * mask
+
+    # 3. Slices uniformément réparties
+    #    → On divise en 8 segments et prend les slices 1 → 6
+    #      Exemple si depth=80 → segments de 10 slices
+    step = depth // 8
+    slice_indices = [step * i for i in range(1, 7)]  # indices 1..6
+
+    # 4. Figure (3 rows × 6 columns)
+    fig, axs = plt.subplots(3, 6, figsize=(18, 9))
+    fig.suptitle('6 Uniform Slices: Masked Input, GT, Prediction', fontsize=16)
+
+    row_labels = ['Masked Input (75%)', 'Ground Truth (GT)', 'Prediction (Pred)']
+
+    # 5. Plot
+    for col_idx, slice_idx in enumerate(slice_indices):
+
+        # récupérer les slices
+        slice_img  = masked_image_np[slice_idx, :, :].T
+        slice_gt   = gt_np[slice_idx, :, :].T
+        slice_pred = pred_np[slice_idx, :, :].T
+
+        # Row 0 : masked input
+        ax = axs[0, col_idx]
+        ax.imshow(slice_img, cmap='gray')
+        ax.axis('off')
+        if col_idx == 0:
+            ax.set_title(row_labels[0], fontsize=12, loc='left')
+        ax.set_xlabel(f"Slice {slice_idx}", fontsize=10)
+
+        # Row 1 : GT
+        ax = axs[1, col_idx]
+        ax.imshow(slice_gt, cmap='gray')
+        ax.axis('off')
+        if col_idx == 0:
+            ax.set_title(row_labels[1], fontsize=12, loc='left')
+
+        # Row 2 : Pred
+        ax = axs[2, col_idx]
+        ax.imshow(slice_pred, cmap='gray')
+        ax.axis('off')
+        if col_idx == 0:
+            ax.set_title(row_labels[2], fontsize=12, loc='left')
+
+    plt.tight_layout(rect=[0, 0.03, 1, 0.95])
+    plt.show()
+
     return fig
