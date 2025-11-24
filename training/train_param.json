@@ -1,4 +1,4 @@
 {
     "wandb": true, 
-    "log_image_interval": 10
+    "log_image_interval": 100
 }

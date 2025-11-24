@@ -87,7 +87,13 @@ class Trainer:
                                                                 shuffle_seed=self.seed,
                                                                 splits=splits,
                                                             )
-        
+        batch = next(iter(self.train_loader))
+
+        for i, batch in enumerate(self.train_loader):
+            labels = batch.get("label", None)
+            print(f"Batch {i} labels:", labels)
+
+
         self.start_epoch = 0
         self.best_val = float('inf')
         if self.resume:
@@ -112,7 +118,7 @@ class Trainer:
 
             target = x
 
-            if self.wandb and iteration % self.log_image_interval == 0:
+            if self.wandb and self.global_step % self.log_image_interval == 0:
                 fig = plot_6_middle_slices(
                     image=x[0, 0].cpu(),
                     gt=target[0, 0].cpu(),
