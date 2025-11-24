@@ -5,5 +5,6 @@
     "train_ratio": 0.8,
     "val_ratio": 0.1,
     "test_ratio": 0.1,
-    "seed": 28
+    "seed": 28, 
+    "json_manifest": "/home/ge.polymtl.ca/thdaga/SpineFoundation/data_management/data_splits.json"
 }

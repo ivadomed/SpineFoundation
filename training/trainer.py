@@ -12,6 +12,8 @@ import matplotlib.pyplot as plt
 
 from model.build import build_model
 from data_management.dataloader import build_dataloaders
+from data_management.dataloader_json import build_dataloaders_from_json
+
 from .utils import patchify, save_checkpoint, load_checkpoint, load_json_param, list_child_folders, plot_6_middle_slices, plot_6_uniform_slices
 from .loss import MSEwloss
 
@@ -48,9 +50,8 @@ class Trainer:
         self.val_ratio = data_params["val_ratio"]
         self.test_ratio = data_params["test_ratio"]
         self.seed = data_params["seed"]
-
-
         self.data_path = data_params["data_path"]
+        self.json_manifest = data_params.get("json_manifest", None)
         
 
         self.global_step = 0
@@ -79,18 +80,28 @@ class Trainer:
         self.scaler = GradScaler(device=self.device, enabled=self.amp)
         self.criterion = MSEwloss()
 
-        folders = list_child_folders(self.data_path)
+        
 
-        splits=(self.train_ratio, self.val_ratio, self.test_ratio)
-        self.train_loader, self.val_loader, self.test_loader = build_dataloaders(
-                                                                img_size=self.img_size,
-                                                                img_resolution=self.img_resolution,
-                                                                batch_size=self.batch_size,
-                                                                folders=folders,
-                                                                num_workers=self.num_workers,
-                                                                shuffle_seed=self.seed,
-                                                                splits=splits,
-                                                            )
+        if self.json_manifest is not None:
+            self.train_loader, self.val_loader, self.test_loader = build_dataloaders_from_json(
+                                                                    json_path=self.json_manifest,
+                                                                    img_size=self.img_size,
+                                                                    img_resolution=self.img_resolution,
+                                                                    batch_size=self.batch_size,
+                                                                    num_workers=self.num_workers,
+                                                                )
+
+        else:
+            folders = list_child_folders(self.data_path)
+            self.train_loader, self.val_loader, self.test_loader = build_dataloaders(
+                                                                    folders=folders,
+                                                                    img_size=self.img_size,
+                                                                    img_resolution=self.img_resolution,
+                                                                    batch_size=self.batch_size,
+                                                                    splits=(self.train_ratio, self.val_ratio, self.test_ratio),
+                                                                    num_workers=self.num_workers,
+                                                                    shuffle_seed=self.seed,
+                                                                )
         batch = next(iter(self.train_loader))
 
         self.start_epoch = 0
