@@ -32,13 +32,13 @@ def create_data_manifest(folders: List[str], splits: Tuple[float, float, float],
         found_images = sorted(glob.glob(os.path.join(pattern), recursive=True))
         
         # Replicate the exact exclusion filtering
-        valid_images = [f for f in found_images if "ax" not in f.lower() and "cor" not in f.lower() and "preproc" not in f.lower()]
-
-        for img_path in valid_images:
+        valid_images = [[f,get_mask(folder,f)] for f in found_images if "ax" not in f.lower() and "cor" not in f.lower() and "preproc" not in f.lower()]
+        for path in valid_images:
+            dict = {'image': path[0]}
+            if path[1] is not None:
+                dict['label'] = path[1]
             # Store full image path only
-            all_data_entries.append({
-                'image': img_path
-            })
+            all_data_entries.append(dict)
 
     total = len(all_data_entries)
     if total == 0:
@@ -79,6 +79,25 @@ def create_data_manifest(folders: List[str], splits: Tuple[float, float, float],
     print(f"Validation set size: {len(data_splits['VALIDATION'])}")
     print(f"Test set size: {len(data_splits['TEST'])}")
     print("-" * 60)
+
+def get_mask(folder, img_file):
+
+    base = os.path.basename(img_file)
+    base_noext = base
+    for ext in ('.nii.gz', '.nii'):
+        if base_noext.endswith(ext):
+            base_noext = "_".join(base_noext[:-len(ext)].split("_")[:-1])
+            break
+
+
+    labels_dir = os.path.join(folder, 'derivatives', 'labels',base_noext)
+    pattern = os.path.join(labels_dir, '**', f"{base_noext}*SC_seg*.nii*")
+    matches = glob.glob(pattern, recursive=True)
+    if matches:
+        return matches[0]
+    return "./data_management/dummy/dummy_mask.nii.gz"
+
+
 
 if __name__ == "__main__":
     

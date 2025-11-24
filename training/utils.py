@@ -127,36 +127,49 @@ def plot_6_middle_slices(image: torch.Tensor, gt: torch.Tensor, pred: torch.Tens
 def plot_6_uniform_slices(image: torch.Tensor, gt: torch.Tensor, pred: torch.Tensor):
 
     # 1. Convertir en numpy
-    image_np = image.float().cpu().detach().numpy()
+    image_np = image.float().cpu().detach().numpy()   # [D, H, W]
     gt_np = gt.float().cpu().detach().numpy()
     pred_np = pred.float().cpu().detach().numpy()
 
-    depth = image_np.shape[0]
+    depth, H, W = image_np.shape
 
     if depth < 8:
         raise ValueError(f"Image trop petite ({depth} slices). Min = 8 pour une division en 8.")
 
-    # 2. Mask 75% de l’image input (MAE-style)
-    #    → Chaque voxel a 75% de chance d’être mis à zéro
-    mask = np.random.rand(*image_np.shape) > 0.75
+    # 2. Mask 75% de l’image input, mais au niveau des patches 16x16
+    patch_h, patch_w = 16, 16
+    nph = (H + patch_h - 1) // patch_h  # ceil(H / 16)
+    npw = (W + patch_w - 1) // patch_w  # ceil(W / 16)
+
+    # mask de patches : True = garder, False = masquer
+    # proba de garder ~25% -> ~75% masqué
+    patch_keep = np.random.rand(nph, npw) > 0.75  # [nph, npw]
+
+    # Étendre chaque patch en un bloc 16x16
+    patch_keep_big = np.kron(patch_keep, np.ones((patch_h, patch_w), dtype=bool))  # [nph*16, npw*16]
+
+    # Rogner à la taille exacte H, W
+    patch_keep_big = patch_keep_big[:H, :W]  # [H, W]
+
+    # Étendre sur la profondeur (même mask pour toutes les slices)
+    mask = np.broadcast_to(patch_keep_big, (depth, H, W))  # [D, H, W]
+
+    # Appliquer le mask : les patches masqués deviennent 0
     masked_image_np = image_np * mask
 
-    # 3. Slices uniformément réparties
-    #    → On divise en 8 segments et prend les slices 1 → 6
-    #      Exemple si depth=80 → segments de 10 slices
-    step = depth // 8
-    slice_indices = [step * i for i in range(1, 7)]  # indices 1..6
+    # 3. Slices uniformément réparties : on divise la profondeur en 8 segments et on prend 6 indices internes
+    step = depth // 15
+    slice_indices = [step * i for i in range(5, 11)]  # indices 5..10
 
     # 4. Figure (3 rows × 6 columns)
     fig, axs = plt.subplots(3, 6, figsize=(18, 9))
-    fig.suptitle('6 Uniform Slices: Masked Input, GT, Prediction', fontsize=16)
+    fig.suptitle('6 Uniform Slices: Masked Input (patch 16x16), GT, Prediction', fontsize=16)
 
     row_labels = ['Masked Input (75%)', 'Ground Truth (GT)', 'Prediction (Pred)']
 
     # 5. Plot
     for col_idx, slice_idx in enumerate(slice_indices):
 
-        # récupérer les slices
         slice_img  = masked_image_np[slice_idx, :, :].T
         slice_gt   = gt_np[slice_idx, :, :].T
         slice_pred = pred_np[slice_idx, :, :].T
@@ -187,3 +200,5 @@ def plot_6_uniform_slices(image: torch.Tensor, gt: torch.Tensor, pred: torch.Ten
     plt.show()
 
     return fig
+
+

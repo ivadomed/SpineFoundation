@@ -103,8 +103,7 @@ class Trainer:
                                                                     num_workers=self.num_workers,
                                                                     shuffle_seed=self.seed,
                                                                 )
-        batch = next(iter(self.train_loader))
-
+                                                                
         self.start_epoch = 0
         self.best_val = float('inf')
         if self.resume:
@@ -121,6 +120,7 @@ class Trainer:
         self.model.train()
 
         x = batch["image"].to(self.device)
+
         mask = batch["label"].to(self.device)
 
         if x.ndim == 4:  # (B, D, H, W) -> (B, 1, D, H, W)
@@ -131,7 +131,7 @@ class Trainer:
             target = x
 
             if self.wandb and self.global_step % self.log_image_interval == 0:
-                fig = plot_6_uniform_slices(
+                fig = plot_6_middle_slices(
                     image=x[0, 0].cpu(),
                     gt=target[0, 0].cpu(),
                     pred=pred[0, 0].cpu(),

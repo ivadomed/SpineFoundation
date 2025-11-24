@@ -1,5 +1,4 @@
-from typing import Tuple
-
+import torch 
 from monai.transforms import (
     Compose,
     LoadImaged,
@@ -9,26 +8,25 @@ from monai.transforms import (
     RandFlipd,
     RandAffined,
     Spacingd,
-    Orientationd
+    Orientationd,
+    EnsureTyped,
+    Lambdad,
 )
 
 
-def get_transforms(img_size, resolution, augment= True, prob_flip= 0.2, prob_affine= 0.2):
+def get_transforms(img_size,resolution,augment= True,prob_flip= 0.2,prob_affine= 0.2,):
+    keys_img = ["image"]
+    keys_both = ["image", "label"]
 
-    base = [
-        LoadImaged(keys=["image", "label"]),
-        EnsureChannelFirstd(keys=["image", "label"]),
-        Orientationd(keys=["image", "label"], axcodes="RPI",labels=None),
-        Spacingd(keys=["image", "label"], pixdim=resolution, mode=("bilinear")),
-        ResizeWithPadOrCropd(keys=["image", "label"], spatial_size=img_size),
-        ScaleIntensityd(keys=["image"]),
+    base = [LoadImaged(keys=keys_both, allow_missing_keys=True),
+            EnsureChannelFirstd(keys=keys_both, allow_missing_keys=True),
+            Orientationd(keys=keys_both, axcodes="RPI",labels=None, allow_missing_keys=True),
+            Spacingd(keys=keys_both,pixdim=resolution,mode=("bilinear"),allow_missing_keys=True),
+            ResizeWithPadOrCropd(keys=keys_both,spatial_size=img_size,allow_missing_keys=True),
+            ScaleIntensityd(keys=keys_img),
+            EnsureTyped(keys=keys_both,dtype=torch.float32,track_meta=False,allow_missing_keys=True),
     ]
-
     if augment:
-        base.extend([
-            RandFlipd(keys=["image", "label"], spatial_axis=0, prob=prob_flip),
-            RandAffined(keys=["image", "label"], rotate_range=0.1, prob=prob_affine),
-        ])
-
+        base.extend([RandFlipd(keys=keys_both,spatial_axis=0,prob=prob_flip,allow_missing_keys=True,),
+                     RandAffined(keys=keys_both,rotate_range=0.1,prob=prob_affine,mode=("bilinear"),allow_missing_keys=True)])
     return Compose(base)
-

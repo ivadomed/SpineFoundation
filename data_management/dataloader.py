@@ -86,6 +86,6 @@ def get_mask(folder, img_file):
     matches = glob.glob(pattern, recursive=True)
     if matches:
         return matches[0]
-    return None
+    return "nomask"
 
 
