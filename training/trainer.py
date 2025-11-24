@@ -51,17 +51,19 @@ class Trainer:
         self.work_dir = data_params["work_dir"]
         self.epochs = data_params["epochs"]
         self.data_path = data_params["data_path"]
-        self.lr = data_params["lr"]
-        self.weight_decay = data_params["weight_decay"]
-        self.amp = data_params["amp"]
-        self.no_cuda = data_params["no_cuda"]
-        self.resume = data_params["resume"]
+        
 
         self.global_step = 0
 
         self.wandb = training_params["wandb"]
         self.log_image_interval = training_params["log_image_interval"]
+        self.lr = training_params["lr"]
+        self.weight_decay = training_params["weight_decay"]
+        self.amp = training_params["amp"]
+        self.no_cuda = training_params["no_cuda"]
+        self.resume = training_params["resume"]
 
+        
         self.device = torch.device('cuda' if (torch.cuda.is_available() and not self.no_cuda) else 'cpu') 
         print(f"Using device: {self.device}")
         model_params.pop("model_name", None)

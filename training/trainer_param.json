@@ -1,0 +1,9 @@
+{
+  "work_dir": "./training/ckpt",
+  "epochs":50000,
+  "lr":1e-4,
+  "weight_decay":1e-2,
+  "amp":true,
+  "no_cuda":false,
+  "resume":""
+}
