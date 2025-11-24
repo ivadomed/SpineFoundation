@@ -11,6 +11,7 @@ ckpt*
 #Wandb specific files
 wandb/*
 wandb-*
+!/wandb/settings
 
 # MRI specific 
 *.nii
