@@ -83,6 +83,7 @@ class Trainer:
         
 
         if self.json_manifest is not None:
+            print("Loading data splits from JSON manifest:", self.json_manifest)
             self.train_loader, self.val_loader, self.test_loader = build_dataloaders_from_json(
                                                                     json_path=self.json_manifest,
                                                                     img_size=self.img_size,
