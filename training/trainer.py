@@ -1,6 +1,7 @@
 import os
 import json
 from tqdm import tqdm
+import time
 
 import torch
 import torch.nn as nn
@@ -65,6 +66,7 @@ class Trainer:
         self.amp = training_params["amp"]
         self.no_cuda = training_params["no_cuda"]
         self.resume = training_params["resume"]
+        self.tqdm_disable = training_params["tqdm_disable"]
 
 
         self.device = torch.device('cuda' if (torch.cuda.is_available() and not self.no_cuda) else 'cpu') 
@@ -115,15 +117,13 @@ class Trainer:
             print(f"Resumed from {self.resume} at epoch {self.start_epoch}")
 
 
-    def train_step(self, batch, iteration: int,epoch: int):
+    def train_step(self, batch, iteration: int, epoch: int):
         self.global_step += 1
         self.model.train()
 
         x = batch["image"].to(self.device)
-
         mask = batch["label"].to(self.device)
-
-        if x.ndim == 4:  # (B, D, H, W) -> (B, 1, D, H, W)
+        if x.ndim == 4:
             x = x.unsqueeze(1)
 
         with autocast(device_type=self.device.type, enabled=self.amp):
@@ -136,10 +136,7 @@ class Trainer:
                     gt=target[0, 0].cpu(),
                     pred=pred[0, 0].cpu(),
                 )
-                wandb.log(
-                    {"Train/Images": wandb.Image(fig)},
-                    step=self.global_step,
-                )
+                wandb.log({"Train/Images": wandb.Image(fig)}, step=self.global_step)
                 plt.close(fig)
             loss = self.criterion(pred, target, weight=mask)
 
@@ -150,9 +147,11 @@ class Trainer:
 
         return loss.item()
 
+
+
     def train_one_epoch(self, epoch: int):
         running_loss = 0.0
-        pbar = tqdm(self.train_loader, desc=f"Train Epoch {epoch}")
+        pbar = tqdm(self.train_loader, desc=f"Train Epoch {epoch}",disable=self.tqdm_disable)
         for i, batch in enumerate(pbar, start=1):
             loss = self.train_step(batch, i,epoch)
             running_loss += loss

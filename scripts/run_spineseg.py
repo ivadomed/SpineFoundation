@@ -29,30 +29,39 @@ def find_images(root: Path):
 
 
 def run_for_image(img_path: Path, root: Path, dry_run: bool, step1_only: bool):
-    # extract sub-XXX
+
     m = re.search(r"sub-[^/\\]+", str(img_path))
+    print(m)
     if not m:
         return (str(img_path), False, "no-sub-found")
     sub = m.group(0)
     outdir = root / "derivatives" / "labels" / sub / "anat"
     outdir.mkdir(parents=True, exist_ok=True)
 
-    cmd = ["CUDA_VISIBLE_DEVICES=1", "SCT_USE_GPU=1", "sct_deepseg", "totalspineseg", "-i", str(img_path), "-o", str(outdir)]
-    if step1_only:
-        cmd += ["-step1-only", "1"]
+    cmd = [
+        "sct_deepseg",
+        "totalspineseg",
+        "-i", str(img_path),
+        "-o", str(outdir),
+        "-step1-only", "1",
+    ]
 
+    # On part de l'environnement actuel et on ajoute les variables GPU
+    env = os.environ.copy()
+    env["CUDA_VISIBLE_DEVICES"] = "1"
+    env["SCT_USE_GPU"] = "1"
+
+    print("Running:", " ".join(cmd))
     if dry_run:
-        return (str(img_path), True, "dry-run: " + " ".join(cmd))
+        return (str(img_path), True, "dry-run")
 
-    try:
-        res = subprocess.run(cmd, check=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-        if res.returncode != 0:
-            return (str(img_path), False, f"returncode {res.returncode}: {res.stderr.strip()}")
-        return (str(img_path), True, res.stdout.strip())
-    except FileNotFoundError:
-        return (str(img_path), False, "sct_deepseg not found in PATH")
-    except Exception as e:
-        return (str(img_path), False, str(e))
+    # stdout/stderr non redirigés → tout s'affiche en direct dans le terminal
+    res = subprocess.run(cmd, check=False, env=env)
+
+    ok = (res.returncode == 0)
+    return (str(img_path), ok, f"returncode={res.returncode}")
+
+
 
 
 def main(argv=None):
