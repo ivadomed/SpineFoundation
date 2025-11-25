@@ -8,5 +8,5 @@
   "no_cuda":false,
   "resume":"",
   "log_image_interval": 1000,
-  "tqdm_disable": true
+  "tqdm_disable": false
 }
