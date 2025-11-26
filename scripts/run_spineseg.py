@@ -24,7 +24,7 @@ from tqdm import tqdm
 
 
 def find_images(root: Path):
-    pattern = "sub-*/anat/**/*.nii.gz"
+    pattern = "sub-*/**/anat/*.nii.gz"
     return sorted(root.glob(pattern))
 
 
@@ -61,7 +61,6 @@ def run_for_image(img_path: Path, root: Path, dry_run: bool, step1_only: bool):
     res = subprocess.run(cmd, check=False, env=env)
 
     ok = (res.returncode == 0)
-    input()
     return (str(img_path), ok, f"returncode={res.returncode}")
 
 
@@ -70,34 +69,32 @@ def run_for_image(img_path: Path, root: Path, dry_run: bool, step1_only: bool):
 def main(argv=None):
 
 
-    """PATHS = ["/home/ge.polymtl.ca/p123239/data/lumbar-nusantara",
+    PATHS = ["/home/ge.polymtl.ca/p123239/data/lumbar-nusantara",
     "/home/ge.polymtl.ca/p123239/data/lumbar-rsna-challenge-2024",
     "/home/ge.polymtl.ca/p123239/data/ms-multi-spine-challenge-2024",
     "/home/ge.polymtl.ca/p123239/data/sci-zurich",
-    "/home/ge.polymtl.ca/p123239/data/whole-spine"]"""
-    PATHS=["/home/ge.polymtl.ca/p123239/data/lumbar-nusantara"]
-    workers = 1
+    "/home/ge.polymtl.ca/p123239/data/whole-spine"]
+
+    total_img=[]
     for p in PATHS:
         tasks = []
         root = Path(p)
         imgs = find_images(root)
         # filter views
-        imgs = [p for p in imgs if ("ax" not in p.name.lower() and "cor" not in p.name.lower() and "preproc" not in p.name.lower())]
-        for p in imgs:
-            tasks.append((p, root))
+        imgs = [k for k in imgs if ("ax" not in k.name.lower() and "cor" not in k.name.lower() and "preproc" not in k.name.lower())]
+        for i in imgs:
+            tasks.append((i, root))
 
         total = len(tasks)
-        if total == 0:
-            print("No images found. Exiting.")
-            return 0
+        total_img.extend(tasks)
+        print(f"Found {total} images across {p}")
 
-        print(f"Found {total} images across {len(PATHS)} root(s). Workers: {workers}. Dry-run: False")
+    results = []
+    input(f"Cela va prendre environ {round(len(total_img)*100/60/60/24,2)} jours, entrée pour continuer CTRL C sinon.")
 
-        results = []
-        if workers == 1:
-            for img, root in tqdm(tasks, desc="Processing images"):
-                res = run_for_image(img, root, dry_run=False, step1_only=True)
-                results.append(res)
+    for img, root in tqdm(total_img, desc="Processing images"):
+        res = run_for_image(img, root, dry_run=False, step1_only=True)
+        results.append(res)
 
     # Summarize
     ok = [r for r in results if r[1] is True]
@@ -109,7 +106,6 @@ def main(argv=None):
         for f in fail[:10]:
             print(f"  {f[0]} -> {f[2]}")
 
-    return 0
 
 
 if __name__ == '__main__':
