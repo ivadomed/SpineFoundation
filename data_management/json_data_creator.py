@@ -39,17 +39,21 @@ def create_data_manifest(data_path, splits: Tuple[float, float, float], shuffle_
     
     # 1. Discover all image files
     for folder in discovered_folders:
+        mask_count=0
         # Replicate the exact file discovery pattern: search for sub-* within the current dataset folder
         pattern = os.path.join(folder, "sub-*", "**", "anat", "*.nii.gz")
         found_images = sorted(glob.glob(os.path.join(pattern), recursive=True))
         
-        valid_images = [[f,get_mask(folder,f)] for f in found_images if "ax" not in f.lower() and "cor" not in f.lower() and "preproc" not in f.lower()]
-        for path in valid_images:
-            dict = {'image': path[0]}
-            dict['label'] = path[1]
+        valid_images = [f for f in found_images if "ax" not in f.lower() and "cor" not in f.lower() and "preproc" not in f.lower()]
+        for f in valid_images:
+            mask,count = get_mask(folder,f)
+            if count:
+                mask_count+=1
+            dict = {'image': f}
+            dict['label'] = mask
             # Store full image path only
             all_data_entries.append(dict)
-
+        print(f"Folder '{os.path.basename(folder)}': Found {len(valid_images)} images, {mask_count} with masks.")
     total = len(all_data_entries)
     if total == 0:
         # Added clarity to the error message
@@ -81,7 +85,8 @@ def create_data_manifest(data_path, splits: Tuple[float, float, float], shuffle_
 
 
     print("-" * 60)
-    print(f"Data manifest successfully saved to {output_file}")
+    if output_file is not False:
+        print(f"Data manifest successfully saved to {output_file}")
     print(f"Training set size: {len(data_splits['TRAINING'])}")
     print(f"Validation set size: {len(data_splits['VALIDATION'])}")
     print(f"Test set size: {len(data_splits['TEST'])}")
@@ -103,5 +108,5 @@ def get_mask(folder, img_file):
     matches = glob.glob(pattern, recursive=True)
     if matches:
         return matches[0],True
-    return "./data_management/dummy/dummy_mask.nii.gz",False
+    return "./data_management/dummy/dummy_mask.nii.gz", False
 

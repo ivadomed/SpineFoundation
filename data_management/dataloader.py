@@ -37,7 +37,7 @@ def build_dataloaders(img_size, img_resolution, batch_size,splits=(0.8, 0.1, 0.1
         if json_save:
             with open(os.path.abspath(json_path), 'w') as f:
                     json.dump(data_manifest, f, indent=4)
-            print(f"Data manifest successfully saved to {os.path.abspath(json_path)}")
+
     
     train_data = data_manifest.get("TRAINING", [])
     val_data = data_manifest.get("VALIDATION", [])
@@ -56,9 +56,9 @@ def build_dataloaders(img_size, img_resolution, batch_size,splits=(0.8, 0.1, 0.1
     test_ds = makemonaidataset(test_data, img_size=img_size, img_resolution=img_resolution, augment=False)
 
     # 3. Create DataLoaders
-    train_loader = DataLoader(train_ds, batch_size=batch_size, shuffle=True, num_workers=num_workers)
-    val_loader = DataLoader(val_ds, batch_size=batch_size, shuffle=False, num_workers=num_workers)
-    test_loader = DataLoader(test_ds, batch_size=batch_size, shuffle=False, num_workers=num_workers)
+    train_loader = DataLoader(train_ds, batch_size=batch_size, shuffle=True, num_workers=num_workers,persistent_workers=True,pin_memory=True)
+    val_loader = DataLoader(val_ds, batch_size=batch_size, shuffle=False, num_workers=num_workers,persistent_workers=True,pin_memory=True)
+    test_loader = DataLoader(test_ds, batch_size=batch_size, shuffle=False, num_workers=num_workers,persistent_workers=True,pin_memory=True)
     return train_loader, val_loader, test_loader
 
 

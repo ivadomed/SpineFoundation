@@ -18,6 +18,9 @@ from data_management.build import build_datasets
 from .utils import patchify, save_checkpoint, load_checkpoint, load_json_param, list_child_folders, plot_6_middle_slices, plot_6_uniform_slices
 from .loss import MSEwloss
 
+TIME_CHECK = True 
+
+
 class Trainer:
     def __init__(self, args):
         self.args = args
@@ -45,8 +48,7 @@ class Trainer:
         self.dec_num_heads=model_params["dec_num_heads"]
         self.dec_mlp_dim=model_params["dec_mlp_dim"]
 
-        self.batch_size = data_params["batch_size"]
-        self.num_workers = data_params["num_workers"]
+        self.batch_size = data_params["batch_size"]      
         self.train_ratio = data_params["train_ratio"]
         self.val_ratio = data_params["val_ratio"]
         self.test_ratio = data_params["test_ratio"]
@@ -59,6 +61,7 @@ class Trainer:
         
         self.epochs = training_params["epochs"]
         self.work_dir = training_params["work_dir"]
+        self.num_workers = training_params["num_workers"]
         self.wandb = training_params["wandb"]
         self.log_image_interval = training_params["log_image_interval"]
         self.lr = training_params["lr"]
@@ -95,7 +98,7 @@ class Trainer:
                                                                 num_workers=self.num_workers,
                                                                 shuffle_seed=self.seed,
                                                             )
-        input()                                                   
+
         self.start_epoch = 0
         self.best_val = float('inf')
         if self.resume:
@@ -111,11 +114,25 @@ class Trainer:
         self.global_step += 1
         self.model.train()
 
+        def now():
+            if TIME_CHECK and self.device.type == "cuda":
+                torch.cuda.synchronize()
+            return time.time()
+
+        timings = None
+        if TIME_CHECK:
+            t0 = now()
+
+        # -------- transfer ----------
         x = batch["image"].to(self.device)
         mask = batch["label"].to(self.device)
         if x.ndim == 4:
             x = x.unsqueeze(1)
 
+        if TIME_CHECK:
+            t1 = now()
+
+        # -------- forward + loss ----------
         with autocast(device_type=self.device.type, enabled=self.amp):
             pred = self.model(x)
             target = x
@@ -128,26 +145,79 @@ class Trainer:
                 )
                 wandb.log({"Train/Images": wandb.Image(fig)}, step=self.global_step)
                 plt.close(fig)
+
             loss = self.criterion(pred, target, weight=mask)
 
+        if TIME_CHECK:
+            t2 = now()
+
+        # -------- backward + optimizer ----------
         self.optimizer.zero_grad()
         self.scaler.scale(loss).backward()
         self.scaler.step(self.optimizer)
         self.scaler.update()
 
-        return loss.item()
+        if TIME_CHECK:
+            t3 = now()
+            timings = {
+                "transfer": t1 - t0,
+                "forward_loss": t2 - t1,
+                "backward_step": t3 - t2,
+                "total": t3 - t0,
+            }
+
+        return loss.item(), timings
 
 
 
     def train_one_epoch(self, epoch: int):
         running_loss = 0.0
-        pbar = tqdm(self.train_loader, desc=f"Train Epoch {epoch}",disable=self.tqdm_disable)
-        for i, batch in enumerate(pbar, start=1):
-            loss = self.train_step(batch, i,epoch)
-            running_loss += loss
-            pbar.set_postfix({'loss': running_loss / i})
-        return running_loss / len(self.train_loader)
 
+        pbar = tqdm(
+            self.train_loader,
+            desc=f"Train Epoch {epoch}",
+            disable=self.tqdm_disable
+        )
+
+        if TIME_CHECK:
+            sums = {"transfer": 0, "forward_loss": 0, "backward_step": 0, "total": 0}
+            last_timings = None
+
+        for i, batch in enumerate(pbar, start=1):
+            loss, timings = self.train_step(batch, i, epoch)
+            running_loss += loss
+
+            postfix = {'loss': running_loss / i}
+
+            if TIME_CHECK and timings:
+                last_timings = timings
+                for k in sums:
+                    sums[k] += timings[k]
+
+                postfix.update({
+                    "t_tot": f"{timings['total']:.3f}",
+                    "t_fwd": f"{timings['forward_loss']:.3f}",
+                    "t_bwd": f"{timings['backward_step']:.3f}",
+                })
+
+            pbar.set_postfix(postfix)
+
+        epoch_loss = running_loss / len(self.train_loader)
+
+        if TIME_CHECK and last_timings:
+            n = len(self.train_loader)
+            avg = {k: sums[k] / n for k in sums}
+
+            print(f"\n[TimeCheck] Epoch {epoch}")
+            print(f"  Avg transfer      : {avg['transfer']:.4f} s")
+            print(f"  Avg forward+loss  : {avg['forward_loss']:.4f} s")
+            print(f"  Avg backward+step : {avg['backward_step']:.4f} s")
+            print(f"  Avg total/batch   : {avg['total']:.4f} s")
+            print(f"  Last batch times  : {last_timings}\n")
+
+        return epoch_loss
+
+        
     def validate(self, epoch: int):
         self.model.eval()
         total = 0.0
@@ -175,6 +245,7 @@ class Trainer:
         avg = total / max(1, count)
         print(f"Validation loss (epoch {epoch}): {avg:.6f}")
         return avg
+
 
    
     def fit(self):
