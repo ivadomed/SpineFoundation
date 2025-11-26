@@ -28,12 +28,11 @@ def build_dataloaders(img_size, img_resolution, batch_size,splits=(0.8, 0.1, 0.1
         json_path = os.path.abspath(Path(json_path))
         with open(json_path, 'r') as f:
             data_manifest = json.load(f)
-        print(f"JSON manifest found at {json_path}")
+        print(f"JSON manifest found at {json_path}.")
     except:
-        print(json_path)
         if data_path==False:
             raise FileNotFoundError(f"JSON manifest not found and no data_path provided to create one.")
-        print("Splits manifest doesn't exist, creating one...")
+        print("Splits manifest doesn't exist, creating one.")
         data_manifest = create_data_manifest(data_path, splits, shuffle_seed, json_path)
         if json_save:
             with open(os.path.abspath(json_path), 'w') as f:
@@ -47,8 +46,8 @@ def build_dataloaders(img_size, img_resolution, batch_size,splits=(0.8, 0.1, 0.1
     if not train_data and not val_data and not test_data:
          raise RuntimeError(f"JSON file at {json_path} contains no data in TRAINING, VALIDATION, or TEST splits.")
 
-    print(f"Data loaded (Image-Only): Train={len(train_data)}, Val={len(val_data)}, Test={len(test_data)}")
-
+    print(f"Data loaded : train={len(train_data)}, val={len(val_data)}, test={len(test_data)}.")
+    print("\n")
     # 2. Create Datasets using the pre-loaded data lists
     # Training usually requires heavy augmentation (augment=True) for MAE
     train_ds = makemonaidataset(train_data, img_size=img_size, img_resolution=img_resolution, augment=True)

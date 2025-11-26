@@ -70,6 +70,7 @@ class Trainer:
 
 
         self.device = torch.device('cuda' if (torch.cuda.is_available() and not self.no_cuda) else 'cpu') 
+        print("\n========== DEVICE ==========")
         print(f"Using device: {self.device}")
         model_params.pop("model_name", None)
         model_params.pop("img_resolution", None)

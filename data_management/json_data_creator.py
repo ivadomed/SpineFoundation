@@ -87,7 +87,7 @@ def create_data_manifest(data_path, splits: Tuple[float, float, float], shuffle_
     print(f"Test set size: {len(data_splits['TEST'])}")
     print("-" * 60)
     return data_splits
-    
+
 def get_mask(folder, img_file):
 
     base = os.path.basename(img_file)
@@ -102,6 +102,6 @@ def get_mask(folder, img_file):
     pattern = os.path.join(labels_dir, '**', f"{base_noext}*SC_seg*.nii*")
     matches = glob.glob(pattern, recursive=True)
     if matches:
-        return matches[0]
-    return "./data_management/dummy/dummy_mask.nii.gz"
+        return matches[0],True
+    return "./data_management/dummy/dummy_mask.nii.gz",False
 
