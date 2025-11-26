@@ -12,8 +12,7 @@
             "description": "Short description of the dataset",
             "version": "v1.0",
             "source": {
-                "url": "https://github.com/spine-generic/data-multi-subject",
-                "method": "git clone https://github.com/spine-generic/data-multi-subject && cd data-multi-subject && git annex init && git annex get ."
+                "url": "https://github.com/spine-generic/data-multi-subject"
                 }
         },
         {
@@ -22,9 +21,35 @@
             "description": "Short description of the dataset",
             "version": "v1.0",
             "source": {
-                "url": "https://openneuro.org/datasets/ds005616/versions/1.1.2",
-                "method": "datalad install https://openneuro.org/datasets/ds005616/versions/1.1.2 && cd ds005616 && datalad get ."
-                }
+                "url": "git@data.neuro.polymtl.ca:datasets/whole-spine.git"
+            }
+        }, 
+        {
+            "id": "dataset-3",
+            "name": "lumbar-rsna-challenge-2024",
+            "description": "Short description of the dataset",
+            "version": "v1.0",
+            "source": {
+                "url": "git@data.neuro.polymtl.ca:datasets/lumbar-rsna-challenge-2024.git"
+            }
+        },
+        {
+            "id": "dataset-4",
+            "name": "dcm-zurich",
+            "description": "Short description of the dataset",
+            "version": "v1.0",
+            "source": {
+                "url": "git@data.neuro.polymtl.ca:datasets/dcm-zurich.git"
+            }
+        },
+        {
+            "id": "dataset-5",
+            "name": "spider",
+            "description": "Short description of the dataset",
+            "version": "v1.0",
+            "source": {
+                "url": "git@data.neuro.polymtl.ca:datasets/spider-challenge-2023.git"
+            }
         }
     ]
 }
