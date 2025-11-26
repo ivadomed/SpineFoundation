@@ -6,5 +6,5 @@
     "val_ratio": 0.1,
     "test_ratio": 0.1,
     "seed": 28, 
-    "json_manifest": "/home/ge.polymtl.ca/p123239/SpineFoundation/data_management/data_splits.json"
+    "json_manifest": true
 }

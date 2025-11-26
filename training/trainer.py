@@ -12,8 +12,8 @@ import wandb
 import matplotlib.pyplot as plt
 
 from model.build import build_model
-from data_management.dataloader import build_dataloaders
-from data_management.dataloader_json import build_dataloaders_from_json
+from data_management.build import build_datasets
+
 
 from .utils import patchify, save_checkpoint, load_checkpoint, load_json_param, list_child_folders, plot_6_middle_slices, plot_6_uniform_slices
 from .loss import MSEwloss
@@ -84,28 +84,17 @@ class Trainer:
 
         
 
-        if self.json_manifest is not None:
-            print("Loading data splits from JSON manifest:", self.json_manifest)
-            self.train_loader, self.val_loader, self.test_loader = build_dataloaders_from_json(
-                                                                    json_path=self.json_manifest,
-                                                                    img_size=self.img_size,
-                                                                    img_resolution=self.img_resolution,
-                                                                    batch_size=self.batch_size,
-                                                                    num_workers=self.num_workers,
-                                                                )
-
-        else:
-            folders = list_child_folders(self.data_path)
-            self.train_loader, self.val_loader, self.test_loader = build_dataloaders(
-                                                                    folders=folders,
-                                                                    img_size=self.img_size,
-                                                                    img_resolution=self.img_resolution,
-                                                                    batch_size=self.batch_size,
-                                                                    splits=(self.train_ratio, self.val_ratio, self.test_ratio),
-                                                                    num_workers=self.num_workers,
-                                                                    shuffle_seed=self.seed,
-                                                                )
-                                                                
+        self.train_loader, self.val_loader, self.test_loader = build_datasets(
+                                                                data_path=self.data_path,
+                                                                json_path=self.json_manifest,
+                                                                splits=(self.train_ratio, self.val_ratio, self.test_ratio),
+                                                                img_size=self.img_size,
+                                                                img_resolution=self.img_resolution,
+                                                                batch_size=self.batch_size,
+                                                                num_workers=self.num_workers,
+                                                                shuffle_seed=self.seed,
+                                                            )
+        input()                                                   
         self.start_epoch = 0
         self.best_val = float('inf')
         if self.resume:

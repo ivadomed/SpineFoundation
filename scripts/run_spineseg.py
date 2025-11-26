@@ -48,7 +48,7 @@ def run_for_image(img_path: Path, root: Path, dry_run: bool, step1_only: bool):
         "-step1-only", "1",
     ]
 
-    # On part de l'environnement actuel et on ajoute les variables GPU
+
     env = os.environ.copy()
     env["CUDA_VISIBLE_DEVICES"] = "1"
     env["SCT_USE_GPU"] = "1"
@@ -57,7 +57,6 @@ def run_for_image(img_path: Path, root: Path, dry_run: bool, step1_only: bool):
     if dry_run:
         return (str(img_path), True, "dry-run")
 
-    # stdout/stderr non redirigés → tout s'affiche en direct dans le terminal
     res = subprocess.run(cmd, check=False, env=env)
 
     ok = (res.returncode == 0)
