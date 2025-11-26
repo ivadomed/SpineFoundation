@@ -24,19 +24,21 @@ from tqdm import tqdm
 
 
 def find_images(root: Path):
-    pattern = "**/sub-*/anat/*.nii.gz"
+    pattern = "sub-*/anat/**/*.nii.gz"
     return sorted(root.glob(pattern))
 
 
 def run_for_image(img_path: Path, root: Path, dry_run: bool, step1_only: bool):
 
-    m = re.search(r"sub-[^/\\]+", str(img_path))
+    img=str(img_path)
+    temp="/".join(img.split("/")[:-1])
+    name ="".join(img.split("/")[-1])
+    m = re.search(r"sub-[^/\\]+", str(temp))
     print(m)
     if not m:
         return (str(img_path), False, "no-sub-found")
     sub = m.group(0)
-    outdir = root / "derivatives" / "labels" / sub / "anat"
-    outdir.mkdir(parents=True, exist_ok=True)
+    outdir = root / "derivatives" / "labels" / sub / "anat" / "TTS" / name
 
     cmd = [
         "sct_deepseg",
@@ -59,6 +61,7 @@ def run_for_image(img_path: Path, root: Path, dry_run: bool, step1_only: bool):
     res = subprocess.run(cmd, check=False, env=env)
 
     ok = (res.returncode == 0)
+    input()
     return (str(img_path), ok, f"returncode={res.returncode}")
 
 
@@ -67,11 +70,12 @@ def run_for_image(img_path: Path, root: Path, dry_run: bool, step1_only: bool):
 def main(argv=None):
 
 
-    PATHS = ["/home/ge.polymtl.ca/p123239/data/lumbar-nusantara",
+    """PATHS = ["/home/ge.polymtl.ca/p123239/data/lumbar-nusantara",
     "/home/ge.polymtl.ca/p123239/data/lumbar-rsna-challenge-2024",
     "/home/ge.polymtl.ca/p123239/data/ms-multi-spine-challenge-2024",
     "/home/ge.polymtl.ca/p123239/data/sci-zurich",
-    "/home/ge.polymtl.ca/p123239/data/whole-spine"]
+    "/home/ge.polymtl.ca/p123239/data/whole-spine"]"""
+    PATHS=["/home/ge.polymtl.ca/p123239/data/lumbar-nusantara"]
     workers = 1
     for p in PATHS:
         tasks = []
