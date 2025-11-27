@@ -18,7 +18,6 @@ from data_management.build import build_datasets
 from .utils import patchify, save_checkpoint, load_checkpoint, load_json_param, list_child_folders, plot_6_middle_slices, plot_6_uniform_slices
 from .loss import MSEwloss
 
-TIME_CHECK = True 
 
 
 class Trainer:
@@ -114,24 +113,11 @@ class Trainer:
         self.global_step += 1
         self.model.train()
 
-        def now():
-            if TIME_CHECK and self.device.type == "cuda":
-                torch.cuda.synchronize()
-            return time.time()
-
-        timings = None
-        if TIME_CHECK:
-            t0 = now()
-
-        # -------- transfer ----------
-        x = batch["image"].to(self.device)
-        mask = batch["label"].to(self.device)
+        x = batch["image"].to(self.device, non_blocking=True)
+        mask = batch["label"].to(self.device, non_blocking=True)
         if x.ndim == 4:
             x = x.unsqueeze(1)
-        if TIME_CHECK:
-            t1 = now()
 
-        # -------- forward + loss ----------
         with autocast(device_type=self.device.type, enabled=self.amp):
             pred = self.model(x)
             target = x
@@ -147,24 +133,10 @@ class Trainer:
 
             loss = self.criterion(pred, target, weight=mask)
 
-        if TIME_CHECK:
-            t2 = now()
-
-        # -------- backward + optimizer ----------
         self.optimizer.zero_grad()
         self.scaler.scale(loss).backward()
         self.scaler.step(self.optimizer)
         self.scaler.update()
-
-        if TIME_CHECK:
-            t3 = now()
-            timings = {
-                "transfer": t1 - t0,
-                "forward_loss": t2 - t1,
-                "backward_step": t3 - t2,
-                "total": t3 - t0,
-            }
-
         return loss.item(), timings
 
 
@@ -178,41 +150,14 @@ class Trainer:
             disable=self.tqdm_disable
         )
 
-        if TIME_CHECK:
-            sums = {"transfer": 0, "forward_loss": 0, "backward_step": 0, "total": 0}
-            last_timings = None
-
         for i, batch in enumerate(pbar, start=1):
             loss, timings = self.train_step(batch, i, epoch)
             running_loss += loss
 
             postfix = {'loss': running_loss / i}
-
-            if TIME_CHECK and timings:
-                last_timings = timings
-                for k in sums:
-                    sums[k] += timings[k]
-
-                postfix.update({
-                    "t_tot": f"{timings['total']:.3f}",
-                    "t_fwd": f"{timings['forward_loss']:.3f}",
-                    "t_bwd": f"{timings['backward_step']:.3f}",
-                })
-
             pbar.set_postfix(postfix)
 
         epoch_loss = running_loss / len(self.train_loader)
-
-        if TIME_CHECK and last_timings:
-            n = len(self.train_loader)
-            avg = {k: sums[k] / n for k in sums}
-
-            print(f"\n[TimeCheck] Epoch {epoch}")
-            print(f"  Avg transfer      : {avg['transfer']:.4f} s")
-            print(f"  Avg forward+loss  : {avg['forward_loss']:.4f} s")
-            print(f"  Avg backward+step : {avg['backward_step']:.4f} s")
-            print(f"  Avg total/batch   : {avg['total']:.4f} s")
-            print(f"  Last batch times  : {last_timings}\n")
 
         return epoch_loss
 

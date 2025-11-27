@@ -12,7 +12,6 @@ from monai.transforms import (
     EnsureTyped,
 )
 
-
 def get_transforms(img_size,resolution,augment= True,prob_flip= 0.2,prob_affine= 0.2,):
     keys_img = ["image"]
     keys_both = ["image", "label"]
