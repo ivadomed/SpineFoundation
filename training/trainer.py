@@ -224,35 +224,45 @@ class Trainer:
             wandb.watch(self.model, log="all")
 
         for epoch in range(self.start_epoch, self.epochs):
-            train_loss = self.train_one_epoch(epoch)
-            val_loss = self.validate(epoch)
+            t_epoch = time.time()
 
+            t_train = time.time()
+            train_loss = self.train_one_epoch(epoch)
+            train_time = time.time() - t_train
+
+            t_val = time.time()
+            val_loss = self.validate(epoch)
+            val_time = time.time() - t_val
+
+            t_ckpt = time.time()
             is_best = val_loss < self.best_val
             self.best_val = min(self.best_val, val_loss)
-
             ckpt = {
                 'epoch': epoch,
                 'model': self.model.state_dict(),
                 'optimizer': self.optimizer.state_dict(),
                 'val_loss': val_loss,
             }
-
-            save_checkpoint(
-                ckpt,
-                os.path.join(self.work_dir, f'ckpt_epoch_{epoch}.pt'),
-            )
+            save_checkpoint(ckpt, os.path.join(self.work_dir, f'ckpt_epoch_{epoch}.pt'))
             if is_best:
-                save_checkpoint(
-                    ckpt,
-                    os.path.join(self.work_dir, 'best.ckpt'),
-                )
+                save_checkpoint(ckpt, os.path.join(self.work_dir, 'best.ckpt'))
+            ckpt_time = time.time() - t_ckpt
+
+            epoch_time = time.time() - t_epoch
+
+            print(f"[Epoch {epoch}] epoch={epoch_time:.2f}s train={train_time:.2f}s val={val_time:.2f}s ckpt={ckpt_time:.2f}s | train_loss={train_loss:.4f} val_loss={val_loss:.4f}")
 
             if self.wandb:
                 wandb.log({
-                    'Train/Loss': train_loss,
-                    'Val/Loss': val_loss,
-                    'Epoch': epoch,
+                    "Train/Loss": train_loss,
+                    "Val/Loss": val_loss,
+                    "Epoch": epoch,
+                    "Time/Epoch": epoch_time,
+                    "Time/Train": train_time,
+                    "Time/Val": val_time,
+                    "Time/Checkpoint": ckpt_time,
                 }, step=self.global_step)
+
         if self.wandb:
             wandb.finish()
             
