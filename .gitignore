@@ -1,6 +1,7 @@
 # environement specific files 
 *env*
 temp_training.sh
+temp*.sh
 #Model specific files
 *.pt 
 *.pth
