@@ -1,8 +1,15 @@
-torch  
-monai 
+torch==2.9.1+cu128
+torchvision==0.24.1+cu128
+torchaudio==2.9.1
+
+--extra-index-url https://download.pytorch.org/whl/cu128
+
+einops
+monai
+kornia
 nibabel
 tqdm
+wandb
+scipy
 numpy
 matplotlib
-einops
-wandb
