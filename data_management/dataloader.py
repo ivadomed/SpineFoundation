@@ -14,15 +14,15 @@ import json
 
 from training.transforms import get_transforms
 from .json_data_creator import create_data_manifest
+from .transforms_cpu import get_transforms_cpu
 
+def makemonaidataset(data_list):
 
-def makemonaidataset(data_list, img_size, img_resolution, augment):
-
-    transforms = get_transforms(img_size, img_resolution,  augment=augment)
+    transforms = get_transforms_cpu()
     return MonaiDataset(data=data_list, transform=transforms)
 
 
-def build_dataloaders(img_size, img_resolution, batch_size,splits=(0.8, 0.1, 0.1),num_workers=2,shuffle_seed=None,data_path=False,json_path=False,json_save=False):
+def build_dataloaders(batch_size,splits=(0.8, 0.1, 0.1),num_workers=2,shuffle_seed=None,data_path=False,json_path=False,json_save=False):
     
     try: #Si le JSON existe
         json_path = os.path.abspath(Path(json_path))
@@ -50,15 +50,17 @@ def build_dataloaders(img_size, img_resolution, batch_size,splits=(0.8, 0.1, 0.1
     print("\n")
     # 2. Create Datasets using the pre-loaded data lists
     # Training usually requires heavy augmentation (augment=True) for MAE
-    train_ds = makemonaidataset(train_data, img_size=img_size, img_resolution=img_resolution, augment=True)
+    train_ds = makemonaidataset(train_data)
     # Validation/Test typically use minimal or no augmentation (augment=False)
-    val_ds = makemonaidataset(val_data, img_size=img_size, img_resolution=img_resolution, augment=False)
-    test_ds = makemonaidataset(test_data, img_size=img_size, img_resolution=img_resolution, augment=False)
+    val_ds = makemonaidataset(val_data)
+    test_ds = makemonaidataset(test_data)
 
     # 3. Create DataLoaders
-    train_loader = DataLoader(train_ds, batch_size=batch_size, shuffle=True, num_workers=num_workers,persistent_workers=True,pin_memory=True,prefetch_factor=2)
-    val_loader = DataLoader(val_ds, batch_size=batch_size, shuffle=False, num_workers=num_workers,persistent_workers=True,pin_memory=True,prefetch_factor=2)
-    test_loader = DataLoader(test_ds, batch_size=batch_size, shuffle=False, num_workers=num_workers,persistent_workers=True,pin_memory=True,prefetch_factor=2)
+    train_loader = DataLoader(train_ds, batch_size=batch_size, shuffle=True, num_workers=num_workers,persistent_workers=True,pin_memory=True,prefetch_factor=2,collate_fn=list_collate)
+    val_loader = DataLoader(val_ds, batch_size=batch_size, shuffle=False, num_workers=num_workers,persistent_workers=True,pin_memory=True,prefetch_factor=2,collate_fn=list_collate)
+    test_loader = DataLoader(test_ds, batch_size=batch_size, shuffle=False, num_workers=num_workers,persistent_workers=True,pin_memory=True,prefetch_factor=2,collate_fn=list_collate)
     return train_loader, val_loader, test_loader
 
+def list_collate(batch):
+    return batch
 

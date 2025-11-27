@@ -13,7 +13,7 @@ import matplotlib.pyplot as plt
 
 from model.build import build_model
 from data_management.build import build_datasets
-
+from .transforms_gpu import GPUResampleAug3D
 
 from .utils import patchify, save_checkpoint, load_checkpoint, load_json_param, list_child_folders, plot_6_middle_slices, plot_6_uniform_slices
 from .loss import MSEwloss
@@ -33,8 +33,8 @@ class Trainer:
        
         self.model_name=model_params["model_name"]
         self.in_channels=model_params["in_channels"]
-        self.img_size=model_params["img_size"]
-        self.img_resolution=model_params["img_resolution"]
+        self.img_size=tuple(model_params["img_size"])
+        self.img_resolution=tuple(model_params["img_resolution"])
         self.patch_size=model_params["patch_size"]
         self.enc_embed_dim=model_params["enc_embed_dim"]
         self.enc_num_heads=model_params["enc_num_heads"]
@@ -85,14 +85,13 @@ class Trainer:
         self.scaler = GradScaler(device=self.device, enabled=self.amp)
         self.criterion = MSEwloss()
 
-        
+        self.gpu_tf_train=GPUResampleAug3D(img_size=self.img_size,target_res=self.img_resolution,augment=True).to(self.device)
+        self.gpu_tf_eval=GPUResampleAug3D(img_size=self.img_size,target_res=self.img_resolution,augment=False).to(self.device)
 
         self.train_loader, self.val_loader, self.test_loader = build_datasets(
                                                                 data_path=self.data_path,
                                                                 json_path=self.json_manifest,
                                                                 splits=(self.train_ratio, self.val_ratio, self.test_ratio),
-                                                                img_size=self.img_size,
-                                                                img_resolution=self.img_resolution,
                                                                 batch_size=self.batch_size,
                                                                 num_workers=self.num_workers,
                                                                 shuffle_seed=self.seed,
@@ -113,8 +112,13 @@ class Trainer:
         self.global_step += 1
         self.model.train()
 
-        x = batch["image"].to(self.device, non_blocking=True)
-        mask = batch["label"].to(self.device, non_blocking=True)
+        images=[b["image"].to(self.device,non_blocking=True) for b in batch]
+        labels=[b["label"].to(self.device,non_blocking=True) for b in batch]
+        spacings=[torch.as_tensor(b["image"].meta["pixdim"][1:4],dtype=torch.float32,device=self.device) for b in batch]
+        x,mask=self.gpu_tf_train(images,labels,spacings)
+
+
+
         if x.ndim == 4:
             x = x.unsqueeze(1)
 
@@ -133,7 +137,7 @@ class Trainer:
 
             loss = self.criterion(pred, target, weight=mask)
 
-        self.optimizer.zero_grad()
+        self.optimizer.zero_grad(set_to_none=True)
         self.scaler.scale(loss).backward()
         self.scaler.step(self.optimizer)
         self.scaler.update()
@@ -151,7 +155,7 @@ class Trainer:
         )
 
         for i, batch in enumerate(pbar, start=1):
-            loss, timings = self.train_step(batch, i, epoch)
+            loss= self.train_step(batch, i, epoch)
             running_loss += loss
 
             postfix = {'loss': running_loss / i}
@@ -169,8 +173,10 @@ class Trainer:
 
         with torch.no_grad():
             for batch in self.val_loader:
-                x = batch["image"].to(self.device)
-                mask = batch["label"].to(self.device)
+                images=[b["image"].to(self.device,non_blocking=True) for b in batch]
+                labels=[b["label"].to(self.device,non_blocking=True) for b in batch]
+                spacings=[torch.as_tensor(b["image"].meta["pixdim"][1:4],dtype=torch.float32,device=self.device) for b in batch]
+                x,mask=self.gpu_tf_train(images,labels,spacings)
                 if x.ndim == 4:
                     x = x.unsqueeze(1)
 
