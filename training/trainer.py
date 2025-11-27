@@ -128,7 +128,6 @@ class Trainer:
         mask = batch["label"].to(self.device)
         if x.ndim == 4:
             x = x.unsqueeze(1)
-
         if TIME_CHECK:
             t1 = now()
 

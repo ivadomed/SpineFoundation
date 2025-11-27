@@ -46,7 +46,7 @@ def build_dataloaders(img_size, img_resolution, batch_size,splits=(0.8, 0.1, 0.1
     if not train_data and not val_data and not test_data:
          raise RuntimeError(f"JSON file at {json_path} contains no data in TRAINING, VALIDATION, or TEST splits.")
 
-    print(f"Data loaded : train={len(train_data)}, val={len(val_data)}, test={len(test_data)}.")
+
     print("\n")
     # 2. Create Datasets using the pre-loaded data lists
     # Training usually requires heavy augmentation (augment=True) for MAE

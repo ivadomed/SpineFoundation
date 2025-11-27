@@ -10,7 +10,6 @@ from monai.transforms import (
     Spacingd,
     Orientationd,
     EnsureTyped,
-    Lambdad,
 )
 
 
