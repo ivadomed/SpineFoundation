@@ -137,7 +137,7 @@ class Trainer:
         self.scaler.scale(loss).backward()
         self.scaler.step(self.optimizer)
         self.scaler.update()
-        return loss.item(), timings
+        return loss.item()
 
 
 
