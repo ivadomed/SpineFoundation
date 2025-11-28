@@ -182,13 +182,8 @@ class Trainer:
 
                 with autocast(device_type=self.device.type, enabled=self.amp):
                     pred = self.model(x)
-                    if pred.shape == x.shape:
-                        target = x
-                    else:
-                        target = patchify(x, self.patch_size)
-
+                    target = x
                     loss = self.criterion(pred, target, weight=mask)
-
                 total += loss.item() * x.shape[0]
                 count += x.shape[0]
 
@@ -237,13 +232,14 @@ class Trainer:
             t_ckpt = time.time()
             is_best = val_loss < self.best_val
             self.best_val = min(self.best_val, val_loss)
-            ckpt = {
-                'epoch': epoch,
-                'model': self.model.state_dict(),
-                'optimizer': self.optimizer.state_dict(),
-                'val_loss': val_loss,
-            }
-            save_checkpoint(ckpt, os.path.join(self.work_dir, f'ckpt_epoch_{epoch}.pt'))
+            if (epoch % 10 == 0):
+                ckpt = {
+                    'epoch': epoch,
+                    'model': self.model.state_dict(),
+                    'optimizer': self.optimizer.state_dict(),
+                    'val_loss': val_loss,
+                }
+                save_checkpoint(ckpt, os.path.join(self.work_dir, f'ckpt_epoch_{epoch}.pt'))
             if is_best:
                 save_checkpoint(ckpt, os.path.join(self.work_dir, 'best.ckpt'))
             ckpt_time = time.time() - t_ckpt

@@ -12,6 +12,10 @@ from pathlib import Path
 from monai.data import Dataset as MonaiDataset
 import json
 
+import torch.multiprocessing as mp
+mp.set_sharing_strategy("file_system") #permets d'augmenter le nombre de workers
+
+
 from training.transforms import get_transforms
 from .json_data_creator import create_data_manifest
 from .transforms_cpu import get_transforms_cpu
@@ -56,9 +60,9 @@ def build_dataloaders(batch_size,splits=(0.8, 0.1, 0.1),num_workers=2,shuffle_se
     test_ds = makemonaidataset(test_data)
 
     # 3. Create DataLoaders
-    train_loader = DataLoader(train_ds, batch_size=batch_size, shuffle=True, num_workers=num_workers,persistent_workers=True,pin_memory=True,prefetch_factor=2,collate_fn=list_collate)
-    val_loader = DataLoader(val_ds, batch_size=batch_size, shuffle=False, num_workers=num_workers,persistent_workers=True,pin_memory=True,prefetch_factor=2,collate_fn=list_collate)
-    test_loader = DataLoader(test_ds, batch_size=batch_size, shuffle=False, num_workers=num_workers,persistent_workers=True,pin_memory=True,prefetch_factor=2,collate_fn=list_collate)
+    train_loader = DataLoader(train_ds, batch_size=batch_size, shuffle=True, num_workers=num_workers,persistent_workers=True,prefetch_factor=5,collate_fn=list_collate)
+    val_loader = DataLoader(val_ds, batch_size=batch_size, shuffle=False, num_workers=num_workers,persistent_workers=True,prefetch_factor=2,collate_fn=list_collate)
+    test_loader = DataLoader(test_ds, batch_size=batch_size, shuffle=False, num_workers=num_workers,persistent_workers=True,prefetch_factor=2,collate_fn=list_collate)
     return train_loader, val_loader, test_loader
 
 def list_collate(batch):

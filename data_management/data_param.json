@@ -1,9 +1,9 @@
 {   
-    "data_path":"/home/ge.polymtl.ca/p123239/sub_data",
+    "data_path":"/home/ge.polymtl.ca/p123239/data",
     "batch_size": 32,
-    "train_ratio": 0.8,
-    "val_ratio": 0.1,
-    "test_ratio": 0.1,
+    "train_ratio": 0.95,
+    "val_ratio": 0.05,
+    "test_ratio": 0,
     "seed": 28, 
     "json_manifest": false
 }
