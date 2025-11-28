@@ -85,7 +85,7 @@ class Trainer:
         self.scaler = GradScaler(device=self.device, enabled=self.amp)
         self.criterion = MSEwloss()
 
-        self.gpu_tf_train=GPUResampleAug3D(img_size=self.img_size,target_res=self.img_resolution,augment=True).to(self.device)
+        self.gpu_tf_train=GPUResampleAug3D(img_size=self.img_size,target_res=self.img_resolution,augment=False).to(self.device)
         self.gpu_tf_eval=GPUResampleAug3D(img_size=self.img_size,target_res=self.img_resolution,augment=False).to(self.device)
 
         self.train_loader, self.val_loader, self.test_loader = build_datasets(

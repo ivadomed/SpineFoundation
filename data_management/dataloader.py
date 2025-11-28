@@ -16,7 +16,6 @@ import torch.multiprocessing as mp
 mp.set_sharing_strategy("file_system") #permets d'augmenter le nombre de workers
 
 
-from training.transforms import get_transforms
 from .json_data_creator import create_data_manifest
 from .transforms_cpu import get_transforms_cpu
 
