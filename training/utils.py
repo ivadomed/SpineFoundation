@@ -54,9 +54,37 @@ def load_json_param(param):
     return json.loads(param)
 
 def plot_6_middle_slices(image: torch.Tensor, gt: torch.Tensor, pred: torch.Tensor):
+    def mask_patches_2d(slice_2d, patch_size=16, mask_ratio=0.75):
+        """
+        Découpe slice_2d en patches patch_size x patch_size et met à zéro
+        mask_ratio * 100 % des patches (tirage aléatoire).
+        """
+        slice_2d = slice_2d.copy()
+        H, W = slice_2d.shape
+        ph, pw = patch_size, patch_size
+
+        n_ph = H // ph  # nombre de patches complets en hauteur
+        n_pw = W // pw  # nombre de patches complets en largeur
+        total_patches = n_ph * n_pw
+
+        if total_patches == 0:
+            return slice_2d  # image trop petite
+
+        # True -> patch masqué (mis à zéro)
+        mask = np.random.rand(total_patches) < mask_ratio
+
+        idx = 0
+        for i in range(n_ph):
+            for j in range(n_pw):
+                if mask[idx]:
+                    h0, h1 = i * ph, (i + 1) * ph
+                    w0, w1 = j * pw, (j + 1) * pw
+                    slice_2d[h0:h1, w0:w1] = 0.0
+                idx += 1
+
+        return slice_2d
 
     # 1. Bring everything to numpy and float
-    # Ensure all inputs are converted to float and numpy arrays for plotting
     image_np = image.float().cpu().detach().numpy()
     gt_np = gt.float().cpu().detach().numpy()
     pred_np = pred.float().cpu().detach().numpy()
@@ -64,63 +92,58 @@ def plot_6_middle_slices(image: torch.Tensor, gt: torch.Tensor, pred: torch.Tens
     # 2. Determine the central slice and starting index
     depth = image_np.shape[0]
     mid_slice = depth // 2
-    # Start 3 slices before the middle (mid_slice - 3)
     start_slice_index = mid_slice - 3
-    
-    # Check if we have enough slices (6 slices + buffer)
+
     if start_slice_index < 0 or start_slice_index + 6 > depth:
         print(f"Warning: Not enough slices ({depth} total) to display 6 middle slices. Adjusting start.")
         if depth >= 6:
             start_slice_index = (depth - 6) // 2
         else:
-            # Handle case where image is too small
             raise ValueError(f"Image has only {depth} slices, cannot plot 6.")
 
-
     # 3. Create the subplot figure
-    # 3 rows (Image, GT, Pred) and 6 columns (slices)
-    fig, axs = plt.subplots(3, 6, figsize=(18, 9)) # Adjust figsize for better aspect ratio
-    fig.suptitle('6 Middle Slices: Image, Ground Truth, and Prediction', fontsize=16)
+    fig, axs = plt.subplots(3, 6, figsize=(18, 9))
+    fig.suptitle('6 Middle Slices: Image (patched+masked), Ground Truth, and Prediction', fontsize=16)
 
-    # Labels for the rows
-    row_labels = ['Input Image', 'Ground Truth (GT)', 'Prediction (Pred)']
+    row_labels = ['Input Image (75% patches masked)', 'Ground Truth (GT)', 'Prediction (Pred)']
 
     # 4. Loop through the 6 slices
     for col_idx in range(6):
-        # Calculate the current slice index
         current_slice_idx = start_slice_index + col_idx
-        
-        # Extract slices
+
+        # extractions (depth, H, W) puis transpose pour correspondre à ton affichage actuel
         slice_image = image_np[current_slice_idx, :, :].T
         slice_gt = gt_np[current_slice_idx, :, :].T
         slice_pred = pred_np[current_slice_idx, :, :].T
-        
-        # Plotting the 3 rows for the current slice (column)
-        
-        # Row 0: Image
+
+        # --- patching + masking 75% des patches 16x16 sur l'input uniquement ---
+        slice_image_masked = mask_patches_2d(slice_image, patch_size=16, mask_ratio=0.75)
+
+        # Row 0: Image masquée
         ax_img = axs[0, col_idx]
-        ax_img.imshow(slice_image, cmap='gray')
+        ax_img.imshow(slice_image_masked, cmap='gray')
         ax_img.axis('off')
         if col_idx == 0:
             ax_img.set_title(row_labels[0], fontsize=12, loc='left')
-        ax_img.set_xlabel(f"Slice {current_slice_idx}", fontsize=10) # Label slice index at the bottom row
+        ax_img.set_xlabel(f"Slice {current_slice_idx}", fontsize=10)
 
         # Row 1: Ground Truth
         ax_gt = axs[1, col_idx]
-        ax_gt.imshow(slice_gt, cmap='gray') 
+        ax_gt.imshow(slice_gt, cmap='gray')
         ax_gt.axis('off')
         if col_idx == 0:
             ax_gt.set_title(row_labels[1], fontsize=12, loc='left')
 
         # Row 2: Prediction
         ax_pred = axs[2, col_idx]
-        ax_pred.imshow(slice_pred, cmap='gray') 
+        ax_pred.imshow(slice_pred, cmap='gray')
         ax_pred.axis('off')
         if col_idx == 0:
             ax_pred.set_title(row_labels[2], fontsize=12, loc='left')
 
-    plt.tight_layout(rect=[0, 0.03, 1, 0.95]) # Adjust layout to make room for suptitle
-    plt.show() # Use plt.show() instead of fig.show() in a script environment
+    plt.tight_layout(rect=[0, 0.03, 1, 0.95])
+    plt.show()
+
     
     return fig
 
