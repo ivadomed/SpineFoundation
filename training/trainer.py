@@ -7,7 +7,7 @@ import torch
 import torch.nn as nn
 from torch.optim import AdamW
 from torch.amp import GradScaler, autocast
-
+from torch.profiler import profile, record_function, ProfilerActivity
 import wandb
 import matplotlib.pyplot as plt
 
@@ -15,9 +15,16 @@ from model.build import build_model
 from data_management.build import build_datasets
 from .transforms_gpu import GPUResampleAug3D
 
+from .lr_scheduler import make_lr_lambda
 from .utils import patchify, save_checkpoint, load_checkpoint, load_json_param, list_child_folders, plot_6_middle_slices, plot_6_uniform_slices
 from .loss import MSEwloss
 
+TIME_CHECK=False
+
+def _now(device):
+    if TIME_CHECK and device.type == "cuda":
+        torch.cuda.synchronize(device)
+    return time.time()
 
 
 class Trainer:
@@ -81,9 +88,6 @@ class Trainer:
         self.model.to(self.device)
 
 
-        self.optimizer = AdamW(self.model.parameters(),lr=self.lr,weight_decay=self.weight_decay,)
-        self.scaler = GradScaler(device=self.device, enabled=self.amp)
-        self.criterion = MSEwloss()
 
         self.gpu_tf_train=GPUResampleAug3D(img_size=self.img_size,target_res=self.img_resolution,augment=False).to(self.device)
         self.gpu_tf_eval=GPUResampleAug3D(img_size=self.img_size,target_res=self.img_resolution,augment=False).to(self.device)
@@ -97,12 +101,25 @@ class Trainer:
                                                                 shuffle_seed=self.seed,
                                                             )
 
+        self.optimizer = AdamW(self.model.parameters(),lr=self.lr,weight_decay=self.weight_decay)
+
+        total_steps = self.epochs * len(self.train_loader)
+        warmup_steps = int(0.1 * total_steps)
+
+        lr_lambda = make_lr_lambda(total_steps=total_steps,warmup_steps=warmup_steps,lr_up=self.lr,lr_min=self.lr / 10)
+
+        
+        self.scheduler =  torch.optim.lr_scheduler.LambdaLR(self.optimizer, lr_lambda)
+        self.scaler = GradScaler(device=self.device, enabled=self.amp)
+        self.criterion = MSEwloss()
+
         self.start_epoch = 0
         self.best_val = float('inf')
         if self.resume:
             ckpt = load_checkpoint(self.resume, self.device)
             self.model.load_state_dict(ckpt['model'])
             self.optimizer.load_state_dict(ckpt['optimizer'])
+            self.scheduler.load_state_dict(ckpt['scheduler'])
             self.start_epoch = ckpt.get('epoch', 0) + 1
             self.best_val = ckpt.get('val_loss', float('inf'))
             print(f"Resumed from {self.resume} at epoch {self.start_epoch}")
@@ -111,20 +128,46 @@ class Trainer:
     def train_step(self, batch, iteration: int, epoch: int):
         self.global_step += 1
         self.model.train()
+        if TIME_CHECK:
+            t0_total = _now(self.device)
 
-        images=[b["image"].to(self.device,non_blocking=True) for b in batch]
-        labels=[b["label"].to(self.device,non_blocking=True) for b in batch]
-        spacings = [torch.as_tensor(b["image"].meta["spacing_dhw"], dtype=torch.float32, device=self.device)for b in batch]
-        x,mask=self.gpu_tf_train(images,labels,spacings)
+        if TIME_CHECK:          
+            t0 = _now(self.device)
 
+        images = [b["image"].to(self.device, non_blocking=True) for b in batch]
+        labels = [b["label"].to(self.device, non_blocking=True) for b in batch]
+        spacings = [
+            torch.as_tensor(
+                b["image"].meta["spacing_dhw"],dtype=torch.float32,device=self.device,)for b in batch]
+        
+        if TIME_CHECK:
+            t_batch_load = _now(self.device) - t0
 
+        if TIME_CHECK:
+            t0 = _now(self.device)
+        x, mask = self.gpu_tf_train(images, labels, spacings)
+        if TIME_CHECK:
+            t_gpu_tf_train = _now(self.device) - t0
 
         if x.ndim == 4:
             x = x.unsqueeze(1)
 
+        # ---------- forward + loss ----------
         with autocast(device_type=self.device.type, enabled=self.amp):
+            # forward
+            if TIME_CHECK:
+                t0 = _now(self.device)
             pred = self.model(x)
+            if TIME_CHECK:
+                t_forward = _now(self.device) - t0
+
+            # loss
+            if TIME_CHECK:
+                t0 = _now(self.device)
             target = x
+            loss = self.criterion(pred, target, weight=mask)
+            if TIME_CHECK:
+                t_loss = _now(self.device) - t0
 
             if self.wandb and self.global_step % self.log_image_interval == 0:
                 fig = plot_6_middle_slices(
@@ -135,35 +178,90 @@ class Trainer:
                 wandb.log({"Train/Images": wandb.Image(fig)}, step=self.global_step)
                 plt.close(fig)
 
-            loss = self.criterion(pred, target, weight=mask)
-
         self.optimizer.zero_grad(set_to_none=True)
+
+
+        if TIME_CHECK:
+            t0 = _now(self.device)
         self.scaler.scale(loss).backward()
+        if TIME_CHECK:
+            t_backward = _now(self.device) - t0
+
+        if TIME_CHECK:
+            t0 = _now(self.device)
         self.scaler.step(self.optimizer)
         self.scaler.update()
-        return loss.item()
+        if TIME_CHECK:
+            t_step = _now(self.device) - t0
+
+        if TIME_CHECK:
+            t_total = _now(self.device) - t0_total
+
+        if TIME_CHECK:
+            timings = {
+                "batch_load": t_batch_load,
+                "gpu_tf_train": t_gpu_tf_train,
+                "forward": t_forward,
+                "loss": t_loss,
+                "backward": t_backward,
+                "step": t_step,
+                "total": t_total,
+            }
+        else : timings = {}
+
+        return loss.item(), timings
+
 
 
 
     def train_one_epoch(self, epoch: int):
         running_loss = 0.0
+        if TIME_CHECK:
+            sums = {
+                "batch_load": 0.0,
+                "gpu_tf_train": 0.0,
+                "forward": 0.0,
+                "loss": 0.0,
+                "backward": 0.0,
+                "step": 0.0,
+                "total": 0.0,
+            }
 
         pbar = tqdm(
             self.train_loader,
             desc=f"Train Epoch {epoch}",
-            disable=self.tqdm_disable
+            disable=self.tqdm_disable,
         )
 
         for i, batch in enumerate(pbar, start=1):
-            loss= self.train_step(batch, i, epoch)
+            loss, timings = self.train_step(batch, i, epoch)
+            self.scheduler.step()
             running_loss += loss
 
-            postfix = {'loss': running_loss / i}
-            pbar.set_postfix(postfix)
+            
+            if TIME_CHECK:
+                for k in sums:
+                    sums[k] += timings[k]
+                postfix = {
+                    "loss": running_loss / i,
+                    "t_tot": f"{timings['total']:.3f}",
+                    "t_tf": f"{timings['gpu_tf_train']:.3f}",
+                    "t_fwd": f"{timings['forward']:.3f}",
+                    "t_bwd": f"{timings['backward']:.3f}",
+                    "t_step": f"{timings['step']:.3f}",
+                }
+                pbar.set_postfix(postfix)
 
-        epoch_loss = running_loss / len(self.train_loader)
+        n = len(self.train_loader)
+        epoch_loss = running_loss / n
+
+        if TIME_CHECK:
+            print(f"\n===== TIMINGS EPOCH {epoch} =====")
+            for k, v in sums.items():
+                print(f"{k:12s}: {v / n:.4f} s / iter avg")
 
         return epoch_loss
+
 
         
     def validate(self, epoch: int):
@@ -176,7 +274,7 @@ class Trainer:
                 images=[b["image"].to(self.device,non_blocking=True) for b in batch]
                 labels=[b["label"].to(self.device,non_blocking=True) for b in batch]
                 spacings = [torch.as_tensor(b["image"].meta["spacing_dhw"], dtype=torch.float32, device=self.device)for b in batch]
-                x,mask=self.gpu_tf_train(images,labels,spacings)
+                x,mask=self.gpu_tf_eval(images,labels,spacings)
                 if x.ndim == 4:
                     x = x.unsqueeze(1)
 
@@ -223,6 +321,7 @@ class Trainer:
 
             t_train = time.time()
             train_loss = self.train_one_epoch(epoch)
+            
             train_time = time.time() - t_train
 
             t_val = time.time()
@@ -237,10 +336,18 @@ class Trainer:
                     'epoch': epoch,
                     'model': self.model.state_dict(),
                     'optimizer': self.optimizer.state_dict(),
+                    'scheduler': self.scheduler.state_dict(),
                     'val_loss': val_loss,
                 }
                 save_checkpoint(ckpt, os.path.join(self.work_dir, f'ckpt_epoch_{epoch}.pt'))
             if is_best:
+                ckpt = {
+                    'epoch': epoch,
+                    'model': self.model.state_dict(),
+                    'optimizer': self.optimizer.state_dict(),
+                    'scheduler': self.scheduler.state_dict(),
+                    'val_loss': val_loss,
+                }
                 save_checkpoint(ckpt, os.path.join(self.work_dir, 'best.ckpt'))
             ckpt_time = time.time() - t_ckpt
 
@@ -258,9 +365,12 @@ class Trainer:
                     "Time/Val": val_time,
                     "Time/Checkpoint": ckpt_time,
                 }, step=self.global_step)
+        
 
         if self.wandb:
             wandb.finish()
+
+        return self.best_val
             
 
 

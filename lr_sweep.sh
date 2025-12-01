@@ -1,0 +1,1 @@
+python -m scripts.lr_sweep --model-params /home/ge.polymtl.ca/p123239/SpineFoundation/model/SpineMAE.json   --data-params /home/ge.polymtl.ca/p123239/SpineFoundation/data_management/data_param.json   --training-params /home/ge.polymtl.ca/p123239/SpineFoundation/training/trainer_param.json   --lr-min 5e-4   --lr-max 5e-3   --num-lr 10   --epochs-per-lr 4

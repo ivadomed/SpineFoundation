@@ -17,7 +17,7 @@ def parse_args():
 def train():
     args = parse_args()
     trainer = Trainer(args)
-    trainer.fit()
+    best_val = trainer.fit()
 
 
 if __name__ == '__main__':

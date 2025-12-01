@@ -31,8 +31,7 @@ def create_data_manifest(data_path, splits: Tuple[float, float, float], shuffle_
     
     # Pass the discovered list of folders to the manifest creator
     t, v, te = splits
-    if abs(t + v + te - 1.0) > 1e-6:
-        raise ValueError("Split ratios must sum to 1.0.")
+
 
     # Data entries only store the image path (no label)
     all_data_entries: List[Dict[str, str]] = []
