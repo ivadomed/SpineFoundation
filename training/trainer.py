@@ -114,7 +114,7 @@ class Trainer:
 
         images=[b["image"].to(self.device,non_blocking=True) for b in batch]
         labels=[b["label"].to(self.device,non_blocking=True) for b in batch]
-        spacings=[torch.as_tensor(b["image"].meta["pixdim"][1:4],dtype=torch.float32,device=self.device) for b in batch]
+        spacings = [torch.as_tensor(b["image"].meta["spacing_dhw"], dtype=torch.float32, device=self.device)for b in batch]
         x,mask=self.gpu_tf_train(images,labels,spacings)
 
 
@@ -175,7 +175,7 @@ class Trainer:
             for batch in self.val_loader:
                 images=[b["image"].to(self.device,non_blocking=True) for b in batch]
                 labels=[b["label"].to(self.device,non_blocking=True) for b in batch]
-                spacings=[torch.as_tensor(b["image"].meta["pixdim"][1:4],dtype=torch.float32,device=self.device) for b in batch]
+                spacings = [torch.as_tensor(b["image"].meta["spacing_dhw"], dtype=torch.float32, device=self.device)for b in batch]
                 x,mask=self.gpu_tf_train(images,labels,spacings)
                 if x.ndim == 4:
                     x = x.unsqueeze(1)
