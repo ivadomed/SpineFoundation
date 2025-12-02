@@ -37,7 +37,7 @@ def run_for_lr(base_args, base_train_cfg, lr_value, epochs_per_lr: int):
     cfg = deepcopy(base_train_cfg)
     cfg["lr"] = lr_value
 
-    for key in ["num_epochs", "epochs", "max_epochs"]:
+    for key in ["epochs"]:
         if key in cfg:
             cfg[key] = epochs_per_lr
 
@@ -93,7 +93,7 @@ def main():
     plt.title("LR sweep")
     plt.grid(True, which="both", ls="--", alpha=0.3)
     plt.tight_layout()
-    plt.savefig("lr_sweep2.png", dpi=150)
+    plt.savefig("SpineFoundation/scripts/lr_sweep2.png", dpi=150)
 
     print("\nPlot sauvegardé : lr_sweep.png")
 

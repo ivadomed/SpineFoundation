@@ -41,7 +41,7 @@ def create_data_manifest(data_path, splits: Tuple[float, float, float], shuffle_
         mask_count=0
         # Replicate the exact file discovery pattern: search for sub-* within the current dataset folder
         pattern = os.path.join(folder, "sub-*", "**", "anat", "*.nii.gz")
-        found_images = sorted(glob.glob(os.path.join(pattern), recursive=True))
+        found_images = sorted(glob.glob(pattern, recursive=True))
         
         valid_images = [f for f in found_images if "preproc" not in f.lower()]
         for f in valid_images:
