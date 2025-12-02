@@ -6,6 +6,7 @@ import time
 import torch
 import torch.nn as nn
 from torch.optim import AdamW
+from torch.nn import MSELoss
 from torch.amp import GradScaler, autocast
 from torch.profiler import profile, record_function, ProfilerActivity
 import wandb
@@ -111,7 +112,7 @@ class Trainer:
         
         self.scheduler =  torch.optim.lr_scheduler.LambdaLR(self.optimizer, lr_lambda)
         self.scaler = GradScaler(device=self.device, enabled=self.amp)
-        self.criterion = MSEwloss()
+        self.criterion = MSELoss()
 
         self.start_epoch = 0
         self.best_val = float('inf')
@@ -165,7 +166,7 @@ class Trainer:
             if TIME_CHECK:
                 t0 = _now(self.device)
             target = x
-            loss = self.criterion(pred, target, weight=mask)
+            loss = self.criterion(pred, target)
             if TIME_CHECK:
                 t_loss = _now(self.device) - t0
 
@@ -281,12 +282,11 @@ class Trainer:
                 with autocast(device_type=self.device.type, enabled=self.amp):
                     pred = self.model(x)
                     target = x
-                    loss = self.criterion(pred, target, weight=mask)
+                    loss = self.criterion(pred, target)
                 total += loss.item() * x.shape[0]
                 count += x.shape[0]
 
         avg = total / max(1, count)
-        print(f"Validation loss (epoch {epoch}): {avg:.6f}")
         return avg
 
 
@@ -331,15 +331,16 @@ class Trainer:
             t_ckpt = time.time()
             is_best = val_loss < self.best_val
             self.best_val = min(self.best_val, val_loss)
-            if (epoch % 10 == 0):
-                ckpt = {
-                    'epoch': epoch,
-                    'model': self.model.state_dict(),
-                    'optimizer': self.optimizer.state_dict(),
-                    'scheduler': self.scheduler.state_dict(),
-                    'val_loss': val_loss,
-                }
-                save_checkpoint(ckpt, os.path.join(self.work_dir, f'ckpt_epoch_{epoch}.pt'))
+        
+            ckpt = {
+                'epoch': epoch,
+                'model': self.model.state_dict(),
+                'optimizer': self.optimizer.state_dict(),
+                'scheduler': self.scheduler.state_dict(),
+                'val_loss': val_loss,
+            }
+            save_checkpoint(ckpt, os.path.join(self.work_dir, f'ckpt_epoch_{epoch}.pt'))
+            
             if is_best:
                 ckpt = {
                     'epoch': epoch,
@@ -353,7 +354,6 @@ class Trainer:
 
             epoch_time = time.time() - t_epoch
 
-            print(f"[Epoch {epoch}] epoch={epoch_time:.2f}s train={train_time:.2f}s val={val_time:.2f}s ckpt={ckpt_time:.2f}s | train_loss={train_loss:.4f} val_loss={val_loss:.4f}")
 
             if self.wandb:
                 wandb.log({
@@ -365,8 +365,9 @@ class Trainer:
                     "Time/Val": val_time,
                     "Time/Checkpoint": ckpt_time,
                 }, step=self.global_step)
-        
 
+
+            print(f"[Epoch {epoch}] Durée :  epoch: {epoch_time:.2f}s train:{train_time:.2f}s val:{val_time:.2f}s ckpt:{ckpt_time:.2f}s , Score : train_loss={train_loss:.4f} val_loss={val_loss:.4f}, LR={self.scheduler.get_last_lr()[0]:.6f}")
         if self.wandb:
             wandb.finish()
 

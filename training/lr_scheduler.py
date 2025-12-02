@@ -4,12 +4,11 @@ def make_lr_lambda(total_steps: int, warmup_steps: int, lr_up: float, lr_min: fl
     scale_min = lr_min / lr_up  # facteur minimal
 
     def lr_lambda(step: int) -> float:
-        if step < warmup_steps:
+        if step < 2200:
             # warmup linéaire de lr_min -> lr_up
-            return scale_min + (1.0 - scale_min) * (step / max(1, warmup_steps))
-
-        t = (step - warmup_steps) / max(1, total_steps - warmup_steps)
-        # cosine de lr_up -> lr_min
-        return scale_min + 0.5 * (1.0 - scale_min) * (1.0 + math.cos(math.pi * t))
+            return 1
+        elif 2200 <= step :
+            return 8e-3
+        return 4e-3
 
     return lr_lambda
