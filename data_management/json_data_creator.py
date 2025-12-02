@@ -43,7 +43,7 @@ def create_data_manifest(data_path, splits: Tuple[float, float, float], shuffle_
         pattern = os.path.join(folder, "sub-*", "**", "anat", "*.nii.gz")
         found_images = sorted(glob.glob(os.path.join(pattern), recursive=True))
         
-        valid_images = [f for f in found_images if "ax" not in f.lower() and "cor" not in f.lower() and "preproc" not in f.lower()]
+        valid_images = [f for f in found_images if "preproc" not in f.lower()]
         for f in valid_images:
             mask,count = get_mask(folder,f)
             if count:
