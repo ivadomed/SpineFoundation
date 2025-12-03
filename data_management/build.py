@@ -12,7 +12,7 @@ from pathlib import Path
 JSON_SPLIT_PATH="./data_management/data_splits.json"
 
 def build_datasets(data_path,json_path,splits,batch_size,num_workers,shuffle_seed):
-    print("\n========== DATA ==========")
+    print("\nDATA :\n")
     if isinstance(json_path, (str, Path)): #On a un chemin JSON
         data_path = False
         json_save = False

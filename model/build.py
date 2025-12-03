@@ -27,10 +27,10 @@ def build_model(name, params=None):
 
     module = importlib.import_module(module_path)
     ModelClass = getattr(module, class_name)
-    print("\n========== MODEL ==========")
+    print("\nMODEL :\n")
     print(f"Building model: {name}")
-    for k, v in params.items():
-        print(f"  - {k:15} = {v}")
+    #for k, v in params.items():
+     #   print(f"  - {k:15} = {v}")
     return ModelClass(**params)
 
 

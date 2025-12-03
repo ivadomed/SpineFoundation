@@ -1,5 +1,5 @@
 {
-  "wandb": true, 
+  "wandb": false, 
   "work_dir": "./training/ckpt",
   "num_workers": 14,
   "epochs":450,

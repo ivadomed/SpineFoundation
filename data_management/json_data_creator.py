@@ -27,7 +27,7 @@ def create_data_manifest(data_path, splits: Tuple[float, float, float], shuffle_
     if not discovered_folders:
         raise RuntimeError(f"No dataset sub-folders found inside: {root_path_abs}.")
 
-    print(f"Discovered {len(discovered_folders)} dataset folders: {discovered_folders}")
+    print(f"\nDiscovered {len(discovered_folders)} dataset folders:")
     
     # Pass the discovered list of folders to the manifest creator
     t, v, te = splits
@@ -52,7 +52,7 @@ def create_data_manifest(data_path, splits: Tuple[float, float, float], shuffle_
             #dict['label'] = mask
             # Store full image path only
             all_data_entries.append(dict)
-        print(f"Folder '{os.path.basename(folder)}': Found {len(valid_images)} images, {mask_count} with masks.")
+        print(f"Dataset '{os.path.basename(folder)}': found {len(valid_images)} images.")
     total = len(all_data_entries)
     if total == 0:
         # Added clarity to the error message
@@ -66,7 +66,7 @@ def create_data_manifest(data_path, splits: Tuple[float, float, float], shuffle_
     rng = np.random.RandomState(shuffle_seed)
     rng.shuffle(indices)
 
-    print(f"Total files found: {total}. Splitting into train/val/test with ratios {t}/{v}/{te}.")
+    print(f"\nTotal files found: {total}. Splitting into train/val/test with ratios {t}/{v}/{te}.")
     n_train = int(total * t)
     n_val = int(total * v)
     
@@ -83,13 +83,12 @@ def create_data_manifest(data_path, splits: Tuple[float, float, float], shuffle_
     }
 
 
-    print("-" * 60)
     if output_file is not False:
-        print(f"Data manifest successfully saved to {output_file}")
-    print(f"Training set size: {len(data_splits['TRAINING'])}")
-    print(f"Validation set size: {len(data_splits['VALIDATION'])}")
-    print(f"Test set size: {len(data_splits['TEST'])}")
-    print("-" * 60)
+        print(f"Data manifest located at {output_file}\n")
+    print(f"Training set size: {len(data_splits['TRAINING'])}.")
+    print(f"Validation set size: {len(data_splits['VALIDATION'])}.")
+    print(f"Test set size: {len(data_splits['TEST'])}.")
+  
     return data_splits
 
 def get_mask(folder, img_file):
