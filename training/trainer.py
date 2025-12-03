@@ -229,6 +229,7 @@ class Trainer:
     def validate(self, epoch: int):
         self.model.eval()
         total = 0.0
+        count=0
 
         if TIME_CHECK:  
             sums = {"batch_load": 0.0,"gpu_tf_eval": 0.0,"forward": 0.0,"loss": 0.0,"iter_total": 0.0}
@@ -271,7 +272,7 @@ class Trainer:
                         t_loss = _now(self.device) - t0
 
                 total += loss.item() * x.shape[0]
-
+                count += x.shape[0]
                 if TIME_CHECK:
                     iter_total = _now(self.device) - t0_total
                     sums["batch_load"] += t_batch_load
@@ -280,7 +281,7 @@ class Trainer:
                     sums["loss"] += t_loss
                     sums["iter_total"] += iter_total
             print()        
-        n = len(self.val_loader)
+        n = max(count, 1)
         if TIME_CHECK:
             print(f"\nVALIDATION TIMINGS EPOCH {epoch}")        
             for k, v in sums.items():
