@@ -50,6 +50,34 @@
             "source": {
                 "url": "git@data.neuro.polymtl.ca:datasets/spider-challenge-2023.git"
             }
+        },
+        {
+            "id": "dataset-6",
+            "name": "lumbar-nusantara",
+            "description": "Short description of the dataset",
+            "version": "v1.0",
+            "source": {
+                "url": "git@data.neuro.polymtl.ca:datasets/lumbar-nusantara.git"
+            }
+        },
+        {
+            "id": "dataset-7",
+            "name": "ms-multi-spine-challenge-2024",
+            "description": "Short description of the dataset",
+            "version": "v1.0",
+            "source": {
+                "url": "git@data.neuro.polymtl.ca:datasets/ms-multi-spine-challenge-2024.git"
+            }
+        },
+        {
+            "id": "dataset-8",
+            "name": "sci-zurich",
+            "description": "Short description of the dataset",
+            "version": "v1.0",
+            "source": {
+                "url": "git@data.neuro.polymtl.ca:datasets/sci-zurich.git"
+            }
         }
+        
     ]
 }

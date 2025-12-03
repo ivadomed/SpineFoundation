@@ -93,7 +93,8 @@ def main():
     plt.title("LR sweep")
     plt.grid(True, which="both", ls="--", alpha=0.3)
     plt.tight_layout()
-    plt.savefig("SpineFoundation/scripts/lr_sweep2.png", dpi=150)
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    plt.savefig(os.path.join(script_dir, "lr_sweep2.png"), dpi=150)
 
     print("\nPlot sauvegardé : lr_sweep.png")
 

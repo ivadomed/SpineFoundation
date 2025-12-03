@@ -1,8 +1,8 @@
 {
   "model_name": "spine_mae",
   "in_channels": 1,
-  "img_size": [72, 280, 320],
-  "patch_size": [8, 8, 8],
+  "img_size": [72, 276, 324],
+  "patch_size": [12, 12, 12],
   "img_resolution": [1, 1, 1],
   "enc_embed_dim": 768,
   "enc_num_heads": 12,

@@ -20,7 +20,7 @@ from .lr_scheduler import make_lr_lambda
 from .utils import patchify, save_checkpoint, load_checkpoint, load_json_param, list_child_folders, plot_6_middle_slices, plot_6_uniform_slices
 from .loss import MSEwloss
 
-TIME_CHECK=False
+TIME_CHECK=True
 
 def _now(device):
     if TIME_CHECK and device.type == "cuda":
@@ -136,7 +136,7 @@ class Trainer:
             t0 = _now(self.device)
 
         images = [b["image"].to(self.device, non_blocking=True) for b in batch]
-        labels = [b["label"].to(self.device, non_blocking=True) for b in batch]
+        #labels = [b["label"].to(self.device, non_blocking=True) for b in batch]
         spacings = [
             torch.as_tensor(
                 b["image"].meta["spacing_dhw"],dtype=torch.float32,device=self.device,)for b in batch]
@@ -146,7 +146,8 @@ class Trainer:
 
         if TIME_CHECK:
             t0 = _now(self.device)
-        x, mask = self.gpu_tf_train(images, labels, spacings)
+        #x, mask = self.gpu_tf_train(images, spacings)
+        x = self.gpu_tf_train(images, spacings)
         if TIME_CHECK:
             t_gpu_tf_train = _now(self.device) - t0
 
@@ -270,24 +271,83 @@ class Trainer:
         total = 0.0
         count = 0
 
+        if TIME_CHECK:
+            print(f"\n===== VALIDATION TIMINGS EPOCH {epoch} =====")
+            sums = {
+                "batch_load": 0.0,
+                "gpu_tf_eval": 0.0,
+                "forward": 0.0,
+                "loss": 0.0,
+                "iter_total": 0.0,
+            }
+
         with torch.no_grad():
             for batch in self.val_loader:
-                images=[b["image"].to(self.device,non_blocking=True) for b in batch]
-                labels=[b["label"].to(self.device,non_blocking=True) for b in batch]
-                spacings = [torch.as_tensor(b["image"].meta["spacing_dhw"], dtype=torch.float32, device=self.device)for b in batch]
-                x,mask=self.gpu_tf_eval(images,labels,spacings)
+
+                if TIME_CHECK:
+                    t0_total = _now(self.device)
+                    t0 = _now(self.device)
+
+                # === load ===
+                images = [b["image"].to(self.device, non_blocking=True) for b in batch]
+                #labels = [b["label"].to(self.device, non_blocking=True) for b in batch]
+                spacings = [
+                    torch.as_tensor(
+                        b["image"].meta["spacing_dhw"],
+                        dtype=torch.float32,
+                        device=self.device,
+                    )
+                    for b in batch
+                ]
+
+                if TIME_CHECK:
+                    t_batch_load = _now(self.device) - t0
+                    t0 = _now(self.device)
+
+                # === gpu transform ===
+                #x, mask = self.gpu_tf_eval(images, spacings)
+                x = self.gpu_tf_eval(images, spacings)
+
+                if TIME_CHECK:
+                    t_gpu_tf_eval = _now(self.device) - t0
+                    t0 = _now(self.device)
+
                 if x.ndim == 4:
                     x = x.unsqueeze(1)
 
+                # === forward + loss ===
                 with autocast(device_type=self.device.type, enabled=self.amp):
                     pred = self.model(x)
+
+                    if TIME_CHECK:
+                        t_forward = _now(self.device) - t0
+                        t0 = _now(self.device)
+
                     target = x
                     loss = self.criterion(pred, target)
+
+                    if TIME_CHECK:
+                        t_loss = _now(self.device) - t0
+
                 total += loss.item() * x.shape[0]
                 count += x.shape[0]
 
+                if TIME_CHECK:
+                    iter_total = _now(self.device) - t0_total
+                    sums["batch_load"] += t_batch_load
+                    sums["gpu_tf_eval"] += t_gpu_tf_eval
+                    sums["forward"] += t_forward
+                    sums["loss"] += t_loss
+                    sums["iter_total"] += iter_total
+
+        if TIME_CHECK:
+            n = max(1, count)
+            for k, v in sums.items():
+                print(f"{k:12s}: {v / n:.4f} s / sample")
+
         avg = total / max(1, count)
         return avg
+
 
 
    
@@ -364,6 +424,7 @@ class Trainer:
                     "Time/Train": train_time,
                     "Time/Val": val_time,
                     "Time/Checkpoint": ckpt_time,
+                    "LR": self.scheduler.get_last_lr()[0],
                 }, step=self.global_step)
 
 

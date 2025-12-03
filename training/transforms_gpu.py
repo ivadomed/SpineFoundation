@@ -40,27 +40,37 @@ class GPUResampleAug3D(nn.Module):
         return ((flat-m)/s).reshape_as(x)
 
 
-    def _flip(self,img,lab):
+    def _flip(self,img,lab=None):
         if torch.rand(1).item()<self.prob_flip:
-            img=torch.flip(img,dims=[1]); lab=torch.flip(lab,dims=[1])
+            img=torch.flip(img,dims=[1])
+            if lab is not None:
+                lab=torch.flip(lab,dims=[1])
         return img,lab
 
-    def forward_single(self,img,lab,spacing):
+    def forward_single(self,img,spacing,lab=None):
         D,H,W=img.shape[-3:]
         Dz,Dh,Dw=self._compute_out_size((D,H,W),spacing)
         img=self._resize(img,(Dz,Dh,Dw),"trilinear")
-        lab=self._resize(lab,(Dz,Dh,Dw),"nearest")
-        img=self._center_crop_pad(img,self.img_size)
-        lab=self._center_crop_pad(lab,self.img_size)
+        if lab is not None:
+            lab=self._resize(lab,(Dz,Dh,Dw),"nearest")
+            lab=self._center_crop_pad(lab,self.img_size)
+        img=self._center_crop_pad(img,self.img_size)            
         img=self._norm(img)
-        if self.augment: img,lab=self._flip(img,lab)
+        if self.augment: 
+            img,lab=self._flip(img,lab)
         return img,lab
 
-    def forward(self,images,labels,spacings):
-        out_i=[]; out_l=[]
-        for img,lab,sp in zip(images,labels,spacings):
+    def forward(self,images,spacings,labels=None):
+        out_i=[]
+        #out_l=[]
+        '''for img,lab,sp in zip(images,labels,spacings):
             img_aug,lab_aug=self.forward_single(img,lab,sp)
-            out_i.append(img_aug); out_l.append(lab_aug)
+            out_i.append(img_aug); out_l.append(lab_aug)'''
+        for img,sp in zip(images,spacings):
+            img_aug,lab_aug=self.forward_single(img,sp,lab=None)
+            out_i.append(img_aug)
+            #out_l.append(lab_aug)
         x=torch.stack(out_i,0)
-        y=torch.stack(out_l,0)
-        return x,y
+        #y=torch.stack(out_l,0)
+        #return x,y
+        return x

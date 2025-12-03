@@ -159,10 +159,10 @@ def plot_6_uniform_slices(image: torch.Tensor, gt: torch.Tensor, pred: torch.Ten
     if depth < 8:
         raise ValueError(f"Image trop petite ({depth} slices). Min = 8 pour une division en 8.")
 
-    # 2. Mask 75% de l’image input, mais au niveau des patches 16x16
-    patch_h, patch_w = 16, 16
-    nph = (H + patch_h - 1) // patch_h  # ceil(H / 16)
-    npw = (W + patch_w - 1) // patch_w  # ceil(W / 16)
+    # 2. Mask 75% de l’image input, mais au niveau des patches 8x8
+    patch_h, patch_w = 8, 8
+    nph = (H + patch_h - 1) // patch_h  # ceil(H / 8)
+    npw = (W + patch_w - 1) // patch_w  # ceil(W / 8)
 
     # mask de patches : True = garder, False = masquer
     # proba de garder ~25% -> ~75% masqué

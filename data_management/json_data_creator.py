@@ -49,7 +49,7 @@ def create_data_manifest(data_path, splits: Tuple[float, float, float], shuffle_
             if count:
                 mask_count+=1
             dict = {'image': f}
-            dict['label'] = mask
+            #dict['label'] = mask
             # Store full image path only
             all_data_entries.append(dict)
         print(f"Folder '{os.path.basename(folder)}': Found {len(valid_images)} images, {mask_count} with masks.")
