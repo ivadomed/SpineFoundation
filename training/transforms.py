@@ -12,7 +12,6 @@ def get_transforms_cpu(img_size, target_res, augment = False):
         Orientationd(keys=keys, axcodes="RAS",labels=(('L', 'R'), ('P', 'A'), ('I', 'S')),allow_missing_keys=True),
         EnsureTyped(keys=keys, dtype=torch.float32, track_meta=True, allow_missing_keys=True),
         ComputeSpacingDHWd(keys=keys),
-        GPUResampleAug3D(keys=keys, img_size=img_size, target_res=target_res)
     ]
 
     if augment:
