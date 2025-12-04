@@ -11,7 +11,6 @@ def get_transforms(augment = False):
         EnsureChannelFirstd(keys=keys, allow_missing_keys=True),
         Orientationd(keys=keys, axcodes="RAS",labels=(('L', 'R'), ('P', 'A'), ('I', 'S')),allow_missing_keys=True),
         EnsureTyped(keys=keys, dtype=torch.float32, track_meta=True, allow_missing_keys=True),
-        ComputeSpacingDHWd(keys=keys),
     ]
 
     if augment:
@@ -31,8 +30,7 @@ def get_transforms(augment = False):
             ResizeWithPadOrCropd(keys=keys, spatial_size=(6, 100, 100)),
             RandScaleIntensityd(keys=keys, factors=(0.8, 1.2), prob=1), 
             NormalizeIntensityd(keys=keys, nonzero=True, channel_wise=True),  
-            ToTensord(keys=keys)
         ]
 
 
-    return Compose(transforms)
+    return Compose(transforms+[ComputeSpacingDHWd(keys=keys)])
