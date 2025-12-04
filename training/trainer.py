@@ -19,7 +19,7 @@ os.environ["WANDB_SILENT"] = "true"
 from model.build import build_model
 from data_management.build import build_datasets
 
-from .utils.augment import GPUResampleAug3D
+from utils.augment import GPUResampleAug3D
 from .lr_scheduler import make_lr_lambda
 from .utils import patchify, save_checkpoint, load_checkpoint, load_json_param, list_child_folders, plot_6_middle_slices, plot_6_uniform_slices
 
