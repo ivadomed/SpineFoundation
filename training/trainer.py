@@ -19,10 +19,9 @@ os.environ["WANDB_SILENT"] = "true"
 from model.build import build_model
 from data_management.build import build_datasets
 
-from .transforms_gpu import GPUResampleAug3D
+from .utils.augment import GPUResampleAug3D
 from .lr_scheduler import make_lr_lambda
 from .utils import patchify, save_checkpoint, load_checkpoint, load_json_param, list_child_folders, plot_6_middle_slices, plot_6_uniform_slices
-#from .loss import MSEwloss
 
 TIME_CHECK=False
 TIME_EPOCH_CHECK=False
@@ -95,8 +94,8 @@ class Trainer:
 
 
 
-        self.gpu_tf_train=GPUResampleAug3D(img_size=self.img_size,target_res=self.img_resolution,augment=False).to(self.device)
-        self.gpu_tf_eval=GPUResampleAug3D(img_size=self.img_size,target_res=self.img_resolution,augment=False).to(self.device)
+        self.gpu_tf_train=GPUResampleAug3D(img_size=self.img_size,target_res=self.img_resolution).to(self.device)
+        self.gpu_tf_eval=GPUResampleAug3D(img_size=self.img_size,target_res=self.img_resolution).to(self.device)
 
         self.train_loader, self.val_loader, self.test_loader = build_datasets(
                                                                 data_path=self.data_path,
