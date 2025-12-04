@@ -1,10 +1,10 @@
 from monai.transforms import Compose, LoadImaged, EnsureChannelFirstd, Orientationd, EnsureTyped, RandFlipd, RandRotated, SpatialPadd, RandSpatialCropd, RandLambdad, RandBiasFieldd, RandAffined, RandGaussianNoised, RandGaussianSharpend, ResizeWithPadOrCropd, RandScaleIntensityd, NormalizeIntensityd, ToTensord
 import torch 
 import numpy as np
-from utils.augmentations import aug_sqrt, aug_sin, aug_exp, aug_sig, aug_laplace, aug_inverse, ComputeSpacingDHWd, GPUResampleAug3D
+from .augment import aug_sqrt, aug_sin, aug_exp, aug_sig, aug_laplace, aug_inverse, ComputeSpacingDHWd, GPUResampleAug3D
 
 
-def get_transforms_cpu(img_size, target_res, augment = False):
+def get_transforms(augment = False):
     keys = ["image"]
     transforms = [
         LoadImaged(keys=keys, allow_missing_keys=True),

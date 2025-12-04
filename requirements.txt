@@ -13,3 +13,5 @@ wandb
 scipy
 numpy
 matplotlib
+torchio
+gryds
