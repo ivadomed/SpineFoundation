@@ -17,11 +17,11 @@ mp.set_sharing_strategy("file_system") # To have more workers than default limit
 
 
 from .json_data_creator import create_data_manifest
-from .transforms_cpu import get_transforms_cpu
+from training.transforms import get_transforms
 
-def makemonaidataset(data_list, augment=False):
+def makemonaidataset(data_list, img_size, target_res, augment=False):
 
-    transforms = get_transforms_cpu(augment=augment)
+    transforms = get_transforms(img_size=img_size, target_res=target_res, augment=augment)
     return MonaiDataset(data=data_list, transform=transforms)
 
 
