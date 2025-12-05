@@ -22,7 +22,7 @@ from data_management.build import build_datasets
 from .augment import GPUResampleAug3D
 from .lr_scheduler import make_lr_lambda
 from .utils import patchify, save_checkpoint, load_checkpoint, load_json_param, list_child_folders, plot_6_middle_slices, plot_6_uniform_slices
-
+from .loss import L1_SSIM_Loss
 TIME_CHECK=False
 TIME_EPOCH_CHECK=False
 
@@ -116,7 +116,7 @@ class Trainer:
         
         self.scheduler =  torch.optim.lr_scheduler.LambdaLR(self.optimizer, lr_lambda)
         self.scaler = GradScaler(device=self.device, enabled=self.amp)
-        self.criterion = MSELoss()
+        self.criterion = L1_SSIM_Loss()
 
         self.start_epoch = 0
         self.best_val = float('inf')
