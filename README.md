@@ -19,6 +19,3 @@ python -m training.build \
         --training-params ./training/trainer_param.json \
         --ddp (optional)
 ```
-
-Replace GPU, YOURSESSION and YOURENV
-Trick : put this command in a .sh file and run the file (bash FILE.sh) to exec the command.
