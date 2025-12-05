@@ -10,9 +10,12 @@ import torch
 
 import torch.nn as nn
 from torch.nn import MSELoss
+from torch.nn.parallel import DistributedDataParallel as DDP
 from torch.optim import AdamW
 from torch.amp import GradScaler, autocast
 from torch.profiler import profile, record_function, ProfilerActivity
+from torch.utils.data import DataLoader
+from torch.utils.data.distributed import DistributedSampler
 
 os.environ["WANDB_SILENT"] = "true" 
 
@@ -21,7 +24,7 @@ from data_management.build import build_datasets
 
 from .augment import GPUResampleAug3D
 from .lr_scheduler import make_lr_lambda
-from .utils import patchify, save_checkpoint, load_checkpoint, load_json_param, list_child_folders, plot_6_middle_slices, plot_6_uniform_slices
+from .utils import collate_fn, patchify, save_checkpoint, load_checkpoint, load_json_param, list_child_folders, plot_6_middle_slices, plot_6_uniform_slices
 from .loss import L1_SSIM_Loss
 
 TIME_CHECK=True
@@ -34,9 +37,9 @@ def _now(device):
 
 
 class Trainer:
-    def __init__(self, args):
+    def __init__(self, args,ddp=False, rank=0, world_size=1):
         self.args = args
-
+        
         model_params = load_json_param(args.model_params)
         data_params = load_json_param(args.data_params)
         training_params = load_json_param(args.training_params)
@@ -84,9 +87,19 @@ class Trainer:
         self.tqdm_disable = training_params["tqdm_disable"]
 
 
-        self.device = torch.device('cuda' if (torch.cuda.is_available() and not self.no_cuda) else 'cpu') 
+
+        self.ddp = ddp
+        self.rank = rank
+        self.world_size = world_size
+        self.is_main = (not self.ddp) or (self.rank == 0)
+        if self.ddp:
+            self.device = torch.device(f"cuda:{self.rank}")
+
+        else:
+            self.device = torch.device('cuda' if (torch.cuda.is_available() and not self.no_cuda) else 'cpu') 
+
         print("\nDEVICE :\n")
-        print(f"Using device: {self.device}")
+        print(f"Using device: {self.device} (ddp={self.ddp}, rank={self.rank})")
         model_params.pop("model_name", None)
         model_params.pop("img_resolution", None)
         
@@ -98,15 +111,25 @@ class Trainer:
         self.gpu_tf_train=GPUResampleAug3D(img_size=self.img_size,target_res=self.img_resolution).to(self.device)
         self.gpu_tf_eval=GPUResampleAug3D(img_size=self.img_size,target_res=self.img_resolution).to(self.device)
 
-        self.train_loader, self.val_loader, self.test_loader = build_datasets(
-                                                                data_path=self.data_path,
-                                                                json_path=self.json_manifest,
-                                                                splits=(self.train_ratio, self.val_ratio, self.test_ratio),
-                                                                batch_size=self.batch_size,
-                                                                num_workers=self.num_workers,
-                                                                shuffle_seed=self.seed,
-                                                            )
+        train_ds, val_ds, test_ds = build_datasets(
+                                                    data_path=self.data_path,
+                                                    json_path=self.json_manifest,
+                                                    splits=(self.train_ratio, self.val_ratio, self.test_ratio),
+                                                    shuffle_seed=self.seed
+                                                )
 
+        if self.ddp:
+            self.train_sampler = DistributedSampler(train_ds,num_replicas=self.world_size,rank=self.rank,shuffle=True)
+
+            self.val_sampler = DistributedSampler(val_ds,num_replicas=self.world_size,rank=self.rank,shuffle=False)
+        else:
+            self.train_sampler = None
+            self.val_sampler = None
+
+        self.train_loader = DataLoader(train_ds,batch_size=self.batch_size,shuffle=(self.train_sampler is None),sampler=self.train_sampler,num_workers=self.num_workers,pin_memory=True,persistent_workers=False,prefetch_factor=1,collate_fn=collate_fn)
+        self.val_loader = DataLoader(val_ds,batch_size=self.batch_size,shuffle=False,sampler=self.val_sampler,num_workers=self.num_workers,pin_memory=True,persistent_workers=False,prefetch_factor=1,collate_fn=collate_fn)
+        self.test_loader = DataLoader(test_ds,batch_size=self.batch_size,shuffle=False,sampler=None,num_workers=self.num_workers,pin_memory=True,persistent_workers=False,prefetch_factor=1,collate_fn=collate_fn)    
+        
         self.optimizer = AdamW(self.model.parameters(),lr=self.lr,weight_decay=self.weight_decay)
 
         total_steps = self.epochs * len(self.train_loader)
@@ -117,7 +140,7 @@ class Trainer:
         
         self.scheduler =  torch.optim.lr_scheduler.LambdaLR(self.optimizer, lr_lambda)
         self.scaler = GradScaler(device=self.device, enabled=self.amp)
-        self.criterion = L1_SSIM_Loss()
+        self.criterion = MSELoss()
 
         self.start_epoch = 0
         self.best_val = float('inf')
@@ -130,10 +153,13 @@ class Trainer:
             self.best_val = ckpt.get('val_loss', float('inf'))
             print(f"Resumed from {self.resume} at epoch {self.start_epoch}")
 
+        if self.ddp:
+            self.model = DDP(self.model, device_ids=[self.rank], output_device=self.rank,find_unused_parameters=True)
 
     def train_step(self, batch, iteration: int, epoch: int):
         self.global_step += 1
         self.model.train()
+
         if TIME_CHECK:
             t0_total = _now(self.device)         
             t0 = _now(self.device)
@@ -166,7 +192,7 @@ class Trainer:
             if TIME_CHECK:
                 t_loss = _now(self.device) - t0
 
-            if self.wandb and self.global_step % self.log_image_interval == 0:
+            if self.is_main and self.wandb and self.global_step % self.log_image_interval == 0:
                 fig = plot_6_middle_slices(image=x[0, 0].cpu(),gt=x[0, 0].cpu(),pred=pred[0, 0].cpu())
                 wandb.log({"Train/Images": wandb.Image(fig)}, step=self.global_step)
                 plt.close(fig)
@@ -190,7 +216,7 @@ class Trainer:
             t_step = _now(self.device) - t0
             t_total = _now(self.device) - t0_total
             timings = {"batch_load": t_batch_load,"gpu_tf_train": t_gpu_tf_train,"forward": t_forward,"loss": t_loss,"backward": t_backward,"step": t_step,"total": t_total}
-            print(f"Iteration {iteration} Epoch {epoch} timings (s): {timings}")
+
         else : timings = {}
 
         return loss.item(), timings
@@ -199,10 +225,14 @@ class Trainer:
     def train_one_epoch(self, epoch: int):
         running_loss = 0.0
 
+        if self.ddp:
+            self.train_sampler.set_epoch(epoch)
+
+
         if TIME_CHECK:
             sums = {"batch_load": 0.0,"gpu_tf_train": 0.0,"forward": 0.0,"loss": 0.0,"backward": 0.0,"step": 0.0,"total": 0.0}
 
-        pbar = tqdm(self.train_loader,desc=f"Train Epoch {epoch}",disable=self.tqdm_disable)
+        pbar = tqdm(self.train_loader,desc=f"Train Epoch {epoch}",disable=self.tqdm_disable or (self.ddp and self.rank !=0))
 
         for i, batch in enumerate(pbar, start=1):
             loss, timings = self.train_step(batch, i, epoch)
@@ -218,7 +248,7 @@ class Trainer:
 
         print()
         
-        if TIME_CHECK:
+        if TIME_CHECK and self.is_main:
             print(f"\nTRAINING TIMINGS EPOCH {epoch}")
             for k, v in sums.items():
                 print(f"{k:12s}: {v / n:.4f} s / batch avg")
@@ -233,7 +263,7 @@ class Trainer:
         if TIME_CHECK:  
             sums = {"batch_load": 0.0,"gpu_tf_eval": 0.0,"forward": 0.0,"loss": 0.0,"iter_total": 0.0}
 
-        pbar = tqdm(self.val_loader,desc=f"Validation Epoch {epoch}",disable=self.tqdm_disable)
+        pbar = tqdm(self.val_loader,desc=f"Validation Epoch {epoch}",disable=self.tqdm_disable or (self.ddp and self.rank !=0))
 
         with torch.no_grad():
             for i, batch in enumerate(pbar, start=1):
@@ -281,7 +311,19 @@ class Trainer:
                     sums["iter_total"] += iter_total
             print()        
         n = max(count, 1)
-        if TIME_CHECK:
+        if self.ddp:
+            import torch.distributed as dist
+
+            total_tensor = torch.tensor([total], device=self.device, dtype=torch.float64)
+            count_tensor = torch.tensor([count], device=self.device, dtype=torch.float64)
+
+            dist.all_reduce(total_tensor, op=dist.ReduceOp.SUM)
+            dist.all_reduce(count_tensor, op=dist.ReduceOp.SUM)
+
+            total = total_tensor.item()
+            n = max(int(count_tensor.item()), 1)
+
+        if TIME_CHECK and self.is_main:
             print(f"\nVALIDATION TIMINGS EPOCH {epoch}")        
             for k, v in sums.items():
                 print(f"{k:12s}: {v / n:.4f} s / sample")
@@ -294,7 +336,7 @@ class Trainer:
    
     def fit(self):
 
-        if self.wandb:
+        if self.wandb and self.is_main:
             run=wandb.init(project="SpineMAE", config={
                 "model_name": self.model_name,
                 "in_channels": self.in_channels,
@@ -338,32 +380,33 @@ class Trainer:
 
             is_best = val_loss < self.best_val
             self.best_val = min(self.best_val, val_loss)
-        
-            ckpt = {'epoch': epoch,'model': self.model.state_dict(),'optimizer': self.optimizer.state_dict(),'scheduler': self.scheduler.state_dict(),'val_loss': val_loss}
-            save_checkpoint(ckpt, os.path.join(self.work_dir, f'ckpt_epoch_{epoch}.pt'))
-            
-            if is_best:
-                save_checkpoint(ckpt, os.path.join(self.work_dir, 'best.ckpt'))
+            if self.is_main:
+                model_state = self.model.module.state_dict() if self.ddp else self.model.state_dict()
+                ckpt = {'epoch': epoch,'model': model_state,'optimizer': self.optimizer.state_dict(),'scheduler': self.scheduler.state_dict(),'val_loss': val_loss}
+                save_checkpoint(ckpt, os.path.join(self.work_dir, f'ckpt_epoch_{epoch}.pt'))
+                
+                if is_best:
+                    save_checkpoint(ckpt, os.path.join(self.work_dir, 'best.ckpt'))
 
-            if TIME_EPOCH_CHECK:
-                    t_f= _now(self.device)
-                    ckpt_time = t_f - t0
-                    epoch_time = t_f - t0_total
-                    print(f"[Epoch {epoch}] Durée :  epoch: {epoch_time:.2f}s train:{train_time:.2f}s val:{val_time:.2f}s ckpt:{ckpt_time:.2f}s , Score : train_loss={train_loss:.4f} val_loss={val_loss:.4f}, LR={self.scheduler.get_last_lr()[0]:.6f}")
+                if TIME_EPOCH_CHECK:
+                        t_f= _now(self.device)
+                        ckpt_time = t_f - t0
+                        epoch_time = t_f - t0_total
+                        print(f"[Epoch {epoch}] Durée :  epoch: {epoch_time:.2f}s train:{train_time:.2f}s val:{val_time:.2f}s ckpt:{ckpt_time:.2f}s , Score : train_loss={train_loss:.4f} val_loss={val_loss:.4f}, LR={self.scheduler.get_last_lr()[0]:.6f}")
 
 
-            log_dict = {"Train/Loss": train_loss,"Val/Loss": val_loss,"Epoch": epoch,"LR": self.scheduler.get_last_lr()[0]}
+                log_dict = {"Train/Loss": train_loss,"Val/Loss": val_loss,"Epoch": epoch,"LR": self.scheduler.get_last_lr()[0]}
 
-            if TIME_EPOCH_CHECK:
-                log_dict.update({"Time/Epoch": epoch_time,"Time/Train": train_time,"Time/Val": val_time,"Time/Checkpoint": ckpt_time})
+                if TIME_EPOCH_CHECK:
+                    log_dict.update({"Time/Epoch": epoch_time,"Time/Train": train_time,"Time/Val": val_time,"Time/Checkpoint": ckpt_time})
 
-            if self.wandb:
-                wandb.log(log_dict, step=self.global_step)
+                if self.wandb:
+                    wandb.log(log_dict, step=self.global_step)
 
         if TIME_CHECK:
             t0 = _now(self.device)
 
-        if self.wandb:
+        if self.wandb and self.is_main:
             wandb.finish()
 
         self.train_loader = None

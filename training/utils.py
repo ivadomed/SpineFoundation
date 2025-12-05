@@ -224,4 +224,5 @@ def plot_6_uniform_slices(image: torch.Tensor, gt: torch.Tensor, pred: torch.Ten
 
     return fig
 
-
+def collate_fn(batch):
+    return batch
