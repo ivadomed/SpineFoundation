@@ -159,3 +159,107 @@ def plot_size_mm(records, out_png: str = "size_mm_hist.png"):
     plt.tight_layout()
     plt.savefig(out_png)
     plt.close()
+
+
+def plot_spacings(records, out_png: str = "spacing_hist.png"):
+    """Plot des distributions d'espacement (mm) pour X/Y/Z et sauvegarde en PNG."""
+    spacing_x = []
+    spacing_y = []
+    spacing_z = []
+    for rec in records:
+        if any(np.isnan([rec["spacing_x"], rec["spacing_y"], rec["spacing_z"]])):
+            continue
+        spacing_x.append(rec["spacing_x"])
+        spacing_y.append(rec["spacing_y"])
+        spacing_z.append(rec["spacing_z"])
+
+    if not spacing_x:
+        return
+
+    spacing_x = np.array(spacing_x)
+    spacing_y = np.array(spacing_y)
+    spacing_z = np.array(spacing_z)
+
+    min_x = float(spacing_x.min())
+    min_y = float(spacing_y.min())
+    min_z = float(spacing_z.min())
+
+    plt.figure(figsize=(12, 4))
+
+    ax = plt.subplot(1, 3, 1)
+    ax.hist(spacing_x, bins=40)
+    ax.axvline(min_x, color='r', linestyle='--', linewidth=1)
+    ax.set_xlabel("Spacing X (mm) [R-L]")
+    ax.set_ylabel("Count")
+    ax.set_title(f"Spacing X (min {min_x:.2f} mm)")
+
+    ax = plt.subplot(1, 3, 2)
+    ax.hist(spacing_y, bins=40)
+    ax.axvline(min_y, color='r', linestyle='--', linewidth=1)
+    ax.set_xlabel("Spacing Y (mm) [A-P]")
+    ax.set_title(f"Spacing Y (min {min_y:.2f} mm)")
+
+    ax = plt.subplot(1, 3, 3)
+    ax.hist(spacing_z, bins=40)
+    ax.axvline(min_z, color='r', linestyle='--', linewidth=1)
+    ax.set_xlabel("Spacing Z (mm) [S-I]")
+    ax.set_title(f"Spacing Z (min {min_z:.2f} mm)")
+
+    plt.tight_layout()
+    plt.savefig(out_png)
+    plt.close()
+
+
+def spacing_min_records(records):
+    """Retourne les fichiers ayant les espacements minimums pour X/Y/Z."""
+    minima = {}
+    for axis in ("x", "y", "z"):
+        key = f"spacing_{axis}"
+        best = None
+        for rec in records:
+            val = rec.get(key, np.nan)
+            if np.isnan(val):
+                continue
+            if best is None or val < best[0]:
+                best = (val, rec.get("filename", ""))
+        if best is not None:
+            minima[axis] = best
+    return minima
+
+
+def parse_args():
+    parser = argparse.ArgumentParser(description="Analyse des résolutions NIfTI et génération d'histogrammes")
+    parser.add_argument("folder", help="Racine contenant les fichiers NIfTI à analyser")
+    parser.add_argument("--size-plot", default="size_mm_hist.png", help="Nom du fichier PNG pour les tailles physiques")
+    parser.add_argument("--spacing-plot", default="spacing_hist.png", help="Nom du fichier PNG pour les espacements")
+    return parser.parse_args()
+
+
+def main():
+    args = parse_args()
+    files = find_nii_files(args.folder)
+    if not files:
+        print(f"Aucun fichier NIfTI trouvé sous {args.folder}", file=sys.stderr)
+        return 1
+
+    print(f"Analyse de {len(files)} fichiers...")
+    records = analyze_files(files)
+
+    plot_size_mm(records, args.size_plot)
+    plot_spacings(records, args.spacing_plot)
+
+    mins = spacing_min_records(records)
+    if mins:
+        print("Espacements minimum observés :")
+        for axis in ("x", "y", "z"):
+            if axis in mins:
+                val, fname = mins[axis]
+                print(f"  axis {axis.upper()} : {val:.4f} mm -> {fname}")
+
+    print(f"Histogrammes sauvegardés dans {args.size_plot} et {args.spacing_plot}")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
+    
