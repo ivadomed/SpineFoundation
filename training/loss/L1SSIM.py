@@ -1,15 +1,28 @@
 import torch
 import torch.nn as nn
-import pytorch_msssim
+import torch
+import torch.nn as nn
+from monai.losses import SSIMLoss
+
 
 class L1_SSIM_Loss(nn.Module):
-    def __init__(self, alpha=0.85):
+    def __init__(self, alpha=0.85, data_range=1.0):
+
         super().__init__()
         self.alpha = alpha
         self.l1 = nn.L1Loss()
-        self.ssim = pytorch_msssim.SSIM(data_range=1.0, size_average=True)
+
+        self.ssim3d = SSIMLoss(
+            spatial_dims=3,
+            data_range=data_range,
+            reduction="mean",
+            channel=1,
+        )
 
     def forward(self, pred, target):
+
         l1 = self.l1(pred, target)
-        ssim = 1 - self.ssim(pred, target)
-        return self.alpha * l1 + (1-self.alpha) * ssim
+
+        ssim_loss = self.ssim3d(pred, target)
+
+        return self.alpha * l1 + (1.0 - self.alpha) * ssim_loss
