@@ -23,8 +23,9 @@ from .augment import GPUResampleAug3D
 from .lr_scheduler import make_lr_lambda
 from .utils import patchify, save_checkpoint, load_checkpoint, load_json_param, list_child_folders, plot_6_middle_slices, plot_6_uniform_slices
 from .loss import L1_SSIM_Loss
-TIME_CHECK=False
-TIME_EPOCH_CHECK=False
+
+TIME_CHECK=True
+TIME_EPOCH_CHECK=True
 
 def _now(device):
     if TIME_CHECK and device.type == "cuda":
@@ -140,7 +141,6 @@ class Trainer:
         images = [b["image"].to(self.device, non_blocking=True) for b in batch]
         #labels = [b["label"].to(self.device, non_blocking=True) for b in batch]
         spacings = [torch.as_tensor(b["image"].meta["spacing_dhw"],dtype=torch.float32,device=self.device) for b in batch]
-        
         if TIME_CHECK:
             t_batch_load = _now(self.device) - t0
             t0 = _now(self.device)
@@ -161,7 +161,6 @@ class Trainer:
             if TIME_CHECK:
                 t_forward = _now(self.device) - t0
                 t0 = _now(self.device)
-
             loss = self.criterion(pred, x)
 
             if TIME_CHECK:
@@ -191,6 +190,7 @@ class Trainer:
             t_step = _now(self.device) - t0
             t_total = _now(self.device) - t0_total
             timings = {"batch_load": t_batch_load,"gpu_tf_train": t_gpu_tf_train,"forward": t_forward,"loss": t_loss,"backward": t_backward,"step": t_step,"total": t_total}
+            print(f"Iteration {iteration} Epoch {epoch} timings (s): {timings}")
         else : timings = {}
 
         return loss.item(), timings
@@ -360,8 +360,6 @@ class Trainer:
             if self.wandb:
                 wandb.log(log_dict, step=self.global_step)
 
-            
-        
         if TIME_CHECK:
             t0 = _now(self.device)
 
