@@ -7,7 +7,7 @@ import os
 import glob
 import numpy as np
 import torch
-from torch.utils.data import DataLoader, Dataset, Subset, ConcatDataset
+from torch.utils.data import Dataset, Subset, ConcatDataset
 from pathlib import Path
 from monai.data import Dataset as MonaiDataset
 import json
@@ -25,7 +25,7 @@ def makemonaidataset(data_list, augment=False):
     return MonaiDataset(data=data_list, transform=transforms)
 
 
-def build_dataloaders(batch_size,splits=(0.8, 0.1, 0.1),num_workers=2,shuffle_seed=None,data_path=False,json_path=False,json_save=False):
+def build_dataloaders(splits=(0.8, 0.1, 0.1),shuffle_seed=None,data_path=False,json_path=False,json_save=False):
     
     try: 
         json_path = os.path.abspath(Path(json_path))
@@ -52,16 +52,16 @@ def build_dataloaders(batch_size,splits=(0.8, 0.1, 0.1),num_workers=2,shuffle_se
 
     print("\n")
 
-    train_ds = makemonaidataset(train_data, augment=True)
+    train_ds = makemonaidataset(train_data, augment=False)
 
     val_ds = makemonaidataset(val_data, augment=False)
     test_ds = makemonaidataset(test_data, augment=False)
 
     # 3. Create DataLoaders
-    train_loader = DataLoader(train_ds, batch_size=batch_size, shuffle=True, num_workers=num_workers,pin_memory=True,persistent_workers=False,prefetch_factor=1,collate_fn=list_collate)
-    val_loader = DataLoader(val_ds, batch_size=batch_size, shuffle=False, num_workers=num_workers,pin_memory=True,persistent_workers=False,prefetch_factor=1,collate_fn=list_collate)
-    test_loader = DataLoader(test_ds, batch_size=batch_size, shuffle=False, num_workers=num_workers,pin_memory=True,persistent_workers=False,prefetch_factor=2,collate_fn=list_collate)
-    return train_loader, val_loader, test_loader
+    #train_loader = DataLoader(train_ds, batch_size=batch_size, shuffle=True, num_workers=num_workers,pin_memory=True,persistent_workers=False,prefetch_factor=1,collate_fn=list_collate)
+    #val_loader = DataLoader(val_ds, batch_size=batch_size, shuffle=False, num_workers=num_workers,pin_memory=True,persistent_workers=False,prefetch_factor=1,collate_fn=list_collate)
+    #test_loader = DataLoader(test_ds, batch_size=batch_size, shuffle=False, num_workers=num_workers,pin_memory=True,persistent_workers=False,prefetch_factor=2,collate_fn=list_collate)
+    return train_ds, val_ds, test_ds
 
 def list_collate(batch):
     return batch

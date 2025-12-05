@@ -12,10 +12,13 @@ To be able to train the model you need to:
 
 Command to run :
 
-CUDA_VISIBLE_DEVICES="GPU" /home/ge.polymtl.ca/YOURSESSION/.conda/envs/YOURENV/bin/python -m training.build \
+```bash 
+python -m training.build \
         --model-params ./model/SpineMAE.json \
         --data-params ./data_management/data_param.json \
         --training-params ./training/trainer_param.json \
+        --ddp (optional)
+```
 
 Replace GPU, YOURSESSION and YOURENV
 Trick : put this command in a .sh file and run the file (bash FILE.sh) to exec the command.

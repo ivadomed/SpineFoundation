@@ -1,6 +1,6 @@
 {   
     "data_path":"/home/ge.polymtl.ca/p123239/data_sub",
-    "batch_size": 20,
+    "batch_size":25,
     "train_ratio": 0.95,
     "val_ratio": 0.05,
     "test_ratio": 0,
