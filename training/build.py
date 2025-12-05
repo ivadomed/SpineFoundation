@@ -29,9 +29,17 @@ def _worker(rank, args):
     os.environ.setdefault("MASTER_PORT", "29500")
     torch.cuda.set_device(rank)
     dist.init_process_group("nccl", rank=rank, world_size=args.gpus)
-    trainer = Trainer(args, ddp=True, rank=rank, world_size=args.gpus)
-    trainer.fit()
-    dist.destroy_process_group()
+    try:
+        trainer = Trainer(args, ddp=True, rank=rank, world_size=args.gpus)
+        trainer.fit()
+    finally:
+        if dist.is_initialized():
+            try:
+                dist.barrier()
+            except Exception:
+                pass
+            print(f"[R{rank}] destroy_process_group()", flush=True)
+            dist.destroy_process_group()
 
 def train():
     args= parse_args()
@@ -46,3 +54,4 @@ def train():
 
 if __name__ == '__main__':
     train()
+

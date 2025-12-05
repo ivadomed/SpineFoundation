@@ -27,7 +27,7 @@ from .lr_scheduler import make_lr_lambda
 from .utils import collate_fn, patchify, save_checkpoint, load_checkpoint, load_json_param, list_child_folders, plot_6_middle_slices, plot_6_uniform_slices
 from .loss import L1_SSIM_Loss
 
-TIME_CHECK=True
+TIME_CHECK=True    
 TIME_EPOCH_CHECK=True
 
 def _now(device):
@@ -97,13 +97,13 @@ class Trainer:
 
         else:
             self.device = torch.device('cuda' if (torch.cuda.is_available() and not self.no_cuda) else 'cpu') 
-
-        print("\nDEVICE :\n")
-        print(f"Using device: {self.device} (ddp={self.ddp}, rank={self.rank})")
+        if self.rank==0:
+            print("\nDEVICE :\n")
+            print(f"Using device: {self.device} (ddp={self.ddp}, rank={self.rank})")
         model_params.pop("model_name", None)
         model_params.pop("img_resolution", None)
         
-        self.model = build_model(self.model_name, model_params)
+        self.model = build_model(self.model_name, model_params,rank=self.rank)
         self.model.to(self.device)
 
 
@@ -115,22 +115,42 @@ class Trainer:
                                                     data_path=self.data_path,
                                                     json_path=self.json_manifest,
                                                     splits=(self.train_ratio, self.val_ratio, self.test_ratio),
-                                                    shuffle_seed=self.seed
+                                                    shuffle_seed=self.seed,
+                                                    rank=self.rank
                                                 )
 
         if self.ddp:
             self.train_sampler = DistributedSampler(train_ds,num_replicas=self.world_size,rank=self.rank,shuffle=True)
 
-            self.val_sampler = DistributedSampler(val_ds,num_replicas=self.world_size,rank=self.rank,shuffle=False)
+            self.train_loader = DataLoader(train_ds,batch_size=self.batch_size,shuffle=False,sampler=self.train_sampler,num_workers=self.num_workers,pin_memory=True,persistent_workers=True,prefetch_factor=2,collate_fn=collate_fn)
+            self.val_loader = DataLoader(val_ds,batch_size=self.batch_size,shuffle=False,num_workers=self.num_workers,pin_memory=True,persistent_workers=True,prefetch_factor=2,collate_fn=collate_fn)
+            self.test_loader = DataLoader(test_ds,batch_size=self.batch_size,shuffle=False,num_workers=self.num_workers,pin_memory=True,persistent_workers=True,prefetch_factor=2,collate_fn=collate_fn)    
+        
         else:
             self.train_sampler = None
-            self.val_sampler = None
 
-        self.train_loader = DataLoader(train_ds,batch_size=self.batch_size,shuffle=(self.train_sampler is None),sampler=self.train_sampler,num_workers=self.num_workers,pin_memory=True,persistent_workers=False,prefetch_factor=1,collate_fn=collate_fn)
-        self.val_loader = DataLoader(val_ds,batch_size=self.batch_size,shuffle=False,sampler=self.val_sampler,num_workers=self.num_workers,pin_memory=True,persistent_workers=False,prefetch_factor=1,collate_fn=collate_fn)
-        self.test_loader = DataLoader(test_ds,batch_size=self.batch_size,shuffle=False,sampler=None,num_workers=self.num_workers,pin_memory=True,persistent_workers=False,prefetch_factor=1,collate_fn=collate_fn)    
+            self.train_loader = DataLoader(train_ds,batch_size=self.batch_size,shuffle=True,num_workers=self.num_workers,pin_memory=True,persistent_workers=True,prefetch_factor=3,collate_fn=collate_fn)
+            self.val_loader = DataLoader(val_ds,batch_size=self.batch_size,shuffle=False,num_workers=self.num_workers,pin_memory=True,persistent_workers=True,prefetch_factor=1,collate_fn=collate_fn)
+            self.test_loader = DataLoader(test_ds,batch_size=self.batch_size,shuffle=False,num_workers=self.num_workers,pin_memory=True,persistent_workers=True,prefetch_factor=1,collate_fn=collate_fn)    
         
-        self.optimizer = AdamW(self.model.parameters(),lr=self.lr,weight_decay=self.weight_decay)
+        #GELER LES POPIDS QUI NE SERVENT A RIEN PENDANT L'ENTRAINEMENT (CROSS ATTENTION)
+        for layer in self.model.encoder.transformer_layers:
+            if hasattr(layer, "cross_attn"):
+                for p in layer.cross_attn.parameters():
+                    p.requires_grad = False
+            if hasattr(layer, "norm_cross_attn"):
+                for p in layer.norm_cross_attn.parameters():
+                    p.requires_grad = False
+
+        for block in self.model.decoder.blocks:
+            if hasattr(block, "cross_attn"):
+                for p in block.cross_attn.parameters():
+                    p.requires_grad = False
+            if hasattr(block, "norm_cross_attn"):
+                for p in block.norm_cross_attn.parameters():
+                    p.requires_grad = False
+
+        self.optimizer = AdamW([p for p in self.model.parameters() if p.requires_grad],lr=self.lr,weight_decay=self.weight_decay)
 
         total_steps = self.epochs * len(self.train_loader)
         warmup_steps = int(0.1 * total_steps)
@@ -140,7 +160,7 @@ class Trainer:
         
         self.scheduler =  torch.optim.lr_scheduler.LambdaLR(self.optimizer, lr_lambda)
         self.scaler = GradScaler(device=self.device, enabled=self.amp)
-        self.criterion = MSELoss()
+        self.criterion = L1_SSIM_Loss()
 
         self.start_epoch = 0
         self.best_val = float('inf')
@@ -154,7 +174,7 @@ class Trainer:
             print(f"Resumed from {self.resume} at epoch {self.start_epoch}")
 
         if self.ddp:
-            self.model = DDP(self.model, device_ids=[self.rank], output_device=self.rank,find_unused_parameters=True)
+            self.model = DDP(self.model, device_ids=[self.rank], output_device=self.rank,find_unused_parameters=False)
 
     def train_step(self, batch, iteration: int, epoch: int):
         self.global_step += 1
@@ -256,6 +276,8 @@ class Trainer:
         return epoch_loss
         
     def validate(self, epoch: int):
+        if self.ddp and self.rank != 0:
+            return 0.0
         self.model.eval()
         total = 0.0
         count=0
@@ -311,17 +333,7 @@ class Trainer:
                     sums["iter_total"] += iter_total
             print()        
         n = max(count, 1)
-        if self.ddp:
-            import torch.distributed as dist
-
-            total_tensor = torch.tensor([total], device=self.device, dtype=torch.float64)
-            count_tensor = torch.tensor([count], device=self.device, dtype=torch.float64)
-
-            dist.all_reduce(total_tensor, op=dist.ReduceOp.SUM)
-            dist.all_reduce(count_tensor, op=dist.ReduceOp.SUM)
-
-            total = total_tensor.item()
-            n = max(int(count_tensor.item()), 1)
+        
 
         if TIME_CHECK and self.is_main:
             print(f"\nVALIDATION TIMINGS EPOCH {epoch}")        
@@ -392,8 +404,7 @@ class Trainer:
                         t_f= _now(self.device)
                         ckpt_time = t_f - t0
                         epoch_time = t_f - t0_total
-                        print(f"[Epoch {epoch}] Durée :  epoch: {epoch_time:.2f}s train:{train_time:.2f}s val:{val_time:.2f}s ckpt:{ckpt_time:.2f}s , Score : train_loss={train_loss:.4f} val_loss={val_loss:.4f}, LR={self.scheduler.get_last_lr()[0]:.6f}")
-
+                        
 
                 log_dict = {"Train/Loss": train_loss,"Val/Loss": val_loss,"Epoch": epoch,"LR": self.scheduler.get_last_lr()[0]}
 
@@ -408,6 +419,20 @@ class Trainer:
 
         if self.wandb and self.is_main:
             wandb.finish()
+
+        def _shutdown_loader(loader):
+            if loader is None:
+                return
+            it = getattr(loader, "_iterator", None)
+            if it is not None and hasattr(it, "_shutdown_workers"):
+                try:
+                    it._shutdown_workers()
+                except Exception:
+                    pass
+
+        _shutdown_loader(self.train_loader)
+        _shutdown_loader(self.val_loader)
+        _shutdown_loader(getattr(self, "test_loader", None))
 
         self.train_loader = None
         self.val_loader = None

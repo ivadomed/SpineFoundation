@@ -25,18 +25,20 @@ def makemonaidataset(data_list, augment=False):
     return MonaiDataset(data=data_list, transform=transforms)
 
 
-def build_dataloaders(splits=(0.8, 0.1, 0.1),shuffle_seed=None,data_path=False,json_path=False,json_save=False):
+def build_dataloaders(splits=(0.8, 0.1, 0.1),shuffle_seed=None,data_path=False,json_path=False,json_save=False,rank=0):
     
     try: 
         json_path = os.path.abspath(Path(json_path))
         with open(json_path, 'r') as f:
             data_manifest = json.load(f)
-        print(f"JSON manifest found at {json_path}.")
+        if rank==0:
+            print(f"JSON manifest found at {json_path}.")
     except:
         if data_path==False:
             raise FileNotFoundError(f"JSON manifest not found and no data_path provided to create one.")
-        print("Splits manifest doesn't exist, creating one.")
-        data_manifest = create_data_manifest(data_path, splits, shuffle_seed, json_path)
+        if rank==0:
+            print("Splits manifest doesn't exist, creating one.")
+        data_manifest = create_data_manifest(data_path, splits, shuffle_seed, json_path, rank=rank)
         if json_save:
             with open(os.path.abspath(json_path), 'w') as f:
                     json.dump(data_manifest, f, indent=4)

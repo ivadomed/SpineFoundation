@@ -1,13 +1,13 @@
 {
-  "wandb": true, 
+  "wandb": false, 
   "work_dir": "./training/ckpt",
-  "num_workers": 14,
-  "epochs":800,
+  "num_workers":9,
+  "epochs":4,
   "lr":4e-4,
   "weight_decay":1e-2,
   "amp":true,
   "no_cuda":false,
   "resume":"",
-  "log_image_interval": 100,
+  "log_image_interval": 1000,
   "tqdm_disable": false
 }

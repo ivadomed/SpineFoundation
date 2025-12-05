@@ -13,7 +13,7 @@ AVAILABLE_MODELS = {
 
 
 
-def build_model(name, params=None):
+def build_model(name, params=None,rank=0):
     key = name.lower()
     if key not in AVAILABLE_MODELS:
         raise KeyError(f"Unknown model '{name}'")
@@ -26,8 +26,9 @@ def build_model(name, params=None):
 
     module = importlib.import_module(module_path)
     ModelClass = getattr(module, class_name)
-    print("\nMODEL :\n")
-    print(f"Building model: {name}")
+    if rank==0:
+        print("\nMODEL :\n")
+        print(f"Building model: {name}")
     #for k, v in params.items():
      #   print(f"  - {k:15} = {v}")
     return ModelClass(**params)
