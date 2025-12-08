@@ -22,89 +22,77 @@ IMG_RESOLUTION = (4.5, 0.6641, 0.6641)  # target_res pour le resample
 # ---------------- GPUResampleAug3D ---------------- #
 
 class GPUResampleAug3D(nn.Module):
-    def __init__(self, img_size=(256, 256, 256), target_res=(1.0, 1.0, 1.0), augment=True, prob_flip=0.2):
+    def __init__(self,img_size=(256,256,256),target_res=(1.0,1.0,1.0),prob_flip=0.2):
         super().__init__()
-        self.img_size = img_size
-        self.target_res = target_res
-        self.augment = augment
-        self.prob_flip = prob_flip
+        self.img_size=img_size
+        self.target_res=target_res
+        self.prob_flip=prob_flip
 
-    def _compute_out_size(self, shape, spacing):
-        D, H, W = shape
-        if isinstance(spacing, torch.Tensor):
-            sz, sy, sx = spacing.tolist()
-        else:
-            sz, sy, sx = spacing
-        tz, ty, tx = self.target_res
-        Dz = max(1, int(round(D * sz / tz)))
-        Dh = max(1, int(round(H * sy / ty)))
-        Dw = max(1, int(round(W * sx / tx)))
-        return Dz, Dh, Dw
+    def _compute_out_size(self,shape,spacing):
+        D,H,W=shape
+        if isinstance(spacing,torch.Tensor): sz,sy,sx=spacing.tolist()
+        else: sz,sy,sx=spacing
+        tz,ty,tx=self.target_res
+        Dz=max(1,int(round(D*sz/tz)))
+        Dh=max(1,int(round(H*sy/ty)))
+        Dw=max(1,int(round(W*sx/tx)))
+        return Dz,Dh,Dw
 
-    def _resize(self, x, size, mode):
-        if x.ndim == 3:
-            x = x.unsqueeze(0).unsqueeze(0)
-        elif x.ndim == 4:
-            x = x.unsqueeze(0)
-        return F.interpolate(
-            x,
-            size=size,
-            mode=mode,
-            align_corners=False if mode != "nearest" else None,
-        ).squeeze(0)
+    def _resize(self,x,size,mode):
+        if x.ndim==3: x=x.unsqueeze(0).unsqueeze(0)
+        elif x.ndim==4: x=x.unsqueeze(0)
+        return F.interpolate(x,size=size,mode=mode,align_corners=False if mode!="nearest" else None).squeeze(0)
 
-    def _center_crop_pad(self, x, target):
-        D, H, W = x.shape[-3:]
-        Td, Th, Tw = target
-        dz = max(Td - D, 0)
-        dh = max(Th - H, 0)
-        dw = max(Tw - W, 0)
-        if dz > 0 or dh > 0 or dw > 0:
-            pad = (dw // 2, dw - dw // 2,
-                   dh // 2, dh - dh // 2,
-                   dz // 2, dz - dz // 2)
-            x = F.pad(x, pad)
-            D, H, W = x.shape[-3:]
-        sd = max((D - Td) // 2, 0)
-        sh = max((H - Th) // 2, 0)
-        sw = max((W - Tw) // 2, 0)
-        return x[..., sd:sd + Td, sh:sh + Th, sw:sw + Tw]
+    def _center_crop_pad(self,x,target):
+        D,H,W=x.shape[-3:]
+        Td,Th,Tw=target
+        dz=max(Td-D,0); dh=max(Th-H,0); dw=max(Tw-W,0)
+        if dz>0 or dh>0 or dw>0:
+            pad=(dw//2,dw-dw//2,dh//2,dh-dh//2,dz//2,dz-dz//2)
+            x=F.pad(x,pad)
+            D,H,W=x.shape[-3:]
+        sd=max((D-Td)//2,0); sh=max((H-Th)//2,0); sw=max((W-Tw)//2,0)
+        return x[...,sd:sd+Td,sh:sh+Th,sw:sw+Tw]
 
-    def _norm(self, x):
-        flat = x.reshape(1, -1)
-        m = flat.mean(-1, keepdim=True)
-        s = flat.std(-1, keepdim=True) + 1e-6
-        return ((flat - m) / s).reshape_as(x)
+    def _norm(self,x):
+        flat=x.reshape(1,-1)
+        m=flat.mean(-1,keepdim=True); s=flat.std(-1,keepdim=True)+1e-6
+        return ((flat-m)/s).reshape_as(x)
 
-    def _flip(self, img, lab):
-        if torch.rand(1).item() < self.prob_flip:
-            img = torch.flip(img, dims=[1])
-            lab = torch.flip(lab, dims=[1])
-        return img, lab
 
-    def forward_single(self, img, lab, spacing):
-        D, H, W = img.shape[-3:]
-        Dz, Dh, Dw = self._compute_out_size((D, H, W), spacing)
-        img = self._resize(img, (Dz, Dh, Dw), "trilinear")
-        lab = self._resize(lab, (Dz, Dh, Dw), "nearest")
-        #img = self._center_crop_pad(img, self.img_size)
-        #lab = self._center_crop_pad(lab, self.img_size)
-        #img = self._norm(img)
-        if self.augment:
-            img, lab = self._flip(img, lab)
-        return img, lab
+    def _flip(self,img,lab=None):
+        if torch.rand(1).item()<self.prob_flip:
+            img=torch.flip(img,dims=[1])
+            if lab is not None:
+                lab=torch.flip(lab,dims=[1])
+        return img,lab
 
-    def forward(self, images, labels, spacings):
-        out_i = []
-        out_l = []
-        for img, lab, sp in zip(images, labels, spacings):
-            img_aug, lab_aug = self.forward_single(img, lab, sp)
+    def forward_single(self,img,spacing,lab=None):
+        D,H,W=img.shape[-3:]
+        Dz,Dh,Dw=self._compute_out_size((D,H,W),spacing)
+        img=self._resize(img,(Dz,Dh,Dw),"trilinear")
+        img=self._norm(img)
+        if lab is not None:
+            lab=self._resize(lab,(Dz,Dh,Dw),"nearest")
+            lab=self._center_crop_pad(lab,self.img_size)
+        img=self._center_crop_pad(img,self.img_size)            
+        
+        return img,lab
+
+    def forward(self,images,spacings,labels=None):
+        out_i=[]
+        #out_l=[]
+        '''for img,lab,sp in zip(images,labels,spacings):
+            img_aug,lab_aug=self.forward_single(img,lab,sp)
+            out_i.append(img_aug); out_l.append(lab_aug)'''
+        for img,sp in zip(images,spacings):
+            img_aug,lab_aug=self.forward_single(img,sp,lab=None)
             out_i.append(img_aug)
-            out_l.append(lab_aug)
-        x = torch.stack(out_i, 0)
-        y = torch.stack(out_l, 0)
-        return x, y
-
+            #out_l.append(lab_aug)
+        x=torch.stack(out_i,0)
+        #y=torch.stack(out_l,0)
+        #return x,y
+        return x
 
 # ---------------- MONAI transforms ---------------- #
 from monai.transforms import MapTransform
@@ -113,8 +101,8 @@ import numpy as np
 
 class ComputeSpacingDHWd(MapTransform):
     """
-    Ajoute dans meta["spacing_dhw"] les espacements dans l'ordre des axes du tensor
-    img.shape[-3:], cohérents avec l'affine actuelle (après Orientationd).
+    Ajoute dans meta["spacing_dhw"] les espacements alignés avec img.shape[-3:].
+    (On dérive les voxel sizes à partir de l'affine actuelle, après Orientationd.)
     """
     def __init__(self, keys):
         super().__init__(keys)
@@ -125,61 +113,46 @@ class ComputeSpacingDHWd(MapTransform):
             if k in d and isinstance(d[k], MetaTensor):
                 mt = d[k]
 
-                # affine 4x4 actuelle (après Orientationd)
-                A = np.asarray(mt.affine, dtype=float)  # shape (4,4)
+                # Affine actuelle (4x4), déjà en RAS après Orientationd
+                A = np.asarray(mt.affine, dtype=float)   # shape (4,4)
 
-                # espacements le long des 3 axes de l'image
-                # (i,j,k) = colonnes de A[:3,:3]
+                # Espacements le long des 3 axes de l'image
+                # -> norme des colonnes de A[:3, :3]
                 spacing_ijk = np.sqrt((A[:3, :3] ** 2).sum(0))  # (s0, s1, s2)
 
-                # PAS de permutation ici : spacing_ijk est déjà aligné avec img.shape[-3:]
-                mt.meta["spacing_dhw"] = spacing_ijk  # clé utilisée côté GPU
+                mt.meta["spacing_dhw"] = spacing_ijk
         return d
 
-def get_transforms_cpu():
-    from monai.transforms import MapTransform
-    from monai.data import MetaTensor
-    import numpy as np
-    from nibabel.orientations import aff2axcodes
-
-    class PrintOrientationd(MapTransform):
-        """
-        Transform MONAI custom : affiche l'orientation actuelle
-        des images avant la réorientation RAS.
-        """
-        def __init__(self, keys):
-            super().__init__(keys)
-
-        def __call__(self, data):
-            d = dict(data)
-            for k in self.keys:
-                if k in d and isinstance(d[k], MetaTensor):
-                    mt = d[k]
-                    if hasattr(mt, "affine"):
-                        codes = aff2axcodes(np.asarray(mt.affine))
-                        print(f"[MONAI] Orientation BEFORE CPU transform ({k}) = {codes}")
-                    else:
-                        print(f"[MONAI] No affine in MetaTensor for key '{k}'")
-            return d
-
-    keys = ["image", "label"]
-
-    return Compose([
+def get_transforms(augment = False):
+    keys = ["image"]
+    transforms = [
         LoadImaged(keys=keys, allow_missing_keys=True),
-
-        # ---- AFFICHAGE ORIENTATION ACTUELLE ----
-        PrintOrientationd(keys=["image"]),
-
         EnsureChannelFirstd(keys=keys, allow_missing_keys=True),
-        Orientationd(
-            keys=keys,
-            axcodes="LIP",
-            labels=(('L', 'R'), ('P', 'A'), ('I', 'S')),
-            allow_missing_keys=True,
-        ),
+        Orientationd(keys=keys, axcodes="RAS",labels=(('L', 'R'), ('P', 'A'), ('I', 'S')),allow_missing_keys=True),
         EnsureTyped(keys=keys, dtype=torch.float32, track_meta=True, allow_missing_keys=True),
-        ComputeSpacingDHWd(keys=["image"]),
-    ])
+    ]
+
+    if augment:
+        transforms += [
+            RandFlipd(keys=keys, prob=0.5, spatial_axis=0),
+            RandRotated(keys=keys, prob=0.5, range_y=0.1),
+            RandLambdad(keys=keys,func=aug_sqrt,prob=0.05,),
+            RandLambdad(keys=keys,func=aug_sin,prob=0.05,),
+            RandLambdad(keys=keys,func=aug_exp,prob=0.05,),
+            RandLambdad(keys=keys,func=aug_sig,prob=0.05, ),
+            RandLambdad(keys=keys,func=aug_laplace,prob=0.05,),
+            RandLambdad(keys=keys,func=aug_inverse,prob=0.05, ),   
+            RandBiasFieldd(keys=keys,prob=0.05),
+            RandAffined(keys=keys,prob=0.05, padding_mode="zeros", mode=["bilinear"]), 
+            RandGaussianNoised(keys=keys, mean=0.0, std=0.1, prob=0.05),
+            RandGaussianSharpend(keys=keys, prob=0.05),   
+            ResizeWithPadOrCropd(keys=keys, spatial_size=(6, 100, 100)),
+            RandScaleIntensityd(keys=keys, factors=(0.8, 1.2), prob=1), 
+            NormalizeIntensityd(keys=keys, nonzero=True, channel_wise=True),  
+        ]
+
+
+    return Compose(transforms+[ComputeSpacingDHWd(keys=keys)])
 
 
 # ---------------- Utils ---------------- #

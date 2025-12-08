@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 import torch
 
 import torch.nn as nn
-from torch.nn import MSELoss
+from torch.nn import MSELoss, L1Loss
 from torch.nn.parallel import DistributedDataParallel as DDP
 from torch.optim import AdamW
 from torch.amp import GradScaler, autocast
@@ -27,7 +27,7 @@ from .lr_scheduler import make_lr_lambda
 from .utils import collate_fn, patchify, save_checkpoint, load_checkpoint, load_json_param, list_child_folders, plot_6_middle_slices, plot_6_uniform_slices
 from .loss import L1_SSIM_Loss
 
-TIME_CHECK=True    
+TIME_CHECK=False    
 TIME_EPOCH_CHECK=True
 
 def _now(device):
@@ -122,9 +122,9 @@ class Trainer:
         if self.ddp:
             self.train_sampler = DistributedSampler(train_ds,num_replicas=self.world_size,rank=self.rank,shuffle=True)
 
-            self.train_loader = DataLoader(train_ds,batch_size=self.batch_size,shuffle=False,sampler=self.train_sampler,num_workers=self.num_workers,pin_memory=True,persistent_workers=True,prefetch_factor=2,collate_fn=collate_fn)
+            self.train_loader = DataLoader(train_ds,batch_size=self.batch_size,shuffle=False,sampler=self.train_sampler,num_workers=self.num_workers,pin_memory=True,persistent_workers=True,prefetch_factor=4,collate_fn=collate_fn)
             self.val_loader = DataLoader(val_ds,batch_size=self.batch_size,shuffle=False,num_workers=self.num_workers,pin_memory=True,persistent_workers=True,prefetch_factor=2,collate_fn=collate_fn)
-            self.test_loader = DataLoader(test_ds,batch_size=self.batch_size,shuffle=False,num_workers=self.num_workers,pin_memory=True,persistent_workers=True,prefetch_factor=2,collate_fn=collate_fn)    
+            self.test_loader = DataLoader(test_ds,batch_size=self.batch_size,shuffle=False,num_workers=self.num_workers,pin_memory=True,persistent_workers=True,prefetch_factor=1,collate_fn=collate_fn)    
         
         else:
             self.train_sampler = None
@@ -160,7 +160,7 @@ class Trainer:
         
         self.scheduler =  torch.optim.lr_scheduler.LambdaLR(self.optimizer, lr_lambda)
         self.scaler = GradScaler(device=self.device, enabled=self.amp)
-        self.criterion = L1_SSIM_Loss()
+        self.criterion = L1Loss()
 
         self.start_epoch = 0
         self.best_val = float('inf')
@@ -190,12 +190,10 @@ class Trainer:
         if TIME_CHECK:
             t_batch_load = _now(self.device) - t0
             t0 = _now(self.device)
-
         #x, mask = self.gpu_tf_train(images, spacings)
         x = self.gpu_tf_train(images, spacings)
         if TIME_CHECK:
             t_gpu_tf_train = _now(self.device) - t0
-
 
         with autocast(device_type=self.device.type, enabled=self.amp):
 
@@ -212,7 +210,7 @@ class Trainer:
             if TIME_CHECK:
                 t_loss = _now(self.device) - t0
 
-            if self.is_main and self.wandb and self.global_step % self.log_image_interval == 0:
+            if self.is_main and self.wandb and self.global_step % (10 * self.log_image_interval) == 0:
                 fig = plot_6_middle_slices(image=x[0, 0].cpu(),gt=x[0, 0].cpu(),pred=pred[0, 0].cpu())
                 wandb.log({"Train/Images": wandb.Image(fig)}, step=self.global_step)
                 plt.close(fig)
@@ -336,10 +334,13 @@ class Trainer:
         
 
         if TIME_CHECK and self.is_main:
-            print(f"\nVALIDATION TIMINGS EPOCH {epoch}")        
+            print(f"\nVALIDATION TIMINGS EPOCH {epoch}") 
             for k, v in sums.items():
                 print(f"{k:12s}: {v / n:.4f} s / sample")
-
+        if self.is_main and self.wandb and self.global_step % (self.log_image_interval) == 0:
+                fig = plot_6_middle_slices(image=x[0, 0].cpu(),gt=x[0, 0].cpu(),pred=pred[0, 0].cpu())
+                wandb.log({"Val/Images": wandb.Image(fig)}, step=self.global_step)
+                plt.close(fig)
         avg = total / n
         return avg
 
@@ -410,7 +411,11 @@ class Trainer:
 
                 if TIME_EPOCH_CHECK:
                     log_dict.update({"Time/Epoch": epoch_time,"Time/Train": train_time,"Time/Val": val_time,"Time/Checkpoint": ckpt_time})
-
+                    print(f"\nEPOCH {epoch} TIMINGS")
+                    print(f"Train      : {train_time:.2f} s")
+                    print(f"Validation : {val_time:.2f} s")
+                    print(f"Checkpoint : {ckpt_time:.2f} s")
+                    print(f"Epoch Total: {epoch_time:.2f} s\n")
                 if self.wandb:
                     wandb.log(log_dict, step=self.global_step)
 

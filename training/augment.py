@@ -297,11 +297,12 @@ class GPUResampleAug3D(nn.Module):
         D,H,W=img.shape[-3:]
         Dz,Dh,Dw=self._compute_out_size((D,H,W),spacing)
         img=self._resize(img,(Dz,Dh,Dw),"trilinear")
+        img=self._norm(img)
         if lab is not None:
             lab=self._resize(lab,(Dz,Dh,Dw),"nearest")
             lab=self._center_crop_pad(lab,self.img_size)
         img=self._center_crop_pad(img,self.img_size)            
-        img=self._norm(img)
+        
         return img,lab
 
     def forward(self,images,spacings,labels=None):
