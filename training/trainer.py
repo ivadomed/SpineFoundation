@@ -172,6 +172,7 @@ class Trainer:
             self.scheduler.load_state_dict(ckpt['scheduler'])
             self.start_epoch = ckpt.get('epoch', 0) + 1
             self.best_val = ckpt.get('val_loss', float('inf'))
+            self.global_step = ckpt.get('global_step', 0)
             print(f"Resumed from {self.resume} at epoch {self.start_epoch}")
 
         if self.ddp:
@@ -398,7 +399,7 @@ class Trainer:
             self.best_val = min(self.best_val, val_loss)
             if self.is_main:
                 model_state = self.model.module.state_dict() if self.ddp else self.model.state_dict()
-                ckpt = {'epoch': epoch,'model': model_state,'optimizer': self.optimizer.state_dict(),'scheduler': self.scheduler.state_dict(),'val_loss': val_loss}
+                ckpt = {'epoch': epoch,'model': model_state,'optimizer': self.optimizer.state_dict(),'scheduler': self.scheduler.state_dict(),'val_loss': val_loss,'global_step': self.global_step}
                 save_checkpoint(ckpt, os.path.join(self.work_dir, f'ckpt_epoch_{epoch}.pt'))
                 
                 if is_best:
@@ -420,7 +421,11 @@ class Trainer:
                     print(f"Checkpoint : {ckpt_time:.2f} s")
                     print(f"Epoch Total: {epoch_time:.2f} s\n")
                 if self.wandb:
-                    wandb.log(log_dict, step=self.global_step)
+                    wandb.log(
+                                {**log_dict, "GlobalStep": self.global_step},
+                                step=self.global_step
+                            )
+
 
         if TIME_CHECK:
             t0 = _now(self.device)
