@@ -16,6 +16,7 @@ from torch.amp import GradScaler, autocast
 from torch.profiler import profile, record_function, ProfilerActivity
 from torch.utils.data import DataLoader
 from torch.utils.data.distributed import DistributedSampler
+import torch.distributed as dist
 
 os.environ["WANDB_SILENT"] = "true" 
 
@@ -121,7 +122,7 @@ class Trainer:
 
         if self.ddp:
             self.train_sampler = DistributedSampler(train_ds,num_replicas=self.world_size,rank=self.rank,shuffle=True)
-
+            #self.val_sampler = DistributedSampler(val_ds,num_replicas=self.world_size,rank=self.rank,shuffle=False)
             self.train_loader = DataLoader(train_ds,batch_size=self.batch_size,shuffle=False,sampler=self.train_sampler,num_workers=self.num_workers,pin_memory=True,persistent_workers=True,prefetch_factor=4,collate_fn=collate_fn)
             self.val_loader = DataLoader(val_ds,batch_size=self.batch_size,shuffle=False,num_workers=self.num_workers,pin_memory=True,persistent_workers=True,prefetch_factor=2,collate_fn=collate_fn)
             self.test_loader = DataLoader(test_ds,batch_size=self.batch_size,shuffle=False,num_workers=self.num_workers,pin_memory=True,persistent_workers=True,prefetch_factor=1,collate_fn=collate_fn)    
@@ -346,6 +347,7 @@ class Trainer:
 
 
 
+
    
     def fit(self):
 
@@ -371,7 +373,7 @@ class Trainer:
                 "epochs": self.epochs,
             })
             print(f"W&B run: {run.url} \n")
-            wandb.watch(self.model, log="all")
+            wandb.watch(self.model, log=None)
 
         for epoch in range(self.start_epoch, self.epochs):
             if TIME_EPOCH_CHECK:
@@ -386,6 +388,7 @@ class Trainer:
                     t0 = _now(self.device)
 
             val_loss = self.validate(epoch)
+
 
             if TIME_EPOCH_CHECK:
                     val_time = _now(self.device) - t0
