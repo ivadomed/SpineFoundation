@@ -338,7 +338,7 @@ class Trainer:
             print(f"\nVALIDATION TIMINGS EPOCH {epoch}") 
             for k, v in sums.items():
                 print(f"{k:12s}: {v / n:.4f} s / sample")
-        if self.is_main and self.wandb and self.global_step % (self.log_image_interval) == 0:
+        if self.is_main and self.wandb and self.epochs % 10 == 0:
                 fig = plot_6_middle_slices(image=x[0, 0].cpu(),gt=x[0, 0].cpu(),pred=pred[0, 0].cpu())
                 wandb.log({"Val/Images": wandb.Image(fig)}, step=self.global_step)
                 plt.close(fig)
@@ -373,7 +373,7 @@ class Trainer:
                 "epochs": self.epochs,
             })
             print(f"W&B run: {run.url} \n")
-            wandb.watch(self.model, log=None)
+            #wandb.watch(self.model, log=None)
 
         for epoch in range(self.start_epoch, self.epochs):
             if TIME_EPOCH_CHECK:
