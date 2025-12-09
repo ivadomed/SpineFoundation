@@ -123,7 +123,7 @@ class Trainer:
         if self.ddp:
             self.train_sampler = DistributedSampler(train_ds,num_replicas=self.world_size,rank=self.rank,shuffle=True)
             #self.val_sampler = DistributedSampler(val_ds,num_replicas=self.world_size,rank=self.rank,shuffle=False)
-            self.train_loader = DataLoader(train_ds,batch_size=self.batch_size,shuffle=False,sampler=self.train_sampler,num_workers=self.num_workers,pin_memory=True,persistent_workers=True,prefetch_factor=4,collate_fn=collate_fn)
+            self.train_loader = DataLoader(train_ds,batch_size=self.batch_size,shuffle=True,sampler=self.train_sampler,num_workers=self.num_workers,pin_memory=True,persistent_workers=True,prefetch_factor=2,collate_fn=collate_fn)
             self.val_loader = DataLoader(val_ds,batch_size=self.batch_size,shuffle=False,num_workers=self.num_workers,pin_memory=True,persistent_workers=True,prefetch_factor=2,collate_fn=collate_fn)
             self.test_loader = DataLoader(test_ds,batch_size=self.batch_size,shuffle=False,num_workers=self.num_workers,pin_memory=True,persistent_workers=True,prefetch_factor=1,collate_fn=collate_fn)    
         
@@ -339,8 +339,10 @@ class Trainer:
             print(f"\nVALIDATION TIMINGS EPOCH {epoch}") 
             for k, v in sums.items():
                 print(f"{k:12s}: {v / n:.4f} s / sample")
-        if self.is_main and self.wandb and self.epochs % 10 == 0:
-                fig = plot_6_middle_slices(image=x[0, 0].cpu(),gt=x[0, 0].cpu(),pred=pred[0, 0].cpu())
+        if self.is_main and self.wandb and epoch % 10 == 0:
+                idx = torch.randint(0, x.shape[0], (1,)).item()
+
+                fig = plot_6_middle_slices(image=x[idx, 0].cpu(),gt=x[idx, 0].cpu(),pred=pred[idx, 0].cpu())
                 wandb.log({"Val/Images": wandb.Image(fig)}, step=self.global_step)
                 plt.close(fig)
         avg = total / n
