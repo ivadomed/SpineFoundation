@@ -294,6 +294,8 @@ class GPUResampleAug3D(nn.Module):
         return img,lab
 
     def forward_single(self,img,spacing,lab=None):
+        if img.ndim == 4 and img.shape[0] > 1:
+            img = img.mean(dim=0, keepdim=True)
         D,H,W=img.shape[-3:]
         Dz,Dh,Dw=self._compute_out_size((D,H,W),spacing)
         img=self._resize(img,(Dz,Dh,Dw),"trilinear")
