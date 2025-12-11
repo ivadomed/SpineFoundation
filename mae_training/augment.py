@@ -222,11 +222,8 @@ def combine_classes(seg, classes):
     return _seg
 
 
+
 class ComputeSpacingDHWd(MapTransform):
-    """
-    Ajoute dans meta["spacing_dhw"] les espacements alignés avec img.shape[-3:].
-    (On dérive les voxel sizes à partir de l'affine actuelle, après Orientationd.)
-    """
     def __init__(self, keys):
         super().__init__(keys)
 
@@ -236,14 +233,21 @@ class ComputeSpacingDHWd(MapTransform):
             if k in d and isinstance(d[k], MetaTensor):
                 mt = d[k]
 
-                # Affine actuelle (4x4), déjà en RAS après Orientationd
-                A = np.asarray(mt.affine, dtype=float)   # shape (4,4)
-
-                # Espacements le long des 3 axes de l'image
-                # -> norme des colonnes de A[:3, :3]
+                A = np.asarray(mt.affine, dtype=float)  # 4x4
                 spacing_ijk = np.sqrt((A[:3, :3] ** 2).sum(0))  # (s0, s1, s2)
 
+                # Espacement aligné avec (D,H,W)
                 mt.meta["spacing_dhw"] = spacing_ijk
+
+                # Géométrie d'origine (sauvegardée une seule fois)
+                if "orig_affine" not in mt.meta:
+                    mt.meta["orig_affine"] = A.copy()
+                if "orig_shape_dhw" not in mt.meta:
+                    mt.meta["orig_shape_dhw"] = np.array(mt.shape[-3:], dtype=int)
+                if "orig_spacing_dhw" not in mt.meta:
+                    mt.meta["orig_spacing_dhw"] = spacing_ijk.copy()
+                if "orig_dtype" not in mt.meta:
+                    mt.meta["orig_dtype"] = str(mt.dtype)
         return d
 
 
