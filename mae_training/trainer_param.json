@@ -7,7 +7,7 @@
   "weight_decay":1e-2,
   "amp":true,
   "no_cuda":false,
-  "resume":"",
+  "resume":"/home/ge.polymtl.ca/p123239/SpineFoundation/training/ckpt/ckpt_epoch_272.pt",
   "log_image_interval": 500,
-  "tqdm_disable": true
+  "tqdm_disable": false
 }

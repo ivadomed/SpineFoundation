@@ -2,6 +2,7 @@
 *env*
 temp_training.sh
 temp*.sh
+log_ddp.txt
 #Model specific files
 *.pt 
 *.pth

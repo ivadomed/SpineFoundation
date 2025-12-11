@@ -17,7 +17,7 @@ mp.set_sharing_strategy("file_system") # To have more workers than default limit
 
 
 from .json_data_creator import create_data_manifest
-from training.transforms import get_transforms
+from mae_training.transforms import get_transforms
 
 def makemonaidataset(data_list, augment=False):
 

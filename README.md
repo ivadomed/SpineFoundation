@@ -13,7 +13,7 @@ To be able to train the model you need to:
 Command to run :
 
 ```bash 
-python -m training.build \
+python -m mae_training.build \
         --model-params ./model/SpineMAE.json \
         --data-params ./data_management/data_param.json \
         --training-params ./training/trainer_param.json \
