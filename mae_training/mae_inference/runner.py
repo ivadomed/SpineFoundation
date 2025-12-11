@@ -95,21 +95,37 @@ class InferenceRunner:
         pred = self.model(x)
         return x, pred
 
-    def _save_pred(self, batch, x, pred, split: str,idx_start: int):
-        base = os.path.join(self.outdir, split)
-        os.makedirs(base, exist_ok=True)
+    def _save_pred(self, batch, x, pred, split: str, idx_start: int):
+        out_dir = os.path.join(self.outdir, split)
+        os.makedirs(out_dir, exist_ok=True)
 
         B = x.shape[0]
+        root = os.path.abspath(self.data_path)
 
         for b in range(B):
-            vol_in = x[b, 0]      # (D, H, W)
-            vol_gt = x[b, 0]      # même chose pour la GT visuelle
-            vol_pred = pred[b, 0] # (D, H, W)
+            vol_in   = x[b, 0]
+            vol_gt   = x[b, 0]
+            vol_pred = pred[b, 0]
 
-            idx = idx_start + b
-            out_path = os.path.join(base, f"slices_{idx}.png")
+            rec = batch[b]
+            full_path = os.path.abspath(rec["image"].meta["filename_or_obj"])
+
+            # chemin relatif par rapport à data_path
+            try:
+                rel = os.path.relpath(full_path, root)
+                parts = rel.split(os.sep)
+                dataset_name = parts[0] if len(parts) > 0 else "unknown_dataset"
+            except Exception:
+                dataset_name = "unknown_dataset"
+
+            fname = os.path.basename(full_path)          # sub-XXX_T2w.nii.gz
+            stem = fname[:-7] if fname.endswith(".nii.gz") else os.path.splitext(fname)[0]
+
+            out_name = f"{dataset_name}__{stem}_slices.png"
+            out_path = os.path.join(out_dir, out_name)
 
             self.save_6_middle_slices(vol_in, vol_gt, vol_pred, out_path)
+
 
 
     def run(self):
