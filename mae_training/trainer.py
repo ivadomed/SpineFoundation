@@ -49,20 +49,9 @@ class Trainer:
         self.data_params = data_params
        
         self.model_name=model_params["model_name"]
-        self.in_channels=model_params["in_channels"]
         self.img_size=tuple(model_params["img_size"])
         self.img_resolution=tuple(model_params["img_resolution"])
-        self.patch_size=model_params["patch_size"]
-        self.enc_embed_dim=model_params["enc_embed_dim"]
-        self.enc_num_heads=model_params["enc_num_heads"]
-        self.enc_layers=model_params["enc_layers"]
-        self.enc_mlp_dim=model_params["enc_mlp_dim"]
-        self.dropout=model_params["dropout"]
-        self.mask_ratio=model_params["mask_ratio"]
-        self.dec_embed_dim=model_params["dec_embed_dim"]
-        self.dec_layers=model_params["dec_layers"]
-        self.dec_num_heads=model_params["dec_num_heads"]
-        self.dec_mlp_dim=model_params["dec_mlp_dim"]
+
 
         self.batch_size = data_params["batch_size"]      
         self.train_ratio = data_params["train_ratio"]

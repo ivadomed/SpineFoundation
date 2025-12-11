@@ -18,6 +18,8 @@ wandb-*
 # MRI specific 
 *.nii
 *.nii.gz
+*.png
+
 #fichier temporaire
 temp*
 
