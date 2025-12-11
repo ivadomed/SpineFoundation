@@ -224,22 +224,28 @@ def combine_classes(seg, classes):
 
 
 class ComputeSpacingDHWd(MapTransform):
+    """
+    Ajoute dans meta :
+      - spacing_dhw : voxel size aligné avec (D,H,W)
+      - orig_affine : affine d'origine (4x4)
+      - orig_shape_dhw : shape d'origine (D,H,W)
+      - orig_spacing_dhw : spacing d'origine
+      - orig_dtype : dtype d'origine
+    """
     def __init__(self, keys):
         super().__init__(keys)
 
     def __call__(self, data):
         d = dict(data)
         for k in self.keys:
-            if k in d and isinstance(d[k], MetaTensor):
-                mt = d[k]
-
+            v = d.get(k, None)
+            if isinstance(v, MetaTensor):
+                mt = v
                 A = np.asarray(mt.affine, dtype=float)  # 4x4
-                spacing_ijk = np.sqrt((A[:3, :3] ** 2).sum(0))  # (s0, s1, s2)
+                spacing_ijk = np.sqrt((A[:3, :3] ** 2).sum(0))  # (s0,s1,s2)
 
-                # Espacement aligné avec (D,H,W)
-                mt.meta["spacing_dhw"] = spacing_ijk
+                mt.meta["spacing_dhw"] = spacing_ijk.astype(float)
 
-                # Géométrie d'origine (sauvegardée une seule fois)
                 if "orig_affine" not in mt.meta:
                     mt.meta["orig_affine"] = A.copy()
                 if "orig_shape_dhw" not in mt.meta:
@@ -248,80 +254,158 @@ class ComputeSpacingDHWd(MapTransform):
                     mt.meta["orig_spacing_dhw"] = spacing_ijk.copy()
                 if "orig_dtype" not in mt.meta:
                     mt.meta["orig_dtype"] = str(mt.dtype)
+
+                d[k] = mt
         return d
 
 
-class GPUResampleAug3D(nn.Module):
-    def __init__(self,img_size=(256,256,256),target_res=(1.0,1.0,1.0),prob_flip=0.2):
-        super().__init__()
-        self.img_size=img_size
-        self.target_res=target_res
-        self.prob_flip=prob_flip
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
 
-    def _compute_out_size(self,shape,spacing):
-        D,H,W=shape
-        if isinstance(spacing,torch.Tensor): sz,sy,sx=spacing.tolist()
-        else: sz,sy,sx=spacing
-        tz,ty,tx=self.target_res
+
+class GPUResampleAug3D(nn.Module):
+    def __init__(self, img_size=(256,256,256), target_res=(1.0,1.0,1.0), prob_flip=0.2, inference=False):
+        super().__init__()
+        self.img_size     = img_size
+        self.target_res   = target_res
+        self.prob_flip    = prob_flip
+        self.inference    = inference   # <── ajouté
+
+    def _compute_out_size(self, shape, spacing):
+        D,H,W = shape
+        if isinstance(spacing, torch.Tensor):
+            sz,sy,sx = spacing.tolist()
+        else:
+            sz,sy,sx = spacing
+        tz,ty,tx = self.target_res
         Dz=max(1,int(round(D*sz/tz)))
         Dh=max(1,int(round(H*sy/ty)))
         Dw=max(1,int(round(W*sx/tx)))
         return Dz,Dh,Dw
 
-    def _resize(self,x,size,mode):
-        if x.ndim==3: x=x.unsqueeze(0).unsqueeze(0)
-        elif x.ndim==4: x=x.unsqueeze(0)
-        return F.interpolate(x,size=size,mode=mode,align_corners=False if mode!="nearest" else None).squeeze(0)
+    def _resize(self, x, size, mode):
+        if x.ndim==3:
+            x=x.unsqueeze(0).unsqueeze(0)
+        elif x.ndim==4:
+            x=x.unsqueeze(0)
+        x = F.interpolate(x, size=size, mode=mode,
+                          align_corners=False if mode!="nearest" else None)
+        return x.squeeze(0)
 
-    def _center_crop_pad(self,x,target):
-        D,H,W=x.shape[-3:]
-        Td,Th,Tw=target
+    def _center_crop_pad(self, x, target):
+        D,H,W = x.shape[-3:]
+        Td,Th,Tw = target
+
         dz=max(Td-D,0); dh=max(Th-H,0); dw=max(Tw-W,0)
+        pdw0=dw//2; pdw1=dw-pdw0
+        pdh0=dh//2; pdh1=dh-pdh0
+        pdz0=dz//2; pdz1=dz-pdz0
+        pad=(pdw0,pdw1,pdh0,pdh1,pdz0,pdz1)
+
         if dz>0 or dh>0 or dw>0:
-            pad=(dw//2,dw-dw//2,dh//2,dh-dh//2,dz//2,dz-dz//2)
-            x=F.pad(x,pad)
-            D,H,W=x.shape[-3:]
-        sd=max((D-Td)//2,0); sh=max((H-Th)//2,0); sw=max((W-Tw)//2,0)
-        return x[...,sd:sd+Td,sh:sh+Th,sw:sw+Tw]
+            x = F.pad(x, pad)
 
-    def _norm(self,x):
+        D2,H2,W2 = x.shape[-3:]
+        sd=max((D2-Td)//2,0)
+        sh=max((H2-Th)//2,0)
+        sw=max((W2-Tw)//2,0)
+
+        z0=sd; z1=sd+Td
+        y0=sh; y1=sh+Th
+        x0=sw; x1=sw+Tw
+
+        x_crop = x[..., z0:z1, y0:y1, x0:x1]
+        crop_slices = (z0,z1,y0,y1,x0,x1)
+
+        return x_crop, crop_slices, pad
+
+    def _norm(self, x):
         flat=x.reshape(1,-1)
-        m=flat.mean(-1,keepdim=True); s=flat.std(-1,keepdim=True)+1e-6
-        return ((flat-m)/s).reshape_as(x)
+        m=flat.mean(-1,keepdim=True)
+        s=flat.std(-1,keepdim=True)+1e-6
+        return ((flat-m)/s).reshape_as(x), float(m.item()), float(s.item())
 
+    def _flip(self, img, lab=None):
+        # Désactivé en inference -> garantir réversibilité
+        if self.inference:
+            return img, lab, False
 
-    def _flip(self,img,lab=None):
+        flipped=False
         if torch.rand(1).item()<self.prob_flip:
-            img=torch.flip(img,dims=[1])
+            img = torch.flip(img, dims=[1])
             if lab is not None:
-                lab=torch.flip(lab,dims=[1])
-        return img,lab
+                lab = torch.flip(lab, dims=[1])
+            flipped=True
+        return img,lab,flipped
 
-    def forward_single(self,img,spacing,lab=None):
-        if img.ndim == 4 and img.shape[0] > 1:
+    def forward_single(self, img, spacing, lab=None):
+        # moyenne si multi-channel
+        if img.ndim==4 and img.shape[0]>1:
             img = img.mean(dim=0, keepdim=True)
-        D,H,W=img.shape[-3:]
-        Dz,Dh,Dw=self._compute_out_size((D,H,W),spacing)
-        img=self._resize(img,(Dz,Dh,Dw),"trilinear")
-        img=self._norm(img)
-        if lab is not None:
-            lab=self._resize(lab,(Dz,Dh,Dw),"nearest")
-            lab=self._center_crop_pad(lab,self.img_size)
-        img=self._center_crop_pad(img,self.img_size)            
-        
-        return img,lab
 
-    def forward(self,images,spacings,labels=None):
+        orig_shape = tuple(img.shape[-3:])
+        Dz,Dh,Dw = self._compute_out_size(orig_shape, spacing)
+
+        img = self._resize(img,(Dz,Dh,Dw),"trilinear")
+        if lab is not None:
+            lab = self._resize(lab,(Dz,Dh,DW),"nearest")
+
+        # Flip seulement si pas inference
+        img, lab, flipped = self._flip(img, lab)
+
+        img, m, s = self._norm(img)
+        img, img_crop_slices, img_pad = self._center_crop_pad(img, self.img_size)
+
+        lab_crop_slices=None
+        lab_pad=None
+        if lab is not None:
+            lab, lab_crop_slices, lab_pad = self._center_crop_pad(lab, self.img_size)
+
+        info = {
+            "orig_shape_dhw"      : orig_shape,
+            "resampled_shape_dhw" : (Dz,Dh,Dw),
+            "img_crop_slices"     : img_crop_slices,
+            "img_pad"             : img_pad,
+            "lab_crop_slices"     : lab_crop_slices,
+            "lab_pad"             : lab_pad,
+            "norm_mean"           : m,
+            "norm_std"            : s,
+            "flipped_D"           : flipped
+        }
+
+        return img, lab, info
+
+    def forward(self, images, spacings, labels=None):
         out_i=[]
-        #out_l=[]
-        '''for img,lab,sp in zip(images,labels,spacings):
-            img_aug,lab_aug=self.forward_single(img,lab,sp)
-            out_i.append(img_aug); out_l.append(lab_aug)'''
-        for img,sp in zip(images,spacings):
-            img_aug,lab_aug=self.forward_single(img,sp,lab=None)
+        infos=[]
+        out_l=[]
+
+        # --- Entraînement (comportement d’origine) ---
+        if not self.inference:
+            if labels is None:
+                for img,sp in zip(images,spacings):
+                    img_aug,_,_ = self.forward_single(img,sp,lab=None)
+                    out_i.append(img_aug)
+                return torch.stack(out_i,0)   # EXACTEMENT comme avant
+
+            for img,lab,sp in zip(images,labels,spacings):
+                img_aug,lab_aug,_ = self.forward_single(img,sp,lab)
+                out_i.append(img_aug)
+                out_l.append(lab_aug)
+            return torch.stack(out_i,0), torch.stack(out_l,0)
+
+        # --- Inference : on retourne infos supplémentaires ---
+        if labels is None:
+            for img,sp in zip(images,spacings):
+                img_aug,_,info = self.forward_single(img,sp,lab=None)
+                out_i.append(img_aug)
+                infos.append(info)
+            return torch.stack(out_i,0), infos
+
+        for img,lab,sp in zip(images,labels,spacings):
+            img_aug,lab_aug,info = self.forward_single(img,sp,lab)
             out_i.append(img_aug)
-            #out_l.append(lab_aug)
-        x=torch.stack(out_i,0)
-        #y=torch.stack(out_l,0)
-        #return x,y
-        return x
+            out_l.append(lab_aug)
+            infos.append(info)
+        return torch.stack(out_i,0), torch.stack(out_l,0), infos
