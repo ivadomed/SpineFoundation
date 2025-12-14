@@ -5,7 +5,7 @@ from .augment import aug_sqrt, aug_sin, aug_exp, aug_sig, aug_laplace, aug_inver
 
 
 def get_transforms(augment = False):
-    keys = ["image"]
+    keys = ["image","labels"]
     transforms = [
         LoadImaged(keys=keys, allow_missing_keys=True),
         EnsureChannelFirstd(keys=keys, allow_missing_keys=True),

@@ -11,8 +11,7 @@ def parse_args():
     p = argparse.ArgumentParser()
 
     p.add_argument('--config',type=str,required=True)
-
-
+    p.add_argument('--model-ckpt',type=str,default=None,help='Chemin vers un checkpoint de modèle pré-entraîné')
     p.add_argument('--ddp', action='store_true', help='Active DistributedDataParallel')
     
     default_gpus = torch.cuda.device_count() if torch.cuda.is_available() else 0

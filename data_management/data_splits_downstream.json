@@ -1,0 +1,748 @@
+{
+    "TRAINING": [
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM049/anat/sub-CSM049_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM049/anat/sub-CSM049_T2star_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM087/anat/sub-CSM087_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM087/anat/sub-CSM087_T2w_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM125/anat/sub-CSM125_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM125/anat/sub-CSM125_T2w_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM127/anat/sub-CSM127_T2star.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM127/anat/sub-CSM127_flip-1_mt-off_MTS_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM065/anat/sub-CSM065_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM065/anat/sub-CSM065_T2star_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM049/anat/sub-CSM049_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM049/anat/sub-CSM049_T2star_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM070/anat/sub-CSM070_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM070/anat/sub-CSM070_flip-1_mt-off_MTS_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM032/anat/sub-CSM032_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM032/anat/sub-CSM032_flip-1_mt-off_MTS_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM137/anat/sub-CSM137_T2star.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM137/anat/sub-CSM137_T2w_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM068/anat/sub-CSM068_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM068/anat/sub-CSM068_T2w_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM070/anat/sub-CSM070_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM070/anat/sub-CSM070_flip-1_mt-off_MTS_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM057/anat/sub-CSM057_T2star.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM057/anat/sub-CSM057_T2star_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM093/anat/sub-CSM093_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM093/anat/sub-CSM093_T2star_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM050/anat/sub-CSM050_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM050/anat/sub-CSM050_T2star_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM053/anat/sub-CSM053_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM053/anat/sub-CSM053_flip-1_mt-off_MTS_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM032/anat/sub-CSM032_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM032/anat/sub-CSM032_flip-1_mt-off_MTS_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM092/anat/sub-CSM092_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM092/anat/sub-CSM092_flip-1_mt-off_MTS_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM050/anat/sub-CSM050_T2star.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM050/anat/sub-CSM050_T2star_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM084/anat/sub-CSM084_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM084/anat/sub-CSM084_T2w_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM100/anat/sub-CSM100_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM100/anat/sub-CSM100_flip-1_mt-off_MTS_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM055/anat/sub-CSM055_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM055/anat/sub-CSM055_T2w_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM073/anat/sub-CSM073_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM073/anat/sub-CSM073_flip-1_mt-off_MTS_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM050/anat/sub-CSM050_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM050/anat/sub-CSM050_T2star_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM081/anat/sub-CSM081_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM081/anat/sub-CSM081_T2w_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM075/anat/sub-CSM075_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM075/anat/sub-CSM075_T2star_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM057/anat/sub-CSM057_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM057/anat/sub-CSM057_T2star_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM050/anat/sub-CSM050_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM050/anat/sub-CSM050_T2star_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM128/anat/sub-CSM128_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM128/anat/sub-CSM128_flip-1_mt-off_MTS_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM020/anat/sub-CSM020_T2star.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM020/anat/sub-CSM020_T2star_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM081/anat/sub-CSM081_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM081/anat/sub-CSM081_T2w_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM128/anat/sub-CSM128_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM128/anat/sub-CSM128_flip-1_mt-off_MTS_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM125/anat/sub-CSM125_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM125/anat/sub-CSM125_T2w_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM100/anat/sub-CSM100_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM100/anat/sub-CSM100_flip-1_mt-off_MTS_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM128/anat/sub-CSM128_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM128/anat/sub-CSM128_flip-1_mt-off_MTS_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM099/anat/sub-CSM099_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM099/anat/sub-CSM099_flip-1_mt-off_MTS_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM030/anat/sub-CSM030_T2star.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM030/anat/sub-CSM030_T2w_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM087/anat/sub-CSM087_T2star.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM087/anat/sub-CSM087_T2w_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM070/anat/sub-CSM070_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM070/anat/sub-CSM070_flip-1_mt-off_MTS_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM142/anat/sub-CSM142_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM142/anat/sub-CSM142_T2star_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM124/anat/sub-CSM124_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM124/anat/sub-CSM124_T2w_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM061/anat/sub-CSM061_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM061/anat/sub-CSM061_T2w_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM093/anat/sub-CSM093_T2star.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM093/anat/sub-CSM093_T2star_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM050/anat/sub-CSM050_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM050/anat/sub-CSM050_T2star_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM065/anat/sub-CSM065_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM065/anat/sub-CSM065_T2star_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM094/anat/sub-CSM094_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM094/anat/sub-CSM094_T2star_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM127/anat/sub-CSM127_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM127/anat/sub-CSM127_flip-1_mt-off_MTS_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM030/anat/sub-CSM030_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM030/anat/sub-CSM030_T2w_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM029/anat/sub-CSM029_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM029/anat/sub-CSM029_T2w_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM124/anat/sub-CSM124_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM124/anat/sub-CSM124_T2w_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM029/anat/sub-CSM029_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM029/anat/sub-CSM029_T2w_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM125/anat/sub-CSM125_T2star.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM125/anat/sub-CSM125_T2w_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM057/anat/sub-CSM057_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM057/anat/sub-CSM057_T2star_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM029/anat/sub-CSM029_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM029/anat/sub-CSM029_T2w_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM087/anat/sub-CSM087_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM087/anat/sub-CSM087_T2w_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM068/anat/sub-CSM068_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM068/anat/sub-CSM068_T2w_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM092/anat/sub-CSM092_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM092/anat/sub-CSM092_flip-1_mt-off_MTS_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM053/anat/sub-CSM053_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM053/anat/sub-CSM053_flip-1_mt-off_MTS_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM092/anat/sub-CSM092_T2star.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM092/anat/sub-CSM092_flip-1_mt-off_MTS_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM061/anat/sub-CSM061_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM061/anat/sub-CSM061_T2w_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM094/anat/sub-CSM094_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM094/anat/sub-CSM094_T2star_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM075/anat/sub-CSM075_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM075/anat/sub-CSM075_T2star_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM055/anat/sub-CSM055_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM055/anat/sub-CSM055_T2w_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM075/anat/sub-CSM075_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM075/anat/sub-CSM075_T2star_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM046/anat/sub-CSM046_T2star.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM046/anat/sub-CSM046_T2w_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM061/anat/sub-CSM061_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM061/anat/sub-CSM061_T2w_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM084/anat/sub-CSM084_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM084/anat/sub-CSM084_T2w_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM125/anat/sub-CSM125_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM125/anat/sub-CSM125_T2w_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM055/anat/sub-CSM055_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM055/anat/sub-CSM055_T2w_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM078/anat/sub-CSM078_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM078/anat/sub-CSM078_T2w_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM084/anat/sub-CSM084_T2star.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM084/anat/sub-CSM084_T2w_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM081/anat/sub-CSM081_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM081/anat/sub-CSM081_T2w_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM138/anat/sub-CSM138_T2star.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM138/anat/sub-CSM138_T2star_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM055/anat/sub-CSM055_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM055/anat/sub-CSM055_T2w_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM028/anat/sub-CSM028_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM028/anat/sub-CSM028_T2star_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM033/anat/sub-CSM033_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM033/anat/sub-CSM033_T2w_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM124/anat/sub-CSM124_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM124/anat/sub-CSM124_T2w_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM100/anat/sub-CSM100_T2star.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM100/anat/sub-CSM100_flip-1_mt-off_MTS_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM046/anat/sub-CSM046_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM046/anat/sub-CSM046_T2w_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM050/anat/sub-CSM050_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM050/anat/sub-CSM050_T2star_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM065/anat/sub-CSM065_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM065/anat/sub-CSM065_T2star_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM128/anat/sub-CSM128_T2star.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM128/anat/sub-CSM128_flip-1_mt-off_MTS_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM065/anat/sub-CSM065_T2star.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM065/anat/sub-CSM065_T2star_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM049/anat/sub-CSM049_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM049/anat/sub-CSM049_T2star_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM055/anat/sub-CSM055_T2star.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM055/anat/sub-CSM055_T2w_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM049/anat/sub-CSM049_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM049/anat/sub-CSM049_T2star_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM142/anat/sub-CSM142_T2star.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM142/anat/sub-CSM142_T2star_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM036/anat/sub-CSM036_T2star.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM036/anat/sub-CSM036_flip-1_mt-off_MTS_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM030/anat/sub-CSM030_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM030/anat/sub-CSM030_T2w_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM135/anat/sub-CSM135_T2star.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM135/anat/sub-CSM135_T2star_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM138/anat/sub-CSM138_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM138/anat/sub-CSM138_T2star_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM036/anat/sub-CSM036_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM036/anat/sub-CSM036_flip-1_mt-off_MTS_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM061/anat/sub-CSM061_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM061/anat/sub-CSM061_T2w_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM093/anat/sub-CSM093_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM093/anat/sub-CSM093_T2star_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM103/anat/sub-CSM103_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM103/anat/sub-CSM103_flip-1_mt-off_MTS_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM046/anat/sub-CSM046_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM046/anat/sub-CSM046_T2w_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM053/anat/sub-CSM053_T2star.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM053/anat/sub-CSM053_flip-1_mt-off_MTS_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM048/anat/sub-CSM048_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM048/anat/sub-CSM048_T2w_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM046/anat/sub-CSM046_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM046/anat/sub-CSM046_T2w_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM048/anat/sub-CSM048_T2star.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM048/anat/sub-CSM048_T2w_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM068/anat/sub-CSM068_T2star.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM068/anat/sub-CSM068_T2w_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM073/anat/sub-CSM073_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM073/anat/sub-CSM073_flip-1_mt-off_MTS_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM075/anat/sub-CSM075_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM075/anat/sub-CSM075_T2star_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM087/anat/sub-CSM087_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM087/anat/sub-CSM087_T2w_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM030/anat/sub-CSM030_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM030/anat/sub-CSM030_T2w_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM127/anat/sub-CSM127_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM127/anat/sub-CSM127_flip-1_mt-off_MTS_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM048/anat/sub-CSM048_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM048/anat/sub-CSM048_T2w_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM084/anat/sub-CSM084_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM084/anat/sub-CSM084_T2w_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM036/anat/sub-CSM036_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM036/anat/sub-CSM036_flip-1_mt-off_MTS_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM103/anat/sub-CSM103_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM103/anat/sub-CSM103_flip-1_mt-off_MTS_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM103/anat/sub-CSM103_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM103/anat/sub-CSM103_flip-1_mt-off_MTS_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM081/anat/sub-CSM081_T2star.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM081/anat/sub-CSM081_T2w_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM130/anat/sub-CSM130_T2star.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM130/anat/sub-CSM130_T2w_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM032/anat/sub-CSM032_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM032/anat/sub-CSM032_flip-1_mt-off_MTS_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM048/anat/sub-CSM048_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM048/anat/sub-CSM048_T2w_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM092/anat/sub-CSM092_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM092/anat/sub-CSM092_flip-1_mt-off_MTS_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM073/anat/sub-CSM073_T2star.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM073/anat/sub-CSM073_flip-1_mt-off_MTS_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM028/anat/sub-CSM028_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM028/anat/sub-CSM028_T2star_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM070/anat/sub-CSM070_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM070/anat/sub-CSM070_flip-1_mt-off_MTS_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM078/anat/sub-CSM078_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM078/anat/sub-CSM078_T2w_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM094/anat/sub-CSM094_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM094/anat/sub-CSM094_T2star_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM050/anat/sub-CSM050_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM050/anat/sub-CSM050_T2star_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM046/anat/sub-CSM046_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM046/anat/sub-CSM046_T2w_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM130/anat/sub-CSM130_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM130/anat/sub-CSM130_T2w_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM128/anat/sub-CSM128_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM128/anat/sub-CSM128_flip-1_mt-off_MTS_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM032/anat/sub-CSM032_T2star.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM032/anat/sub-CSM032_flip-1_mt-off_MTS_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM033/anat/sub-CSM033_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM033/anat/sub-CSM033_T2w_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM103/anat/sub-CSM103_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM103/anat/sub-CSM103_flip-1_mt-off_MTS_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM078/anat/sub-CSM078_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM078/anat/sub-CSM078_T2w_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM073/anat/sub-CSM073_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM073/anat/sub-CSM073_flip-1_mt-off_MTS_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM048/anat/sub-CSM048_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM048/anat/sub-CSM048_T2w_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM099/anat/sub-CSM099_T2star.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM099/anat/sub-CSM099_flip-1_mt-off_MTS_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM057/anat/sub-CSM057_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM057/anat/sub-CSM057_T2star_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM094/anat/sub-CSM094_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM094/anat/sub-CSM094_T2star_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM068/anat/sub-CSM068_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM068/anat/sub-CSM068_T2w_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM061/anat/sub-CSM061_T2star.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM061/anat/sub-CSM061_T2w_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM099/anat/sub-CSM099_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM099/anat/sub-CSM099_flip-1_mt-off_MTS_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM125/anat/sub-CSM125_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM125/anat/sub-CSM125_T2w_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM148/anat/sub-CSM148_T2star.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM148/anat/sub-CSM148_T2w_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM036/anat/sub-CSM036_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM036/anat/sub-CSM036_flip-1_mt-off_MTS_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM103/anat/sub-CSM103_T2star.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM103/anat/sub-CSM103_flip-1_mt-off_MTS_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM078/anat/sub-CSM078_T2star.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM078/anat/sub-CSM078_T2w_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM020/anat/sub-CSM020_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM020/anat/sub-CSM020_T2star_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM092/anat/sub-CSM092_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM092/anat/sub-CSM092_flip-1_mt-off_MTS_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM068/anat/sub-CSM068_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM068/anat/sub-CSM068_T2w_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM094/anat/sub-CSM094_T2star.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM094/anat/sub-CSM094_T2star_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM033/anat/sub-CSM033_T2star.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM033/anat/sub-CSM033_T2w_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM093/anat/sub-CSM093_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM093/anat/sub-CSM093_T2star_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM029/anat/sub-CSM029_T2star.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM029/anat/sub-CSM029_T2w_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM030/anat/sub-CSM030_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM030/anat/sub-CSM030_T2w_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM100/anat/sub-CSM100_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM100/anat/sub-CSM100_flip-1_mt-off_MTS_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM148/anat/sub-CSM148_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM148/anat/sub-CSM148_T2w_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM053/anat/sub-CSM053_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM053/anat/sub-CSM053_flip-1_mt-off_MTS_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM065/anat/sub-CSM065_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM065/anat/sub-CSM065_T2star_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM084/anat/sub-CSM084_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM084/anat/sub-CSM084_T2w_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM135/anat/sub-CSM135_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM135/anat/sub-CSM135_T2star_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM075/anat/sub-CSM075_T2star.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM075/anat/sub-CSM075_T2star_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM137/anat/sub-CSM137_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM137/anat/sub-CSM137_T2w_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM129/anat/sub-CSM129_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM129/anat/sub-CSM129_T2star_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM020/anat/sub-CSM020_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM020/anat/sub-CSM020_T2star_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM033/anat/sub-CSM033_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM033/anat/sub-CSM033_T2w_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM100/anat/sub-CSM100_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM100/anat/sub-CSM100_flip-1_mt-off_MTS_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM081/anat/sub-CSM081_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM081/anat/sub-CSM081_T2w_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM033/anat/sub-CSM033_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM033/anat/sub-CSM033_T2w_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM078/anat/sub-CSM078_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM078/anat/sub-CSM078_T2w_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM057/anat/sub-CSM057_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM057/anat/sub-CSM057_T2star_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM127/anat/sub-CSM127_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM127/anat/sub-CSM127_flip-1_mt-off_MTS_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM127/anat/sub-CSM127_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM127/anat/sub-CSM127_flip-1_mt-off_MTS_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM053/anat/sub-CSM053_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM053/anat/sub-CSM053_flip-1_mt-off_MTS_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM049/anat/sub-CSM049_T2star.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM049/anat/sub-CSM049_T2star_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM087/anat/sub-CSM087_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM087/anat/sub-CSM087_T2w_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM093/anat/sub-CSM093_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM093/anat/sub-CSM093_T2star_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM028/anat/sub-CSM028_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM028/anat/sub-CSM028_T2star_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM129/anat/sub-CSM129_T2star.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM129/anat/sub-CSM129_T2star_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM073/anat/sub-CSM073_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM073/anat/sub-CSM073_flip-1_mt-off_MTS_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM124/anat/sub-CSM124_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM124/anat/sub-CSM124_T2w_label-SC_seg.nii.gz"
+        }
+    ],
+    "VALIDATION": [
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM028/anat/sub-CSM028_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM028/anat/sub-CSM028_T2star_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM029/anat/sub-CSM029_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM029/anat/sub-CSM029_T2w_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM124/anat/sub-CSM124_T2star.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM124/anat/sub-CSM124_T2w_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM099/anat/sub-CSM099_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM099/anat/sub-CSM099_flip-1_mt-off_MTS_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM070/anat/sub-CSM070_T2star.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM070/anat/sub-CSM070_flip-1_mt-off_MTS_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM020/anat/sub-CSM020_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM020/anat/sub-CSM020_T2star_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM036/anat/sub-CSM036_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM036/anat/sub-CSM036_flip-1_mt-off_MTS_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM032/anat/sub-CSM032_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM032/anat/sub-CSM032_flip-1_mt-off_MTS_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM028/anat/sub-CSM028_T2star.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM028/anat/sub-CSM028_T2star_label-SC_seg.nii.gz"
+        }
+    ],
+    "TEST": [
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/sub-CSM020/anat/sub-CSM020_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-oklahoma/derivatives/labels/sub-CSM020/anat/sub-CSM020_T2star_label-SC_seg.nii.gz"
+        }
+    ]
+}

@@ -18,15 +18,19 @@ from torch.utils.data import DataLoader
 from torch.utils.data.distributed import DistributedSampler
 import torch.distributed as dist
 
+from monai.losses import DiceCELoss
+from monai.metrics import DiceMetric
+
+
 os.environ["WANDB_SILENT"] = "true" 
 
 from model.build import build_model
 from data_management.build import build_datasets
 
-from .augment import GPUResampleAug3D
-from .lr_scheduler import make_lr_lambda
-from .utils import collate_fn, patchify, save_checkpoint, load_checkpoint, load_json_param, list_child_folders, plot_6_middle_slices, plot_6_uniform_slices
-from .loss import L1_SSIM_Loss
+from mae_training.augment import GPUResampleAug3D
+from mae_training.lr_scheduler import make_lr_lambda
+from mae_training.utils import collate_fn, patchify, save_checkpoint, load_checkpoint, load_json_param, list_child_folders, plot_6_middle_slices, plot_6_uniform_slices
+from mae_training.loss import L1_SSIM_Loss
 
 TIME_CHECK=True    
 TIME_EPOCH_CHECK=True
@@ -38,14 +42,14 @@ def _now(device):
 
 
 class Trainer:
-    def __init__(self, args,ddp=False, rank=0, world_size=1):
+    def __init__(self, args, ddp=False, rank=0, world_size=1):
         self.args = args
-        
-        conf=load_json_param(args.config)
+        conf= load_json_param(args.config)
         model_params = conf["Model"]
         data_params = conf["Data"]
         training_params = conf["Training"]
 
+        self.ckpt = args.model_ckpt
         self.model_params = model_params
         self.data_params = data_params
        
@@ -78,7 +82,6 @@ class Trainer:
         self.tqdm_disable = training_params["tqdm_disable"]
 
 
-
         self.ddp = ddp
         self.rank = rank
         self.world_size = world_size
@@ -91,13 +94,39 @@ class Trainer:
         if self.rank==0:
             print("\nDEVICE :\n")
             print(f"Using device: {self.device} (ddp={self.ddp}, rank={self.rank})")
+
         model_params.pop("model_name", None)
         model_params.pop("img_resolution", None)
         
         self.model = build_model(self.model_name, model_params,rank=self.rank)
         self.model.to(self.device)
 
+        ckpt=load_checkpoint(self.ckpt,self.device)
+        state=ckpt["model"]
 
+        enc_state={}
+        for k,v in state.items():
+            if k.startswith("encoder."):
+                enc_state[k.replace("encoder.","",1)]=v
+            elif k.startswith("module.encoder."):
+                enc_state[k.replace("module.encoder.","",1)]=v
+
+        if hasattr(self.model,"encoder"):
+            missing,unexpected=self.model.encoder.load_state_dict(enc_state,strict=False)
+            if self.rank==0:
+                print(f"Loaded pretrained encoder from {self.ckpt}")
+                print(f"  missing keys: {len(missing)} | unexpected keys: {len(unexpected)}")
+        else:
+            if self.rank==0:
+                print("WARNING: model has no attribute .encoder, cannot load pretrained encoder weights")
+
+        for p in self.model.encoder.parameters():
+            p.requires_grad=False
+        self.model.encoder.eval()
+        if self.rank==0:
+            n_train=sum(p.numel() for p in self.model.parameters() if p.requires_grad)
+            n_all=sum(p.numel() for p in self.model.parameters())
+            print(f"Encoder frozen. Trainable params: {n_train}/{n_all}")
 
         self.gpu_tf_train=GPUResampleAug3D(img_size=self.img_size,target_res=self.img_resolution).to(self.device)
         self.gpu_tf_eval=GPUResampleAug3D(img_size=self.img_size,target_res=self.img_resolution).to(self.device)
@@ -107,7 +136,8 @@ class Trainer:
                                                     json_path=self.json_manifest,
                                                     splits=(self.train_ratio, self.val_ratio, self.test_ratio),
                                                     shuffle_seed=self.seed,
-                                                    rank=self.rank
+                                                    rank=self.rank,
+                                                    label=True
                                                 )
 
         if self.ddp:
@@ -124,22 +154,8 @@ class Trainer:
             self.val_loader = DataLoader(val_ds,batch_size=self.batch_size,shuffle=False,num_workers=self.num_workers,pin_memory=True,persistent_workers=True,prefetch_factor=1,collate_fn=collate_fn)
             self.test_loader = DataLoader(test_ds,batch_size=self.batch_size,shuffle=False,num_workers=self.num_workers,pin_memory=True,persistent_workers=True,prefetch_factor=1,collate_fn=collate_fn)    
         
-        #GELER LES POPIDS QUI NE SERVENT A RIEN PENDANT L'ENTRAINEMENT (CROSS ATTENTION)
-        for layer in self.model.encoder.transformer_layers:
-            if hasattr(layer, "cross_attn"):
-                for p in layer.cross_attn.parameters():
-                    p.requires_grad = False
-            if hasattr(layer, "norm_cross_attn"):
-                for p in layer.norm_cross_attn.parameters():
-                    p.requires_grad = False
 
-        for block in self.model.decoder.blocks:
-            if hasattr(block, "cross_attn"):
-                for p in block.cross_attn.parameters():
-                    p.requires_grad = False
-            if hasattr(block, "norm_cross_attn"):
-                for p in block.norm_cross_attn.parameters():
-                    p.requires_grad = False
+
 
         self.optimizer = AdamW([p for p in self.model.parameters() if p.requires_grad],lr=self.lr,weight_decay=self.weight_decay)
 
@@ -151,7 +167,8 @@ class Trainer:
         
         self.scheduler =  torch.optim.lr_scheduler.LambdaLR(self.optimizer, lr_lambda)
         self.scaler = GradScaler(device=self.device, enabled=self.amp)
-        self.criterion = L1Loss()
+        self.criterion = DiceCELoss(to_onehot_y=True, softmax=True)
+        self.dice_metric=DiceMetric(include_background=False,reduction="mean")
 
         self.start_epoch = 0
         self.best_val = float('inf')
@@ -177,13 +194,14 @@ class Trainer:
             t0 = _now(self.device)
 
         images = [b["image"].to(self.device, non_blocking=True) for b in batch]
+        labels = [b["labels"].to(self.device, non_blocking=True) for b in batch]
         #labels = [b["label"].to(self.device, non_blocking=True) for b in batch]
         spacings = [torch.as_tensor(b["image"].meta["spacing_dhw"],dtype=torch.float32,device=self.device) for b in batch]
         if TIME_CHECK:
             t_batch_load = _now(self.device) - t0
             t0 = _now(self.device)
         #x, mask = self.gpu_tf_train(images, spacings)
-        x = self.gpu_tf_train(images, spacings)
+        x,y = self.gpu_tf_train(images, spacings, labels)
         if TIME_CHECK:
             t_gpu_tf_train = _now(self.device) - t0
 
@@ -197,14 +215,21 @@ class Trainer:
             if TIME_CHECK:
                 t_forward = _now(self.device) - t0
                 t0 = _now(self.device)
-            loss = self.criterion(pred, x)
+
+            loss = self.criterion(pred, y.long())
 
             if TIME_CHECK:
                 t_loss = _now(self.device) - t0
 
             if self.is_main and self.wandb and self.global_step % (10 * self.log_image_interval) == 0:
-                fig = plot_6_middle_slices(image=x[0, 0].cpu(),gt=x[0, 0].cpu(),pred=pred[0, 0].cpu())
-                wandb.log({"Train/Images": wandb.Image(fig)}, step=self.global_step)
+                idx=torch.randint(0,x.shape[0],(1,)).item()
+
+                img=x[idx,0].cpu()                      
+                gt=y[idx,0].cpu()                       
+                pred_mask=pred.argmax(dim=1)[idx].cpu() 
+
+                fig=plot_6_middle_slices(image=img,gt=gt,pred=pred_mask)
+                wandb.log({"Train/Images": wandb.Image(fig)},step=self.global_step)
                 plt.close(fig)
 
         self.optimizer.zero_grad(set_to_none=True)
@@ -284,6 +309,7 @@ class Trainer:
                     t0 = _now(self.device)
 
                 images = [b["image"].to(self.device, non_blocking=True) for b in batch]
+                labels = [b["labels"].to(self.device, non_blocking=True) for b in batch]
                 #labels = [b["label"].to(self.device, non_blocking=True) for b in batch]
                 spacings = [torch.as_tensor(b["image"].meta["spacing_dhw"],dtype=torch.float32,device=self.device) for b in batch]
 
@@ -292,7 +318,7 @@ class Trainer:
                     t0 = _now(self.device)
 
                 #x, mask = self.gpu_tf_eval(images, spacings)
-                x = self.gpu_tf_eval(images, spacings)
+                x, y = self.gpu_tf_eval(images, spacings, labels)
 
                 if TIME_CHECK:
                     t_gpu_tf_eval = _now(self.device) - t0
@@ -300,13 +326,16 @@ class Trainer:
 
                 with autocast(device_type=self.device.type, enabled=self.amp):
                     pred = self.model(x)
-
+                    gt=y.long()   
                     if TIME_CHECK:
                         t_forward = _now(self.device) - t0
                         t0 = _now(self.device)
 
-                    target = x
-                    loss = self.criterion(pred, target)
+                    loss = self.criterion(pred, gt)
+                    pred_mask=pred.argmax(dim=1,keepdim=True)  # (B,1,D,H,W)
+                                                 
+
+                    self.dice_metric(pred_mask,gt)
 
                     if TIME_CHECK:
                         t_loss = _now(self.device) - t0
@@ -322,17 +351,25 @@ class Trainer:
                     sums["iter_total"] += iter_total
             print()        
         n = max(count, 1)
-        
+        val_dice=self.dice_metric.aggregate().item()
+        self.dice_metric.reset()
+
 
         if TIME_CHECK and self.is_main:
             print(f"\nVALIDATION TIMINGS EPOCH {epoch}") 
             for k, v in sums.items():
                 print(f"{k:12s}: {v / n:.4f} s / sample")
+        
         if self.is_main and self.wandb and epoch % 10 == 0:
-                idx = torch.randint(0, x.shape[0], (1,)).item()
+                idx=torch.randint(0,x.shape[0],(1,)).item()
 
-                fig = plot_6_middle_slices(image=x[idx, 0].cpu(),gt=x[idx, 0].cpu(),pred=pred[idx, 0].cpu())
-                wandb.log({"Val/Images": wandb.Image(fig)}, step=self.global_step)
+                img=x[idx,0].cpu()                      
+                gt=y[idx,0].cpu()                       
+                pred_mask=pred.argmax(dim=1)[idx].cpu() 
+
+                fig=plot_6_middle_slices(image=img,gt=gt,pred=pred_mask)
+                wandb.log({"Val/Images": wandb.Image(fig)},step=self.global_step)
+                wandb.log({"Val/Dice": val_dice},step=self.global_step)
                 plt.close(fig)
         avg = total / n
         return avg
@@ -346,6 +383,7 @@ class Trainer:
         if self.wandb and self.is_main:
             run=wandb.init(project="SpineMAE", config={
                 "model_name": self.model_name,
+            
                 "img_size": self.img_size,
                 "batch_size": self.batch_size,
                 "lr": self.lr,

@@ -7,7 +7,7 @@ from typing import List, Dict, Tuple
 
 
 
-def create_data_manifest(data_path, splits: Tuple[float, float, float], shuffle_seed: int, output_file: str,rank=0):
+def create_data_manifest(data_path, splits: Tuple[float, float, float], shuffle_seed: int, output_file: str,rank=0,label=False):
     """
     Scans the specified folders (which are the independent datasets), 
     gathers image file paths, performs splitting, and saves the results to a JSON file (unsupervised format).
@@ -46,22 +46,28 @@ def create_data_manifest(data_path, splits: Tuple[float, float, float], shuffle_
         
         valid_images = [f for f in found_images if "preproc" not in f.lower()]
         for f in valid_images:
-            mask,count = get_mask(folder,f)
-            if count:
-                mask_count+=1
-            dict = {'image': f}
-            #dict['label'] = mask
+            
+            if label:
+                mask,count = get_mask(folder,f)
+                if count:
+                    dict = {'image': f}
+                    mask_count+=1
+                    dict['labels'] = mask
+            else:
+                dict = {'image': f}
+                         
             # Store full image path only
             all_data_entries.append(dict)
         if rank==0:
             print(f"  - Found {len(valid_images)} images in dataset folder {os.path.basename(folder)}.")
+            if label:
+                print(f"    - {mask_count} images have corresponding masks.")
     total = len(all_data_entries)
     if total == 0:
-        # Added clarity to the error message
+
         print("-" * 60)
         raise RuntimeError(f"No valid image files found using BIDS-like pattern in the discovered folders.")
 
-    # 2. Perform the Split
     indices = list(range(total))
     
     # Replicate shuffle seed logic

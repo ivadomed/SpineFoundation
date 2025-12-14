@@ -14,8 +14,6 @@ Command to run :
 
 ```bash 
 python -m mae_training.build \
-        --model-params ./model/SpineMAE.json \
-        --data-params ./data_management/data_param.json \
-        --training-params ./training/trainer_param.json \
+        --config ./mae_training/config.json \
         --ddp (optional)
 ```

@@ -9,6 +9,7 @@ import importlib
 AVAILABLE_MODELS = {
     "spine_encoder": ("model.SpineEncoder", "SpineEncoder"),
     "spine_mae": ("model.SpineMAE", "SpineMAE"),
+    "spine_vit_seg": ("model.seg", "SpineViTSeg"),
 }
 
 

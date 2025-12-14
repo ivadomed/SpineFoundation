@@ -25,7 +25,7 @@ def makemonaidataset(data_list, augment=False):
     return MonaiDataset(data=data_list, transform=transforms)
 
 
-def build_dataloaders(splits=(0.8, 0.1, 0.1),shuffle_seed=None,data_path=False,json_path=False,json_save=False,rank=0):
+def build_dataloaders(splits=(0.8, 0.1, 0.1),shuffle_seed=None,data_path=False,json_path=False,json_save=False,rank=0,label=False):
     
     try: 
         json_path = os.path.abspath(Path(json_path))
@@ -38,8 +38,12 @@ def build_dataloaders(splits=(0.8, 0.1, 0.1),shuffle_seed=None,data_path=False,j
             raise FileNotFoundError(f"JSON manifest not found and no data_path provided to create one.")
         if rank==0:
             print("Splits manifest doesn't exist, creating one.")
-        data_manifest = create_data_manifest(data_path, splits, shuffle_seed, json_path, rank=rank)
-        if json_save:
+        data_manifest = create_data_manifest(data_path, splits, shuffle_seed, json_path, rank=rank, label=label)
+        try:
+            with open(os.path.abspath(json_path), 'w') as f:
+                    json.dump(data_manifest, f, indent=4)
+        except:
+            json_path= "./data_management/data_splits.json"
             with open(os.path.abspath(json_path), 'w') as f:
                     json.dump(data_manifest, f, indent=4)
 
@@ -55,7 +59,6 @@ def build_dataloaders(splits=(0.8, 0.1, 0.1),shuffle_seed=None,data_path=False,j
     print("\n")
 
     train_ds = makemonaidataset(train_data, augment=False)
-
     val_ds = makemonaidataset(val_data, augment=False)
     test_ds = makemonaidataset(test_data, augment=False)
 
