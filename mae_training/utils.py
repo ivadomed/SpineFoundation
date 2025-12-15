@@ -53,8 +53,8 @@ def load_json_param(param):
 
     return json.loads(param)
 
-def plot_6_middle_slices(image: torch.Tensor, gt: torch.Tensor, pred: torch.Tensor):
-    def mask_patches_2d(slice_2d, patch_size=16, mask_ratio=0.75):
+def plot_6_middle_slices(image: torch.Tensor, gt: torch.Tensor, pred: torch.Tensor,mask_ratio=0.0):
+    def mask_patches_2d(slice_2d, patch_size=16, mask_ratio=mask_ratio):
         """
         Découpe slice_2d en patches patch_size x patch_size et met à zéro
         mask_ratio * 100 % des patches (tirage aléatoire).
@@ -117,7 +117,8 @@ def plot_6_middle_slices(image: torch.Tensor, gt: torch.Tensor, pred: torch.Tens
         slice_pred = pred_np[current_slice_idx, :, :].T
 
         # --- patching + masking 75% des patches 16x16 sur l'input uniquement ---
-        slice_image_masked = mask_patches_2d(slice_image, patch_size=16, mask_ratio=0.75)
+        slice_image_masked = mask_patches_2d(slice_image, patch_size=16, mask_ratio=mask_ratio)
+
 
         # Row 0: Image masquée
         ax_img = axs[0, col_idx]

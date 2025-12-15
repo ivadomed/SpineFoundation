@@ -18,7 +18,7 @@ from torch.utils.data import DataLoader
 from torch.utils.data.distributed import DistributedSampler
 import torch.distributed as dist
 
-from monai.losses import DiceCELoss
+from monai.losses import DiceLoss
 from monai.metrics import DiceMetric
 
 
@@ -122,7 +122,9 @@ class Trainer:
 
         for p in self.model.encoder.parameters():
             p.requires_grad=False
+
         self.model.encoder.eval()
+
         if self.rank==0:
             n_train=sum(p.numel() for p in self.model.parameters() if p.requires_grad)
             n_all=sum(p.numel() for p in self.model.parameters())
@@ -167,8 +169,12 @@ class Trainer:
         
         self.scheduler =  torch.optim.lr_scheduler.LambdaLR(self.optimizer, lr_lambda)
         self.scaler = GradScaler(device=self.device, enabled=self.amp)
-        self.criterion = DiceCELoss(to_onehot_y=True, softmax=True)
-        self.dice_metric=DiceMetric(include_background=False,reduction="mean")
+
+        pos_weight = torch.tensor([30.0], device=self.device)
+        self.bce = nn.BCEWithLogitsLoss(pos_weight=pos_weight)
+        self.dice = DiceLoss(sigmoid=True)
+        self.criterion = ""
+
 
         self.start_epoch = 0
         self.best_val = float('inf')
@@ -188,52 +194,62 @@ class Trainer:
     def train_step(self, batch, iteration: int, epoch: int):
         self.global_step += 1
         self.model.train()
+  
+        self.model.encoder.eval()
+
 
         if TIME_CHECK:
-            t0_total = _now(self.device)         
-            t0 = _now(self.device)
+            t0_total = _now(self.device); t0 = _now(self.device)
 
-        images = [b["image"].to(self.device, non_blocking=True) for b in batch]
-        labels = [b["labels"].to(self.device, non_blocking=True) for b in batch]
-        #labels = [b["label"].to(self.device, non_blocking=True) for b in batch]
-        spacings = [torch.as_tensor(b["image"].meta["spacing_dhw"],dtype=torch.float32,device=self.device) for b in batch]
+        images  = [b["image"].to(self.device, non_blocking=True) for b in batch]
+        labels  = [b["labels"].to(self.device, non_blocking=True) for b in batch]
+        spacings = [torch.as_tensor(b["image"].meta["spacing_dhw"], dtype=torch.float32, device=self.device) for b in batch]
+
         if TIME_CHECK:
-            t_batch_load = _now(self.device) - t0
-            t0 = _now(self.device)
-        #x, mask = self.gpu_tf_train(images, spacings)
-        x,y = self.gpu_tf_train(images, spacings, labels)
+            t_batch_load = _now(self.device) - t0; t0 = _now(self.device)
+
+        x, y = self.gpu_tf_train(images, spacings, labels)
+
         if TIME_CHECK:
             t_gpu_tf_train = _now(self.device) - t0
 
         with autocast(device_type=self.device.type, enabled=self.amp):
-
             if TIME_CHECK:
                 t0 = _now(self.device)
 
-            pred = self.model(x)
+            pred = self.model(x)           # logits (B,1,D,H,W)
+            gt = y.float()
+            if gt.ndim == 4:
+                gt = gt.unsqueeze(1)       # (B,1,D,H,W)
+
+            probs = torch.sigmoid(pred)
+            pred_mask = (probs > 0.5)
+
+            pos = gt > 0.5
+            neg = ~pos
+
+            # compteurs batch (en int64 sur GPU puis .item())
+            TP = (pred_mask & pos).sum().item()
+            FP = (pred_mask & neg).sum().item()
+            FN = ((~pred_mask) & pos).sum().item()
+            TN = ((~pred_mask) & neg).sum().item()
+
+            loss = self.bce(pred, gt) + self.dice(pred, gt)
 
             if TIME_CHECK:
-                t_forward = _now(self.device) - t0
-                t0 = _now(self.device)
-
-            loss = self.criterion(pred, y.long())
-
-            if TIME_CHECK:
+                t_forward = _now(self.device) - t0; t0 = _now(self.device)
                 t_loss = _now(self.device) - t0
 
-            if self.is_main and self.wandb and self.global_step % (10 * self.log_image_interval) == 0:
-                idx=torch.randint(0,x.shape[0],(1,)).item()
-
-                img=x[idx,0].cpu()                      
-                gt=y[idx,0].cpu()                       
-                pred_mask=pred.argmax(dim=1)[idx].cpu() 
-
-                fig=plot_6_middle_slices(image=img,gt=gt,pred=pred_mask)
-                wandb.log({"Train/Images": wandb.Image(fig)},step=self.global_step)
+            if self.is_main and self.wandb and (self.global_step % self.log_image_interval == 0):
+                idx = torch.randint(0, x.shape[0], (1,)).item()
+                img = x[idx, 0].detach().cpu()
+                gt_vis = gt[idx, 0].detach().cpu()
+                pred_vis = probs[idx, 0].detach().cpu()   # [0,1]
+                fig = plot_6_middle_slices(image=img, gt=gt_vis, pred=pred_vis, mask_ratio=0.0)
+                wandb.log({"Train/Images": wandb.Image(fig), "Train/Loss_step": loss.item()}, step=self.global_step)
                 plt.close(fig)
 
         self.optimizer.zero_grad(set_to_none=True)
-
 
         if TIME_CHECK:
             t0 = _now(self.device)
@@ -241,25 +257,27 @@ class Trainer:
         self.scaler.scale(loss).backward()
 
         if TIME_CHECK:
-            t_backward = _now(self.device) - t0
-            t0 = _now(self.device)
+            t_backward = _now(self.device) - t0; t0 = _now(self.device)
 
         self.scaler.step(self.optimizer)
         self.scaler.update()
+        del pred, probs, pred_mask, gt, x, y, images, labels, spacings
 
         if TIME_CHECK:
             t_step = _now(self.device) - t0
             t_total = _now(self.device) - t0_total
-            timings = {"batch_load": t_batch_load,"gpu_tf_train": t_gpu_tf_train,"forward": t_forward,"loss": t_loss,"backward": t_backward,"step": t_step,"total": t_total}
+            timings = {"batch_load": t_batch_load, "gpu_tf_train": t_gpu_tf_train, "forward": t_forward, "loss": t_loss, "backward": t_backward, "step": t_step, "total": t_total}
+        else:
+            timings = {}
 
-        else : timings = {}
+        stats = {"TP": TP, "FP": FP, "FN": FN, "TN": TN}
+        return loss.item(), timings, stats
 
-        return loss.item(), timings
 
 
     def train_one_epoch(self, epoch: int):
         running_loss = 0.0
-
+        TP = FP = FN = TN = 0
         if self.ddp:
             self.train_sampler.set_epoch(epoch)
 
@@ -270,19 +288,27 @@ class Trainer:
         pbar = tqdm(self.train_loader,desc=f"Train Epoch {epoch}",disable=self.tqdm_disable or (self.ddp and self.rank !=0))
 
         for i, batch in enumerate(pbar, start=1):
-            loss, timings = self.train_step(batch, i, epoch)
+            loss, timings, stats = self.train_step(batch, i, epoch)
             self.scheduler.step()
             running_loss += loss
             if TIME_CHECK:
                 for k in sums:
                     sums[k] += timings[k]
-
+            TP += stats["TP"]; FP += stats["FP"]; FN += stats["FN"]; TN += stats["TN"]
         n = len(self.train_loader)
         epoch_loss = running_loss / n
-
+        eps = 1e-8
+        precision = TP / (TP + FP + eps)
+        recall    = TP / (TP + FN + eps)
+        dice      = 2*TP / (2*TP + FP + FN + eps)
+        iou       = TP / (TP + FP + FN + eps)
+        gt_pos_ratio   = (TP + FN) / (TP + FP + FN + TN + eps)
+        pred_pos_ratio = (TP + FP) / (TP + FP + FN + TN + eps)
         print()
         
         if TIME_CHECK and self.is_main:
+            print(f"\nTRAIN EPOCH {epoch} | loss={epoch_loss:.4f} | prec={precision:.4f} rec={recall:.4f} dice={dice:.4f} iou={iou:.4f}")
+            print(f"TP={TP} FP={FP} FN={FN} TN={TN} | gt_pos_ratio={gt_pos_ratio:.6f} pred_pos_ratio={pred_pos_ratio:.6f}")
             print(f"\nTRAINING TIMINGS EPOCH {epoch}")
             for k, v in sums.items():
                 print(f"{k:12s}: {v / n:.4f} s / batch avg")
@@ -326,16 +352,15 @@ class Trainer:
 
                 with autocast(device_type=self.device.type, enabled=self.amp):
                     pred = self.model(x)
-                    gt=y.long()   
+ 
                     if TIME_CHECK:
                         t_forward = _now(self.device) - t0
                         t0 = _now(self.device)
 
-                    loss = self.criterion(pred, gt)
-                    pred_mask=pred.argmax(dim=1,keepdim=True)  # (B,1,D,H,W)
-                                                 
-
-                    self.dice_metric(pred_mask,gt)
+                    gt = y.float()                       # doit être 0/1
+                    if gt.ndim == 4: gt = gt.unsqueeze(1)  # (B,1,D,H,W) si besoin
+                                                           
+                    loss = self.bce(pred, gt) + self.dice(pred, gt)
 
                     if TIME_CHECK:
                         t_loss = _now(self.device) - t0
@@ -351,8 +376,6 @@ class Trainer:
                     sums["iter_total"] += iter_total
             print()        
         n = max(count, 1)
-        val_dice=self.dice_metric.aggregate().item()
-        self.dice_metric.reset()
 
 
         if TIME_CHECK and self.is_main:
@@ -360,16 +383,16 @@ class Trainer:
             for k, v in sums.items():
                 print(f"{k:12s}: {v / n:.4f} s / sample")
         
-        if self.is_main and self.wandb and epoch % 10 == 0:
+        if self.is_main and self.wandb:
                 idx=torch.randint(0,x.shape[0],(1,)).item()
 
-                img=x[idx,0].cpu()                      
-                gt=y[idx,0].cpu()                       
-                pred_mask=pred.argmax(dim=1)[idx].cpu() 
+                img=x[idx,0].detach().cpu()                      
+                gt=gt[idx,0].detach().cpu()                       
+                pred_mask = (torch.sigmoid(pred) > 0.5).long()
+                pred_mask = pred_mask[idx,0].detach().cpu()
 
-                fig=plot_6_middle_slices(image=img,gt=gt,pred=pred_mask)
+                fig=plot_6_middle_slices(image=img,gt=gt,pred=pred_mask,mask_ratio=0)
                 wandb.log({"Val/Images": wandb.Image(fig)},step=self.global_step)
-                wandb.log({"Val/Dice": val_dice},step=self.global_step)
                 plt.close(fig)
         avg = total / n
         return avg
