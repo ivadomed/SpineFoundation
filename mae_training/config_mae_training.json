@@ -1,0 +1,42 @@
+{"Training": {
+  "wandb": true,
+  "project_name": "SpineMAE",
+  "work_dir": "./mae_training/ckpt",
+  "num_workers":6,
+  "epochs":800,
+  "lr":3e-4,
+  "weight_decay":1e-2,
+  "amp":true,
+  "no_cuda":false,
+  "resume":"",
+  "log_image_interval": 500,
+  "tqdm_disable": false
+},
+"Data":
+{   
+    "data_path":"/home/ge.polymtl.ca/p123239/data_sub",
+    "batch_size":24,
+    "train_ratio": 0.95,
+    "val_ratio": 0.05,
+    "test_ratio": 0,
+    "seed": 28, 
+    "json_manifest": false
+},
+"Model":{
+  "model_name": "spine_mae",
+  "in_channels": 1,
+  "img_size": [96, 84, 324],
+  "patch_size": [12, 12, 12],
+  "img_resolution": [1, 1, 1],
+  "enc_embed_dim": 768,
+  "enc_num_heads": 12,
+  "enc_layers": 12,
+  "enc_mlp_dim": 3072,
+  "dropout": 0,
+  "mask_ratio": 0.75,
+  "dec_embed_dim": 128,
+  "dec_layers": 4,
+  "dec_num_heads": 4,
+  "dec_mlp_dim": 512
+}
+}

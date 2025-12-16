@@ -1,0 +1,83 @@
+{
+    "manifestVersion": "1.0",
+    "project": {
+        "name": "SpineFoundation",
+        "description": "Registry of datasets and how to fetch them",
+        "owner": "Neuropoly"
+    },
+    "datasets": [
+        {
+            "id": "dataset-1",
+            "name": "data-multi-subject",
+            "description": "Short description of the dataset",
+            "version": "v1.0",
+            "source": {
+                "url": "https://github.com/spine-generic/data-multi-subject"
+                }
+        },
+        {
+            "id": "dataset-2",
+            "name": "whole-spine",
+            "description": "Short description of the dataset",
+            "version": "v1.0",
+            "source": {
+                "url": "git@data.neuro.polymtl.ca:datasets/whole-spine.git"
+            }
+        }, 
+        {
+            "id": "dataset-3",
+            "name": "lumbar-rsna-challenge-2024",
+            "description": "Short description of the dataset",
+            "version": "v1.0",
+            "source": {
+                "url": "git@data.neuro.polymtl.ca:datasets/lumbar-rsna-challenge-2024.git"
+            }
+        },
+        {
+            "id": "dataset-4",
+            "name": "dcm-zurich",
+            "description": "Short description of the dataset",
+            "version": "v1.0",
+            "source": {
+                "url": "git@data.neuro.polymtl.ca:datasets/dcm-zurich.git"
+            }
+        },
+        {
+            "id": "dataset-5",
+            "name": "spider",
+            "description": "Short description of the dataset",
+            "version": "v1.0",
+            "source": {
+                "url": "git@data.neuro.polymtl.ca:datasets/spider-challenge-2023.git"
+            }
+        },
+        {
+            "id": "dataset-6",
+            "name": "lumbar-nusantara",
+            "description": "Short description of the dataset",
+            "version": "v1.0",
+            "source": {
+                "url": "git@data.neuro.polymtl.ca:datasets/lumbar-nusantara.git"
+            }
+        },
+        {
+            "id": "dataset-7",
+            "name": "ms-multi-spine-challenge-2024",
+            "description": "Short description of the dataset",
+            "version": "v1.0",
+            "source": {
+                "url": "git@data.neuro.polymtl.ca:datasets/ms-multi-spine-challenge-2024.git"
+            }
+        },
+        {
+            "id": "dataset-8",
+            "name": "sci-zurich",
+            "description": "Short description of the dataset",
+            "version": "v1.0",
+            "source": {
+                "url": "git@data.neuro.polymtl.ca:datasets/sci-zurich.git"
+            }
+        }
+        
+    ]
+}

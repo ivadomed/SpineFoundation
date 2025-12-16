@@ -1,3 +1,28 @@
+# environement specific files 
+*env*
+temp_training.sh
+temp*.sh
+log_ddp.txt
+#Model specific files
+*.pt 
+*.pth
+*.h5
+*.ckpt
+ckpt*
+
+#Wandb specific files
+wandb/*
+wandb-*
+!/wandb/settings
+
+# MRI specific 
+*.nii
+*.nii.gz
+*.png
+
+#fichier temporaire
+temp*
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]
