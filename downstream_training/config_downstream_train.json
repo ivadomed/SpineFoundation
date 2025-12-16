@@ -1,5 +1,5 @@
 {"Training": {
-  "wandb": true,
+  "wandb": false,
   "project_name": "spine_vit_seg",
   "work_dir": "./downstream_training/ckpt",
   "num_workers":10,
@@ -15,7 +15,7 @@
 "Data":
 {   
     "data_path":"/home/ge.polymtl.ca/p123239/data_downstream",
-    "batch_size":3,
+    "batch_size":4,
     "train_ratio": 0.8,
     "val_ratio": 0.2,
     "test_ratio": 0,
@@ -25,7 +25,7 @@
 "Model":{
   "model_name": "spine_vit_seg",
   "in_channels": 1,
-  "img_size": [72, 276, 324],
+  "img_size":  [72, 276, 324],
   "patch_size": [12, 12, 12],
   "img_resolution": [1, 1, 1],
   "enc_embed_dim": 768,
@@ -33,6 +33,11 @@
   "enc_layers": 12,
   "enc_mlp_dim": 3072,
   "dropout": 0,
-  "mask_ratio": 0.0
+  "mask_ratio": 0.0,
+  "dec_embed_dim": 256,
+  "dec_layers": 8,
+  "dec_num_heads": 16,
+  "dec_mlp_dim": 1024
 }
+
 }

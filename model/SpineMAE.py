@@ -24,6 +24,7 @@ class SpineMAE(nn.Module):
             self.decoder = SpineDecoder(img_size=img_size, patch_size=patch_size, enc_embed_dim=enc_embed_dim,dec_mlp_dim=dec_mlp_dim,
                         dec_embed_dim=dec_embed_dim, dec_layers=dec_layers, dec_num_heads=dec_num_heads, in_channels=in_channels)
 
+
         def forward(self, x):
             z, ids_restore = self.encoder.forward(x)
             return self.decoder.forward(z, ids_restore)

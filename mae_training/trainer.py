@@ -23,7 +23,7 @@ os.environ["WANDB_SILENT"] = "true"
 from model.build import build_model
 from data_management.build import build_datasets
 
-from .augment import GPUResampleAug3D
+from .augment2 import GPUResampleAug3D
 from .lr_scheduler import make_lr_lambda
 from .utils import collate_fn, patchify, save_checkpoint, load_checkpoint, load_json_param, list_child_folders, plot_6_middle_slices, plot_6_uniform_slices
 from .loss import L1_SSIM_Loss
@@ -50,9 +50,8 @@ class Trainer:
         self.data_params = data_params
        
         self.model_name=model_params["model_name"]
-        self.img_size=tuple(model_params["img_size"])
         self.img_resolution=tuple(model_params["img_resolution"])
-
+        self.patch_size=tuple(model_params["patch_size"])
 
         self.batch_size = data_params["batch_size"]      
         self.train_ratio = data_params["train_ratio"]
@@ -99,8 +98,8 @@ class Trainer:
 
 
 
-        self.gpu_tf_train=GPUResampleAug3D(img_size=self.img_size,target_res=self.img_resolution).to(self.device)
-        self.gpu_tf_eval=GPUResampleAug3D(img_size=self.img_size,target_res=self.img_resolution).to(self.device)
+        self.gpu_tf_train=GPUResampleAug3D(patch_size=self.patch_size,target_res=self.img_resolution).to(self.device)
+        self.gpu_tf_eval=GPUResampleAug3D(patch_size=self.patch_size,target_res=self.img_resolution).to(self.device)
 
         train_ds, val_ds, test_ds = build_datasets(
                                                     data_path=self.data_path,

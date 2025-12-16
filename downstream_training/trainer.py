@@ -32,8 +32,8 @@ from mae_training.lr_scheduler import make_lr_lambda
 from mae_training.utils import collate_fn, patchify, save_checkpoint, load_checkpoint, load_json_param, list_child_folders, plot_6_middle_slices, plot_6_uniform_slices
 from mae_training.loss import L1_SSIM_Loss
 
-TIME_CHECK=True    
-TIME_EPOCH_CHECK=True
+TIME_CHECK=False    
+TIME_EPOCH_CHECK=False
 
 def _now(device):
     if TIME_CHECK and device.type == "cuda":
@@ -170,10 +170,10 @@ class Trainer:
         self.scheduler =  torch.optim.lr_scheduler.LambdaLR(self.optimizer, lr_lambda)
         self.scaler = GradScaler(device=self.device, enabled=self.amp)
 
-        pos_weight = torch.tensor([30.0], device=self.device)
+        pos_weight = torch.tensor([300.0], device=self.device)
         self.bce = nn.BCEWithLogitsLoss(pos_weight=pos_weight)
         self.dice = DiceLoss(sigmoid=True)
-        self.criterion = ""
+        self.criterion = "" 
 
 
         self.start_epoch = 0
@@ -234,7 +234,7 @@ class Trainer:
             FN = ((~pred_mask) & pos).sum().item()
             TN = ((~pred_mask) & neg).sum().item()
 
-            loss = self.bce(pred, gt) + self.dice(pred, gt)
+            loss = self.bce(pred, gt)
 
             if TIME_CHECK:
                 t_forward = _now(self.device) - t0; t0 = _now(self.device)
@@ -305,10 +305,10 @@ class Trainer:
         gt_pos_ratio   = (TP + FN) / (TP + FP + FN + TN + eps)
         pred_pos_ratio = (TP + FP) / (TP + FP + FN + TN + eps)
         print()
-        
+        print(f"\nTRAIN EPOCH {epoch} | loss={epoch_loss:.4f} | prec={precision:.4f} rec={recall:.4f} dice={dice:.4f} iou={iou:.4f}")
+        print(f"TP={TP} FP={FP} FN={FN} TN={TN} | gt_pos_ratio={gt_pos_ratio:.6f} pred_pos_ratio={pred_pos_ratio:.6f}")
         if TIME_CHECK and self.is_main:
-            print(f"\nTRAIN EPOCH {epoch} | loss={epoch_loss:.4f} | prec={precision:.4f} rec={recall:.4f} dice={dice:.4f} iou={iou:.4f}")
-            print(f"TP={TP} FP={FP} FN={FN} TN={TN} | gt_pos_ratio={gt_pos_ratio:.6f} pred_pos_ratio={pred_pos_ratio:.6f}")
+            
             print(f"\nTRAINING TIMINGS EPOCH {epoch}")
             for k, v in sums.items():
                 print(f"{k:12s}: {v / n:.4f} s / batch avg")
@@ -357,10 +357,11 @@ class Trainer:
                         t_forward = _now(self.device) - t0
                         t0 = _now(self.device)
 
-                    gt = y.float()                       # doit être 0/1
-                    if gt.ndim == 4: gt = gt.unsqueeze(1)  # (B,1,D,H,W) si besoin
+                    gt = y.float()                       
+                    if gt.ndim == 4: 
+                        gt = gt.unsqueeze(1)
                                                            
-                    loss = self.bce(pred, gt) + self.dice(pred, gt)
+                    loss = self.bce(pred, gt)
 
                     if TIME_CHECK:
                         t_loss = _now(self.device) - t0

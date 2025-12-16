@@ -3,7 +3,7 @@ import glob
 import json
 import numpy as np
 from typing import List, Dict, Tuple
-
+from pathlib import Path
 
 
 
@@ -44,7 +44,10 @@ def create_data_manifest(data_path, splits: Tuple[float, float, float], shuffle_
         pattern = os.path.join(folder, "sub-*", "**", "anat", "*.nii.gz")
         found_images = sorted(glob.glob(pattern, recursive=True))
         
-        valid_images = [f for f in found_images if "preproc" not in f.lower()]
+        valid_images = [f for f in found_images if "preproc" not in f.lower() and ("lowres" not in f.lower() or Path(f.replace("lowres", "highres")).exists())]
+
+        if "lumbar-rsna-challenge-2024" in folder.lower():
+            valid_images = [f for f in valid_images if "ax" in f.lower()]
         for f in valid_images:
             
             if label:
@@ -53,11 +56,12 @@ def create_data_manifest(data_path, splits: Tuple[float, float, float], shuffle_
                     dict = {'image': f}
                     mask_count+=1
                     dict['labels'] = mask
+                    all_data_entries.append(dict)
             else:
                 dict = {'image': f}
-                         
+                all_data_entries.append(dict)
             # Store full image path only
-            all_data_entries.append(dict)
+            
         if rank==0:
             print(f"  - Found {len(valid_images)} images in dataset folder {os.path.basename(folder)}.")
             if label:
@@ -103,14 +107,16 @@ def create_data_manifest(data_path, splits: Tuple[float, float, float], shuffle_
 def get_mask(folder, img_file):
 
     base = os.path.basename(img_file)
-    base_noext = base
+
+    sub=base.split("_")[0]
+    base_noext = ".".join(base.split(".")[:-2])
     for ext in ('.nii.gz', '.nii'):
         if base_noext.endswith(ext):
             base_noext = "_".join(base_noext[:-len(ext)].split("_")[:-1])
             break
 
 
-    labels_dir = os.path.join(folder, 'derivatives', 'labels',base_noext)
+    labels_dir = os.path.join(folder, 'derivatives', 'labels',sub)
     pattern = os.path.join(labels_dir, '**', f"{base_noext}*SC_seg*.nii*")
     matches = glob.glob(pattern, recursive=True)
     if matches:

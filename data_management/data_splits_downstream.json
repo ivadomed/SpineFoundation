@@ -1,464 +1,607 @@
 {
     "TRAINING": [
         {
-            "image": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/sub-unfErssm028/anat/sub-unfErssm028_T1w.nii.gz",
-            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/derivatives/labels/sub-unfErssm028/anat/sub-unfErssm028_T2w_label-SC_seg.nii.gz"
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/sub-027/ses-M0/anat/sub-027_ses-M0_acq-axial_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/derivatives/labels/sub-027/ses-M0/anat/sub-027_ses-M0_acq-axial_T2w_label-SC_seg.nii.gz"
         },
         {
-            "image": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/sub-unfErssm031/anat/sub-unfErssm031_T2w.nii.gz",
-            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/derivatives/labels/sub-unfErssm031/anat/sub-unfErssm031_T1w_label-SC_seg.nii.gz"
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/sub-154/ses-M0/anat/sub-154_ses-M0_acq-axial_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/derivatives/labels/sub-154/ses-M0/anat/sub-154_ses-M0_acq-axial_T2w_label-SC_seg.nii.gz"
         },
         {
-            "image": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/sub-amuAL/anat/sub-amuAL_T1w.nii.gz",
-            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/derivatives/labels/sub-amuAL/anat/sub-amuAL_T1w_label-SC_seg.nii.gz"
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/sub-098/ses-M0/anat/sub-098_ses-M0_acq-axial_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/derivatives/labels/sub-098/ses-M0/anat/sub-098_ses-M0_acq-axial_T2w_label-SC_seg.nii.gz"
         },
         {
-            "image": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/sub-unfPain006/anat/sub-unfPain006_T2w.nii.gz",
-            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/derivatives/labels/sub-unfPain006/anat/sub-unfPain006_T2w_label-SC_seg.nii.gz"
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/sub-016/ses-M0/anat/sub-016_ses-M0_acq-axial_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/derivatives/labels/sub-016/ses-M0/anat/sub-016_ses-M0_acq-axial_T2w_label-SC_seg.nii.gz"
         },
         {
-            "image": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/sub-unfErssm014/anat/sub-unfErssm014_T1w.nii.gz",
-            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/derivatives/labels/sub-unfErssm014/anat/sub-unfErssm014_T1w_label-SC_seg.nii.gz"
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/sub-132/ses-M0/anat/sub-132_ses-M0_acq-axial_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/derivatives/labels/sub-132/ses-M0/anat/sub-132_ses-M0_acq-axial_T2w_label-SC_seg.nii.gz"
         },
         {
-            "image": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/sub-amuGB/anat/sub-amuGB_T2w.nii.gz",
-            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/derivatives/labels/sub-amuGB/anat/sub-amuGB_T1w_label-SC_seg.nii.gz"
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/sub-110/ses-M0/anat/sub-110_ses-M0_acq-axial_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/derivatives/labels/sub-110/ses-M0/anat/sub-110_ses-M0_acq-axial_T2w_label-SC_seg.nii.gz"
         },
         {
-            "image": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/sub-unfErssm021/anat/sub-unfErssm021_T2w.nii.gz",
-            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/derivatives/labels/sub-unfErssm021/anat/sub-unfErssm021_T2w_label-SC_seg.nii.gz"
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/sub-147/ses-M0/anat/sub-147_ses-M0_acq-axial_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/derivatives/labels/sub-147/ses-M0/anat/sub-147_ses-M0_acq-axial_T2w_label-SC_seg.nii.gz"
         },
         {
-            "image": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/sub-amuVG/anat/sub-amuVG_T2w.nii.gz",
-            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/derivatives/labels/sub-amuVG/anat/sub-amuVG_T1w_label-SC_seg.nii.gz"
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/sub-076/ses-M0/anat/sub-076_ses-M0_acq-axial_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/derivatives/labels/sub-076/ses-M0/anat/sub-076_ses-M0_acq-axial_T2w_label-SC_seg.nii.gz"
         },
         {
-            "image": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/sub-unfErssm024/anat/sub-unfErssm024_T2w.nii.gz",
-            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/derivatives/labels/sub-unfErssm024/anat/sub-unfErssm024_T1w_label-SC_seg.nii.gz"
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/sub-069/ses-M0/anat/sub-069_ses-M0_acq-axial_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/derivatives/labels/sub-069/ses-M0/anat/sub-069_ses-M0_acq-axial_T2w_label-SC_seg.nii.gz"
         },
         {
-            "image": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/sub-unfPain002/anat/sub-unfPain002_T1w.nii.gz",
-            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/derivatives/labels/sub-unfPain002/anat/sub-unfPain002_T2w_label-SC_seg.nii.gz"
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/sub-039/ses-M0/anat/sub-039_ses-M0_acq-axial_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/derivatives/labels/sub-039/ses-M0/anat/sub-039_ses-M0_acq-axial_T2w_label-SC_seg.nii.gz"
         },
         {
-            "image": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/sub-unfErssm025/anat/sub-unfErssm025_T1w.nii.gz",
-            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/derivatives/labels/sub-unfErssm025/anat/sub-unfErssm025_T2w_label-SC_seg.nii.gz"
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/sub-119/ses-M0/anat/sub-119_ses-M0_acq-axial_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/derivatives/labels/sub-119/ses-M0/anat/sub-119_ses-M0_acq-axial_T2w_label-SC_seg.nii.gz"
         },
         {
-            "image": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/sub-unfErssm008/anat/sub-unfErssm008_T2w.nii.gz",
-            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/derivatives/labels/sub-unfErssm008/anat/sub-unfErssm008_T1w_label-SC_seg.nii.gz"
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/sub-017/ses-M0/anat/sub-017_ses-M0_acq-axial_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/derivatives/labels/sub-017/ses-M0/anat/sub-017_ses-M0_acq-axial_T2w_label-SC_seg.nii.gz"
         },
         {
-            "image": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/sub-amuFL/anat/sub-amuFL_T1w.nii.gz",
-            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/derivatives/labels/sub-amuFL/anat/sub-amuFL_T1w_label-SC_seg.nii.gz"
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/sub-059/ses-M0/anat/sub-059_ses-M0_acq-axial_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/derivatives/labels/sub-059/ses-M0/anat/sub-059_ses-M0_acq-axial_T2w_label-SC_seg.nii.gz"
         },
         {
-            "image": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/sub-unfErssm006/anat/sub-unfErssm006_T1w.nii.gz",
-            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/derivatives/labels/sub-unfErssm006/anat/sub-unfErssm006_T1w_label-SC_seg.nii.gz"
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/sub-060/ses-M0/anat/sub-060_ses-M0_acq-axial_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/derivatives/labels/sub-060/ses-M0/anat/sub-060_ses-M0_acq-axial_T2w_label-SC_seg.nii.gz"
         },
         {
-            "image": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/sub-amuGB/anat/sub-amuGB_T1w.nii.gz",
-            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/derivatives/labels/sub-amuGB/anat/sub-amuGB_T1w_label-SC_seg.nii.gz"
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/sub-149/ses-M0/anat/sub-149_ses-M0_acq-axial_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/derivatives/labels/sub-149/ses-M0/anat/sub-149_ses-M0_acq-axial_T2w_label-SC_seg.nii.gz"
         },
         {
-            "image": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/sub-unfErssm001/anat/sub-unfErssm001_T2w.nii.gz",
-            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/derivatives/labels/sub-unfErssm001/anat/sub-unfErssm001_T1w_label-SC_seg.nii.gz"
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/sub-057/ses-M0/anat/sub-057_ses-M0_acq-axial_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/derivatives/labels/sub-057/ses-M0/anat/sub-057_ses-M0_acq-axial_T2w_label-SC_seg.nii.gz"
         },
         {
-            "image": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/sub-unfErssm025/anat/sub-unfErssm025_T2w.nii.gz",
-            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/derivatives/labels/sub-unfErssm025/anat/sub-unfErssm025_T2w_label-SC_seg.nii.gz"
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/sub-138/ses-M0/anat/sub-138_ses-M0_acq-axial_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/derivatives/labels/sub-138/ses-M0/anat/sub-138_ses-M0_acq-axial_T2w_label-SC_seg.nii.gz"
         },
         {
-            "image": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/sub-amuLJ/anat/sub-amuLJ_T2w.nii.gz",
-            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/derivatives/labels/sub-amuLJ/anat/sub-amuLJ_T2w_label-SC_seg.nii.gz"
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/sub-142/ses-M0/anat/sub-142_ses-M0_acq-axial_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/derivatives/labels/sub-142/ses-M0/anat/sub-142_ses-M0_acq-axial_T2w_label-SC_seg.nii.gz"
         },
         {
-            "image": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/sub-unfErssm006/anat/sub-unfErssm006_T2w.nii.gz",
-            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/derivatives/labels/sub-unfErssm006/anat/sub-unfErssm006_T1w_label-SC_seg.nii.gz"
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/sub-169/ses-M0/anat/sub-169_ses-M0_acq-axial_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/derivatives/labels/sub-169/ses-M0/anat/sub-169_ses-M0_acq-axial_T2w_label-SC_seg.nii.gz"
         },
         {
-            "image": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/sub-amuMLL/anat/sub-amuMLL_T1w.nii.gz",
-            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/derivatives/labels/sub-amuMLL/anat/sub-amuMLL_T2w_label-SC_seg.nii.gz"
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/sub-072/ses-M0/anat/sub-072_ses-M0_acq-axial_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/derivatives/labels/sub-072/ses-M0/anat/sub-072_ses-M0_acq-axial_T2w_label-SC_seg.nii.gz"
         },
         {
-            "image": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/sub-unfErssm007/anat/sub-unfErssm007_T1w.nii.gz",
-            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/derivatives/labels/sub-unfErssm007/anat/sub-unfErssm007_T2w_label-SC_seg.nii.gz"
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/sub-001/ses-M0/anat/sub-001_ses-M0_acq-axial_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/derivatives/labels/sub-001/ses-M0/anat/sub-001_ses-M0_acq-axial_T2w_label-SC_seg.nii.gz"
         },
         {
-            "image": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/sub-unfErssm027/anat/sub-unfErssm027_T2w.nii.gz",
-            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/derivatives/labels/sub-unfErssm027/anat/sub-unfErssm027_T2w_label-SC_seg.nii.gz"
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/sub-040/ses-M0/anat/sub-040_ses-M0_acq-axial_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/derivatives/labels/sub-040/ses-M0/anat/sub-040_ses-M0_acq-axial_T2w_label-SC_seg.nii.gz"
         },
         {
-            "image": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/sub-unfErssm031/anat/sub-unfErssm031_T1w.nii.gz",
-            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/derivatives/labels/sub-unfErssm031/anat/sub-unfErssm031_T1w_label-SC_seg.nii.gz"
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/sub-063/ses-M0/anat/sub-063_ses-M0_acq-axial_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/derivatives/labels/sub-063/ses-M0/anat/sub-063_ses-M0_acq-axial_T2w_label-SC_seg.nii.gz"
         },
         {
-            "image": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/sub-amuTR/anat/sub-amuTR_T2w.nii.gz",
-            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/derivatives/labels/sub-amuTR/anat/sub-amuTR_T2w_label-SC_seg.nii.gz"
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/sub-083/ses-M0/anat/sub-083_ses-M0_acq-axial_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/derivatives/labels/sub-083/ses-M0/anat/sub-083_ses-M0_acq-axial_T2w_label-SC_seg.nii.gz"
         },
         {
-            "image": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/sub-unfErssm020/anat/sub-unfErssm020_T1w.nii.gz",
-            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/derivatives/labels/sub-unfErssm020/anat/sub-unfErssm020_T2w_label-SC_seg.nii.gz"
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/sub-087/ses-M0/anat/sub-087_ses-M0_acq-axial_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/derivatives/labels/sub-087/ses-M0/anat/sub-087_ses-M0_acq-axial_T2w_label-SC_seg.nii.gz"
         },
         {
-            "image": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/sub-amuVC/anat/sub-amuVC_T2w.nii.gz",
-            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/derivatives/labels/sub-amuVC/anat/sub-amuVC_T1w_label-SC_seg.nii.gz"
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/sub-058/ses-M0/anat/sub-058_ses-M0_acq-axial_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/derivatives/labels/sub-058/ses-M0/anat/sub-058_ses-M0_acq-axial_T2w_label-SC_seg.nii.gz"
         },
         {
-            "image": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/sub-amuAP/anat/sub-amuAP_T1w.nii.gz",
-            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/derivatives/labels/sub-amuAP/anat/sub-amuAP_T2w_label-SC_seg.nii.gz"
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/sub-123/ses-M0/anat/sub-123_ses-M0_acq-axial_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/derivatives/labels/sub-123/ses-M0/anat/sub-123_ses-M0_acq-axial_T2w_label-SC_seg.nii.gz"
         },
         {
-            "image": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/sub-unfErssm003/anat/sub-unfErssm003_T1w.nii.gz",
-            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/derivatives/labels/sub-unfErssm003/anat/sub-unfErssm003_T2w_label-SC_seg.nii.gz"
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/sub-157/ses-M0/anat/sub-157_ses-M0_acq-axial_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/derivatives/labels/sub-157/ses-M0/anat/sub-157_ses-M0_acq-axial_T2w_label-SC_seg.nii.gz"
         },
         {
-            "image": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/sub-amuVP/anat/sub-amuVP_T1w.nii.gz",
-            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/derivatives/labels/sub-amuVP/anat/sub-amuVP_T2w_label-SC_seg.nii.gz"
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/sub-010/ses-M0/anat/sub-010_ses-M0_acq-axial_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/derivatives/labels/sub-010/ses-M0/anat/sub-010_ses-M0_acq-axial_T2w_label-SC_seg.nii.gz"
         },
         {
-            "image": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/sub-unfErssm008/anat/sub-unfErssm008_T1w.nii.gz",
-            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/derivatives/labels/sub-unfErssm008/anat/sub-unfErssm008_T1w_label-SC_seg.nii.gz"
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/sub-061/ses-M0/anat/sub-061_ses-M0_acq-axial_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/derivatives/labels/sub-061/ses-M0/anat/sub-061_ses-M0_acq-axial_T2w_label-SC_seg.nii.gz"
         },
         {
-            "image": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/sub-unfErssm012/anat/sub-unfErssm012_T1w.nii.gz",
-            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/derivatives/labels/sub-unfErssm012/anat/sub-unfErssm012_T2w_label-SC_seg.nii.gz"
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/sub-024/ses-M0/anat/sub-024_ses-M0_acq-axial_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/derivatives/labels/sub-024/ses-M0/anat/sub-024_ses-M0_acq-axial_T2w_label-SC_seg.nii.gz"
         },
         {
-            "image": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/sub-unfErssm009/anat/sub-unfErssm009_T1w.nii.gz",
-            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/derivatives/labels/sub-unfErssm009/anat/sub-unfErssm009_T1w_label-SC_seg.nii.gz"
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/sub-166/ses-M0/anat/sub-166_ses-M0_acq-axial_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/derivatives/labels/sub-166/ses-M0/anat/sub-166_ses-M0_acq-axial_T2w_label-SC_seg.nii.gz"
         },
         {
-            "image": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/sub-unfErssm028/anat/sub-unfErssm028_T2w.nii.gz",
-            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/derivatives/labels/sub-unfErssm028/anat/sub-unfErssm028_T2w_label-SC_seg.nii.gz"
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/sub-109/ses-M0/anat/sub-109_ses-M0_acq-axial_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/derivatives/labels/sub-109/ses-M0/anat/sub-109_ses-M0_acq-axial_T2w_label-SC_seg.nii.gz"
         },
         {
-            "image": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/sub-unfErssm002/anat/sub-unfErssm002_T1w.nii.gz",
-            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/derivatives/labels/sub-unfErssm002/anat/sub-unfErssm002_T1w_label-SC_seg.nii.gz"
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/sub-030/ses-M0/anat/sub-030_ses-M0_acq-axial_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/derivatives/labels/sub-030/ses-M0/anat/sub-030_ses-M0_acq-axial_T2w_label-SC_seg.nii.gz"
         },
         {
-            "image": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/sub-amuTR/anat/sub-amuTR_T1w.nii.gz",
-            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/derivatives/labels/sub-amuTR/anat/sub-amuTR_T2w_label-SC_seg.nii.gz"
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/sub-094/ses-M0/anat/sub-094_ses-M0_acq-axial_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/derivatives/labels/sub-094/ses-M0/anat/sub-094_ses-M0_acq-axial_T2w_label-SC_seg.nii.gz"
         },
         {
-            "image": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/sub-unfErssm018/anat/sub-unfErssm018_T1w.nii.gz",
-            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/derivatives/labels/sub-unfErssm018/anat/sub-unfErssm018_T2w_label-SC_seg.nii.gz"
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/sub-090/ses-M0/anat/sub-090_ses-M0_acq-axial_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/derivatives/labels/sub-090/ses-M0/anat/sub-090_ses-M0_acq-axial_T2w_label-SC_seg.nii.gz"
         },
         {
-            "image": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/sub-unfErssm010/anat/sub-unfErssm010_T1w.nii.gz",
-            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/derivatives/labels/sub-unfErssm010/anat/sub-unfErssm010_T1w_label-SC_seg.nii.gz"
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/sub-121/ses-M0/anat/sub-121_ses-M0_acq-axial_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/derivatives/labels/sub-121/ses-M0/anat/sub-121_ses-M0_acq-axial_T2w_label-SC_seg.nii.gz"
         },
         {
-            "image": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/sub-unfErssm005/anat/sub-unfErssm005_T1w.nii.gz",
-            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/derivatives/labels/sub-unfErssm005/anat/sub-unfErssm005_T2w_label-SC_seg.nii.gz"
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/sub-066/ses-M0/anat/sub-066_ses-M0_acq-axial_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/derivatives/labels/sub-066/ses-M0/anat/sub-066_ses-M0_acq-axial_T2w_label-SC_seg.nii.gz"
         },
         {
-            "image": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/sub-unfPain004/anat/sub-unfPain004_T1w.nii.gz",
-            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/derivatives/labels/sub-unfPain004/anat/sub-unfPain004_T1w_label-SC_seg.nii.gz"
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/sub-074/ses-M0/anat/sub-074_ses-M0_acq-axial_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/derivatives/labels/sub-074/ses-M0/anat/sub-074_ses-M0_acq-axial_T2w_label-SC_seg.nii.gz"
         },
         {
-            "image": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/sub-unfErssm009/anat/sub-unfErssm009_T2w.nii.gz",
-            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/derivatives/labels/sub-unfErssm009/anat/sub-unfErssm009_T1w_label-SC_seg.nii.gz"
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/sub-152/ses-M0/anat/sub-152_ses-M0_acq-axial_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/derivatives/labels/sub-152/ses-M0/anat/sub-152_ses-M0_acq-axial_T2w_label-SC_seg.nii.gz"
         },
         {
-            "image": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/sub-amuMD/anat/sub-amuMD_T2w.nii.gz",
-            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/derivatives/labels/sub-amuMD/anat/sub-amuMD_T1w_label-SC_seg.nii.gz"
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/sub-071/ses-M0/anat/sub-071_ses-M0_acq-axial_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/derivatives/labels/sub-071/ses-M0/anat/sub-071_ses-M0_acq-axial_T2w_label-SC_seg.nii.gz"
         },
         {
-            "image": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/sub-unfPain003/anat/sub-unfPain003_T1w.nii.gz",
-            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/derivatives/labels/sub-unfPain003/anat/sub-unfPain003_T2w_label-SC_seg.nii.gz"
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/sub-116/ses-M0/anat/sub-116_ses-M0_acq-axial_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/derivatives/labels/sub-116/ses-M0/anat/sub-116_ses-M0_acq-axial_T2w_label-SC_seg.nii.gz"
         },
         {
-            "image": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/sub-unfErssm019/anat/sub-unfErssm019_T1w.nii.gz",
-            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/derivatives/labels/sub-unfErssm019/anat/sub-unfErssm019_T2w_label-SC_seg.nii.gz"
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/sub-139/ses-M0/anat/sub-139_ses-M0_acq-axial_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/derivatives/labels/sub-139/ses-M0/anat/sub-139_ses-M0_acq-axial_T2w_label-SC_seg.nii.gz"
         },
         {
-            "image": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/sub-unfErssm023/anat/sub-unfErssm023_T2w.nii.gz",
-            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/derivatives/labels/sub-unfErssm023/anat/sub-unfErssm023_T2w_label-SC_seg.nii.gz"
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/sub-064/ses-M0/anat/sub-064_ses-M0_acq-axial_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/derivatives/labels/sub-064/ses-M0/anat/sub-064_ses-M0_acq-axial_T2w_label-SC_seg.nii.gz"
         },
         {
-            "image": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/sub-unfErssm015/anat/sub-unfErssm015_T2w.nii.gz",
-            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/derivatives/labels/sub-unfErssm015/anat/sub-unfErssm015_T1w_label-SC_seg.nii.gz"
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/sub-015/ses-M0/anat/sub-015_ses-M0_acq-axial_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/derivatives/labels/sub-015/ses-M0/anat/sub-015_ses-M0_acq-axial_T2w_label-SC_seg.nii.gz"
         },
         {
-            "image": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/sub-unfErssm018/anat/sub-unfErssm018_T2w.nii.gz",
-            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/derivatives/labels/sub-unfErssm018/anat/sub-unfErssm018_T2w_label-SC_seg.nii.gz"
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/sub-137/ses-M0/anat/sub-137_ses-M0_acq-axial_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/derivatives/labels/sub-137/ses-M0/anat/sub-137_ses-M0_acq-axial_T2w_label-SC_seg.nii.gz"
         },
         {
-            "image": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/sub-amuFR/anat/sub-amuFR_T1w.nii.gz",
-            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/derivatives/labels/sub-amuFR/anat/sub-amuFR_T1w_label-SC_seg.nii.gz"
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/sub-133/ses-M0/anat/sub-133_ses-M0_acq-axial_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/derivatives/labels/sub-133/ses-M0/anat/sub-133_ses-M0_acq-axial_T2w_label-SC_seg.nii.gz"
         },
         {
-            "image": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/sub-amuMD/anat/sub-amuMD_T1w.nii.gz",
-            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/derivatives/labels/sub-amuMD/anat/sub-amuMD_T1w_label-SC_seg.nii.gz"
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/sub-140/ses-M0/anat/sub-140_ses-M0_acq-axial_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/derivatives/labels/sub-140/ses-M0/anat/sub-140_ses-M0_acq-axial_T2w_label-SC_seg.nii.gz"
         },
         {
-            "image": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/sub-unfErssm022/anat/sub-unfErssm022_T2w.nii.gz",
-            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/derivatives/labels/sub-unfErssm022/anat/sub-unfErssm022_T1w_label-SC_seg.nii.gz"
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/sub-033/ses-M0/anat/sub-033_ses-M0_acq-axial_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/derivatives/labels/sub-033/ses-M0/anat/sub-033_ses-M0_acq-axial_T2w_label-SC_seg.nii.gz"
         },
         {
-            "image": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/sub-unfPain002/anat/sub-unfPain002_T2w.nii.gz",
-            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/derivatives/labels/sub-unfPain002/anat/sub-unfPain002_T2w_label-SC_seg.nii.gz"
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/sub-018/ses-M0/anat/sub-018_ses-M0_acq-axial_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/derivatives/labels/sub-018/ses-M0/anat/sub-018_ses-M0_acq-axial_T2w_label-SC_seg.nii.gz"
         },
         {
-            "image": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/sub-unfErssm019/anat/sub-unfErssm019_T2w.nii.gz",
-            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/derivatives/labels/sub-unfErssm019/anat/sub-unfErssm019_T2w_label-SC_seg.nii.gz"
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/sub-163/ses-M0/anat/sub-163_ses-M0_acq-axial_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/derivatives/labels/sub-163/ses-M0/anat/sub-163_ses-M0_acq-axial_T2w_label-SC_seg.nii.gz"
         },
         {
-            "image": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/sub-unfErssm026/anat/sub-unfErssm026_T1w.nii.gz",
-            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/derivatives/labels/sub-unfErssm026/anat/sub-unfErssm026_T2w_label-SC_seg.nii.gz"
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/sub-167/ses-M0/anat/sub-167_ses-M0_acq-axial_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/derivatives/labels/sub-167/ses-M0/anat/sub-167_ses-M0_acq-axial_T2w_label-SC_seg.nii.gz"
         },
         {
-            "image": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/sub-unfPain005/anat/sub-unfPain005_T1w.nii.gz",
-            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/derivatives/labels/sub-unfPain005/anat/sub-unfPain005_T1w_label-SC_seg.nii.gz"
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/sub-037/ses-M0/anat/sub-037_ses-M0_acq-axial_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/derivatives/labels/sub-037/ses-M0/anat/sub-037_ses-M0_acq-axial_T2w_label-SC_seg.nii.gz"
         },
         {
-            "image": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/sub-unfErssm002/anat/sub-unfErssm002_T2w.nii.gz",
-            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/derivatives/labels/sub-unfErssm002/anat/sub-unfErssm002_T1w_label-SC_seg.nii.gz"
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/sub-082/ses-M0/anat/sub-082_ses-M0_acq-axial_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/derivatives/labels/sub-082/ses-M0/anat/sub-082_ses-M0_acq-axial_T2w_label-SC_seg.nii.gz"
         },
         {
-            "image": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/sub-unfPain001/anat/sub-unfPain001_T1w.nii.gz",
-            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/derivatives/labels/sub-unfPain001/anat/sub-unfPain001_T1w_label-SC_seg.nii.gz"
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/sub-101/ses-M0/anat/sub-101_ses-M0_acq-axial_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/derivatives/labels/sub-101/ses-M0/anat/sub-101_ses-M0_acq-axial_T2w_label-SC_seg.nii.gz"
         },
         {
-            "image": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/sub-unfSCT002/anat/sub-unfSCT002_T1w.nii.gz",
-            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/derivatives/labels/sub-unfSCT002/anat/sub-unfSCT002_T1w_label-SC_seg.nii.gz"
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/sub-043/ses-M0/anat/sub-043_ses-M0_acq-axial_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/derivatives/labels/sub-043/ses-M0/anat/sub-043_ses-M0_acq-axial_T2w_label-SC_seg.nii.gz"
         },
         {
-            "image": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/sub-amuTT/anat/sub-amuTT_T1w.nii.gz",
-            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/derivatives/labels/sub-amuTT/anat/sub-amuTT_T1w_label-SC_seg.nii.gz"
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/sub-112/ses-M0/anat/sub-112_ses-M0_acq-axial_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/derivatives/labels/sub-112/ses-M0/anat/sub-112_ses-M0_acq-axial_T2w_label-SC_seg.nii.gz"
         },
         {
-            "image": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/sub-unfErssm013/anat/sub-unfErssm013_T2w.nii.gz",
-            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/derivatives/labels/sub-unfErssm013/anat/sub-unfErssm013_T2w_label-SC_seg.nii.gz"
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/sub-055/ses-M0/anat/sub-055_ses-M0_acq-axial_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/derivatives/labels/sub-055/ses-M0/anat/sub-055_ses-M0_acq-axial_T2w_label-SC_seg.nii.gz"
         },
         {
-            "image": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/sub-amuTM/anat/sub-amuTM_T1w.nii.gz",
-            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/derivatives/labels/sub-amuTM/anat/sub-amuTM_T1w_label-SC_seg.nii.gz"
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/sub-073/ses-M0/anat/sub-073_ses-M0_acq-axial_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/derivatives/labels/sub-073/ses-M0/anat/sub-073_ses-M0_acq-axial_T2w_label-SC_seg.nii.gz"
         },
         {
-            "image": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/sub-unfErssm001/anat/sub-unfErssm001_T1w.nii.gz",
-            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/derivatives/labels/sub-unfErssm001/anat/sub-unfErssm001_T1w_label-SC_seg.nii.gz"
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/sub-046/ses-M0/anat/sub-046_ses-M0_acq-axial_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/derivatives/labels/sub-046/ses-M0/anat/sub-046_ses-M0_acq-axial_T2w_label-SC_seg.nii.gz"
         },
         {
-            "image": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/sub-amuHB/anat/sub-amuHB_T2w.nii.gz",
-            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/derivatives/labels/sub-amuHB/anat/sub-amuHB_T1w_label-SC_seg.nii.gz"
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/sub-099/ses-M0/anat/sub-099_ses-M0_acq-axial_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/derivatives/labels/sub-099/ses-M0/anat/sub-099_ses-M0_acq-axial_T2w_label-SC_seg.nii.gz"
         },
         {
-            "image": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/sub-unfErssm029/anat/sub-unfErssm029_T2w.nii.gz",
-            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/derivatives/labels/sub-unfErssm029/anat/sub-unfErssm029_T2w_label-SC_seg.nii.gz"
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/sub-020/ses-M0/anat/sub-020_ses-M0_acq-axial_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/derivatives/labels/sub-020/ses-M0/anat/sub-020_ses-M0_acq-axial_T2w_label-SC_seg.nii.gz"
         },
         {
-            "image": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/sub-unfErssm013/anat/sub-unfErssm013_T1w.nii.gz",
-            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/derivatives/labels/sub-unfErssm013/anat/sub-unfErssm013_T2w_label-SC_seg.nii.gz"
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/sub-096/ses-M0/anat/sub-096_ses-M0_acq-axial_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/derivatives/labels/sub-096/ses-M0/anat/sub-096_ses-M0_acq-axial_T2w_label-SC_seg.nii.gz"
         },
         {
-            "image": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/sub-unfSCT001/anat/sub-unfSCT001_T2w.nii.gz",
-            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/derivatives/labels/sub-unfSCT001/anat/sub-unfSCT001_T1w_label-SC_seg.nii.gz"
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/sub-041/ses-M0/anat/sub-041_ses-M0_acq-axial_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/derivatives/labels/sub-041/ses-M0/anat/sub-041_ses-M0_acq-axial_T2w_label-SC_seg.nii.gz"
         },
         {
-            "image": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/sub-unfErssm024/anat/sub-unfErssm024_T1w.nii.gz",
-            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/derivatives/labels/sub-unfErssm024/anat/sub-unfErssm024_T1w_label-SC_seg.nii.gz"
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/sub-143/ses-M0/anat/sub-143_ses-M0_acq-axial_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/derivatives/labels/sub-143/ses-M0/anat/sub-143_ses-M0_acq-axial_T2w_label-SC_seg.nii.gz"
         },
         {
-            "image": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/sub-unfErssm005/anat/sub-unfErssm005_T2w.nii.gz",
-            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/derivatives/labels/sub-unfErssm005/anat/sub-unfErssm005_T2w_label-SC_seg.nii.gz"
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/sub-021/ses-M0/anat/sub-021_ses-M0_acq-axial_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/derivatives/labels/sub-021/ses-M0/anat/sub-021_ses-M0_acq-axial_T2w_label-SC_seg.nii.gz"
         },
         {
-            "image": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/sub-amuPA/anat/sub-amuPA_T1w.nii.gz",
-            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/derivatives/labels/sub-amuPA/anat/sub-amuPA_T2w_label-SC_seg.nii.gz"
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/sub-048/ses-M0/anat/sub-048_ses-M0_acq-axial_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/derivatives/labels/sub-048/ses-M0/anat/sub-048_ses-M0_acq-axial_T2w_label-SC_seg.nii.gz"
         },
         {
-            "image": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/sub-amuALT/anat/sub-amuALT_T1w.nii.gz",
-            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/derivatives/labels/sub-amuALT/anat/sub-amuALT_T2w_label-SC_seg.nii.gz"
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/sub-038/ses-M0/anat/sub-038_ses-M0_acq-axial_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/derivatives/labels/sub-038/ses-M0/anat/sub-038_ses-M0_acq-axial_T2w_label-SC_seg.nii.gz"
         },
         {
-            "image": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/sub-amuFL/anat/sub-amuFL_T2w.nii.gz",
-            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/derivatives/labels/sub-amuFL/anat/sub-amuFL_T1w_label-SC_seg.nii.gz"
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/sub-124/ses-M0/anat/sub-124_ses-M0_acq-axial_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/derivatives/labels/sub-124/ses-M0/anat/sub-124_ses-M0_acq-axial_T2w_label-SC_seg.nii.gz"
         },
         {
-            "image": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/sub-unfPain006/anat/sub-unfPain006_T1w.nii.gz",
-            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/derivatives/labels/sub-unfPain006/anat/sub-unfPain006_T2w_label-SC_seg.nii.gz"
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/sub-126/ses-M0/anat/sub-126_ses-M0_acq-axial_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/derivatives/labels/sub-126/ses-M0/anat/sub-126_ses-M0_acq-axial_T2w_label-SC_seg.nii.gz"
         },
         {
-            "image": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/sub-amuLJ/anat/sub-amuLJ_T1w.nii.gz",
-            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/derivatives/labels/sub-amuLJ/anat/sub-amuLJ_T2w_label-SC_seg.nii.gz"
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/sub-026/ses-M0/anat/sub-026_ses-M0_acq-axial_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/derivatives/labels/sub-026/ses-M0/anat/sub-026_ses-M0_acq-axial_T2w_label-SC_seg.nii.gz"
         },
         {
-            "image": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/sub-unfPain001/anat/sub-unfPain001_T2w.nii.gz",
-            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/derivatives/labels/sub-unfPain001/anat/sub-unfPain001_T1w_label-SC_seg.nii.gz"
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/sub-107/ses-M0/anat/sub-107_ses-M0_acq-axial_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/derivatives/labels/sub-107/ses-M0/anat/sub-107_ses-M0_acq-axial_T2w_label-SC_seg.nii.gz"
         },
         {
-            "image": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/sub-unfErssm015/anat/sub-unfErssm015_T1w.nii.gz",
-            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/derivatives/labels/sub-unfErssm015/anat/sub-unfErssm015_T1w_label-SC_seg.nii.gz"
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/sub-095/ses-M0/anat/sub-095_ses-M0_acq-axial_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/derivatives/labels/sub-095/ses-M0/anat/sub-095_ses-M0_acq-axial_T2w_label-SC_seg.nii.gz"
         },
         {
-            "image": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/sub-unfErssm011/anat/sub-unfErssm011_T1w.nii.gz",
-            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/derivatives/labels/sub-unfErssm011/anat/sub-unfErssm011_T1w_label-SC_seg.nii.gz"
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/sub-007/ses-M0/anat/sub-007_ses-M0_acq-axial_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/derivatives/labels/sub-007/ses-M0/anat/sub-007_ses-M0_acq-axial_T2w_label-SC_seg.nii.gz"
         },
         {
-            "image": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/sub-unfErssm010/anat/sub-unfErssm010_T2w.nii.gz",
-            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/derivatives/labels/sub-unfErssm010/anat/sub-unfErssm010_T1w_label-SC_seg.nii.gz"
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/sub-165/ses-M0/anat/sub-165_ses-M0_acq-axial_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/derivatives/labels/sub-165/ses-M0/anat/sub-165_ses-M0_acq-axial_T2w_label-SC_seg.nii.gz"
         },
         {
-            "image": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/sub-unfErssm023/anat/sub-unfErssm023_T1w.nii.gz",
-            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/derivatives/labels/sub-unfErssm023/anat/sub-unfErssm023_T2w_label-SC_seg.nii.gz"
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/sub-065/ses-M0/anat/sub-065_ses-M0_acq-axial_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/derivatives/labels/sub-065/ses-M0/anat/sub-065_ses-M0_acq-axial_T2w_label-SC_seg.nii.gz"
         },
         {
-            "image": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/sub-unfErssm016/anat/sub-unfErssm016_T1w.nii.gz",
-            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/derivatives/labels/sub-unfErssm016/anat/sub-unfErssm016_T2w_label-SC_seg.nii.gz"
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/sub-044/ses-M0/anat/sub-044_ses-M0_acq-axial_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/derivatives/labels/sub-044/ses-M0/anat/sub-044_ses-M0_acq-axial_T2w_label-SC_seg.nii.gz"
         },
         {
-            "image": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/sub-unfSCT001/anat/sub-unfSCT001_T1w.nii.gz",
-            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/derivatives/labels/sub-unfSCT001/anat/sub-unfSCT001_T1w_label-SC_seg.nii.gz"
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/sub-102/ses-M0/anat/sub-102_ses-M0_acq-axial_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/derivatives/labels/sub-102/ses-M0/anat/sub-102_ses-M0_acq-axial_T2w_label-SC_seg.nii.gz"
         },
         {
-            "image": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/sub-unfErssm020/anat/sub-unfErssm020_T2w.nii.gz",
-            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/derivatives/labels/sub-unfErssm020/anat/sub-unfErssm020_T2w_label-SC_seg.nii.gz"
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/sub-023/ses-M0/anat/sub-023_ses-M0_acq-axial_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/derivatives/labels/sub-023/ses-M0/anat/sub-023_ses-M0_acq-axial_T2w_label-SC_seg.nii.gz"
         },
         {
-            "image": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/sub-unfErssm004/anat/sub-unfErssm004_T1w.nii.gz",
-            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/derivatives/labels/sub-unfErssm004/anat/sub-unfErssm004_T1w_label-SC_seg.nii.gz"
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/sub-032/ses-M0/anat/sub-032_ses-M0_acq-axial_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/derivatives/labels/sub-032/ses-M0/anat/sub-032_ses-M0_acq-axial_T2w_label-SC_seg.nii.gz"
         },
         {
-            "image": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/sub-unfPain003/anat/sub-unfPain003_T2w.nii.gz",
-            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/derivatives/labels/sub-unfPain003/anat/sub-unfPain003_T2w_label-SC_seg.nii.gz"
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/sub-131/ses-M0/anat/sub-131_ses-M0_acq-axial_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/derivatives/labels/sub-131/ses-M0/anat/sub-131_ses-M0_acq-axial_T2w_label-SC_seg.nii.gz"
         },
         {
-            "image": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/sub-unfErssm030/anat/sub-unfErssm030_T2w.nii.gz",
-            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/derivatives/labels/sub-unfErssm030/anat/sub-unfErssm030_T1w_label-SC_seg.nii.gz"
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/sub-105/ses-M0/anat/sub-105_ses-M0_acq-axial_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/derivatives/labels/sub-105/ses-M0/anat/sub-105_ses-M0_acq-axial_T2w_label-SC_seg.nii.gz"
         },
         {
-            "image": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/sub-amuAM/anat/sub-amuAM_T1w.nii.gz",
-            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/derivatives/labels/sub-amuAM/anat/sub-amuAM_T2w_label-SC_seg.nii.gz"
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/sub-047/ses-M0/anat/sub-047_ses-M0_acq-axial_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/derivatives/labels/sub-047/ses-M0/anat/sub-047_ses-M0_acq-axial_T2w_label-SC_seg.nii.gz"
         },
         {
-            "image": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/sub-amuPA/anat/sub-amuPA_T2w.nii.gz",
-            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/derivatives/labels/sub-amuPA/anat/sub-amuPA_T2w_label-SC_seg.nii.gz"
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/sub-113/ses-M0/anat/sub-113_ses-M0_acq-axial_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/derivatives/labels/sub-113/ses-M0/anat/sub-113_ses-M0_acq-axial_T2w_label-SC_seg.nii.gz"
         },
         {
-            "image": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/sub-amuHB/anat/sub-amuHB_T1w.nii.gz",
-            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/derivatives/labels/sub-amuHB/anat/sub-amuHB_T1w_label-SC_seg.nii.gz"
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/sub-150/ses-M0/anat/sub-150_ses-M0_acq-axial_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/derivatives/labels/sub-150/ses-M0/anat/sub-150_ses-M0_acq-axial_T2w_label-SC_seg.nii.gz"
         },
         {
-            "image": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/sub-amuTM/anat/sub-amuTM_T2w.nii.gz",
-            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/derivatives/labels/sub-amuTM/anat/sub-amuTM_T1w_label-SC_seg.nii.gz"
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/sub-118/ses-M0/anat/sub-118_ses-M0_acq-axial_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/derivatives/labels/sub-118/ses-M0/anat/sub-118_ses-M0_acq-axial_T2w_label-SC_seg.nii.gz"
         },
         {
-            "image": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/sub-unfErssm016/anat/sub-unfErssm016_T2w.nii.gz",
-            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/derivatives/labels/sub-unfErssm016/anat/sub-unfErssm016_T2w_label-SC_seg.nii.gz"
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/sub-085/ses-M0/anat/sub-085_ses-M0_acq-axial_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/derivatives/labels/sub-085/ses-M0/anat/sub-085_ses-M0_acq-axial_T2w_label-SC_seg.nii.gz"
         },
         {
-            "image": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/sub-unfErssm017/anat/sub-unfErssm017_T2w.nii.gz",
-            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/derivatives/labels/sub-unfErssm017/anat/sub-unfErssm017_T1w_label-SC_seg.nii.gz"
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/sub-106/ses-M0/anat/sub-106_ses-M0_acq-axial_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/derivatives/labels/sub-106/ses-M0/anat/sub-106_ses-M0_acq-axial_T2w_label-SC_seg.nii.gz"
         },
         {
-            "image": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/sub-amuVP/anat/sub-amuVP_T2w.nii.gz",
-            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/derivatives/labels/sub-amuVP/anat/sub-amuVP_T2w_label-SC_seg.nii.gz"
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/sub-013/ses-M0/anat/sub-013_ses-M0_acq-axial_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/derivatives/labels/sub-013/ses-M0/anat/sub-013_ses-M0_acq-axial_T2w_label-SC_seg.nii.gz"
         },
         {
-            "image": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/sub-unfPain004/anat/sub-unfPain004_T2w.nii.gz",
-            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/derivatives/labels/sub-unfPain004/anat/sub-unfPain004_T1w_label-SC_seg.nii.gz"
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/sub-100/ses-M0/anat/sub-100_ses-M0_acq-axial_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/derivatives/labels/sub-100/ses-M0/anat/sub-100_ses-M0_acq-axial_T2w_label-SC_seg.nii.gz"
         },
         {
-            "image": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/sub-amuVG/anat/sub-amuVG_T1w.nii.gz",
-            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/derivatives/labels/sub-amuVG/anat/sub-amuVG_T1w_label-SC_seg.nii.gz"
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/sub-144/ses-M0/anat/sub-144_ses-M0_acq-axial_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/derivatives/labels/sub-144/ses-M0/anat/sub-144_ses-M0_acq-axial_T2w_label-SC_seg.nii.gz"
         },
         {
-            "image": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/sub-unfErssm012/anat/sub-unfErssm012_T2w.nii.gz",
-            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/derivatives/labels/sub-unfErssm012/anat/sub-unfErssm012_T2w_label-SC_seg.nii.gz"
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/sub-086/ses-M0/anat/sub-086_ses-M0_acq-axial_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/derivatives/labels/sub-086/ses-M0/anat/sub-086_ses-M0_acq-axial_T2w_label-SC_seg.nii.gz"
         },
         {
-            "image": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/sub-unfErssm004/anat/sub-unfErssm004_T2w.nii.gz",
-            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/derivatives/labels/sub-unfErssm004/anat/sub-unfErssm004_T1w_label-SC_seg.nii.gz"
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/sub-115/ses-M0/anat/sub-115_ses-M0_acq-axial_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/derivatives/labels/sub-115/ses-M0/anat/sub-115_ses-M0_acq-axial_T2w_label-SC_seg.nii.gz"
         },
         {
-            "image": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/sub-unfErssm022/anat/sub-unfErssm022_T1w.nii.gz",
-            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/derivatives/labels/sub-unfErssm022/anat/sub-unfErssm022_T1w_label-SC_seg.nii.gz"
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/sub-128/ses-M0/anat/sub-128_ses-M0_acq-axial_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/derivatives/labels/sub-128/ses-M0/anat/sub-128_ses-M0_acq-axial_T2w_label-SC_seg.nii.gz"
         },
         {
-            "image": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/sub-unfSCT002/anat/sub-unfSCT002_T2w.nii.gz",
-            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/derivatives/labels/sub-unfSCT002/anat/sub-unfSCT002_T1w_label-SC_seg.nii.gz"
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/sub-153/ses-M0/anat/sub-153_ses-M0_acq-axial_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/derivatives/labels/sub-153/ses-M0/anat/sub-153_ses-M0_acq-axial_T2w_label-SC_seg.nii.gz"
         },
         {
-            "image": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/sub-amuAP/anat/sub-amuAP_T2w.nii.gz",
-            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/derivatives/labels/sub-amuAP/anat/sub-amuAP_T2w_label-SC_seg.nii.gz"
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/sub-050/ses-M0/anat/sub-050_ses-M0_acq-axial_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/derivatives/labels/sub-050/ses-M0/anat/sub-050_ses-M0_acq-axial_T2w_label-SC_seg.nii.gz"
         },
         {
-            "image": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/sub-unfErssm027/anat/sub-unfErssm027_T1w.nii.gz",
-            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/derivatives/labels/sub-unfErssm027/anat/sub-unfErssm027_T2w_label-SC_seg.nii.gz"
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/sub-170/ses-M0/anat/sub-170_ses-M0_acq-axial_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/derivatives/labels/sub-170/ses-M0/anat/sub-170_ses-M0_acq-axial_T2w_label-SC_seg.nii.gz"
         },
         {
-            "image": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/sub-unfErssm029/anat/sub-unfErssm029_T1w.nii.gz",
-            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/derivatives/labels/sub-unfErssm029/anat/sub-unfErssm029_T2w_label-SC_seg.nii.gz"
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/sub-034/ses-M0/anat/sub-034_ses-M0_acq-axial_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/derivatives/labels/sub-034/ses-M0/anat/sub-034_ses-M0_acq-axial_T2w_label-SC_seg.nii.gz"
         },
         {
-            "image": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/sub-unfErssm003/anat/sub-unfErssm003_T2w.nii.gz",
-            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/derivatives/labels/sub-unfErssm003/anat/sub-unfErssm003_T2w_label-SC_seg.nii.gz"
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/sub-120/ses-M0/anat/sub-120_ses-M0_acq-axial_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/derivatives/labels/sub-120/ses-M0/anat/sub-120_ses-M0_acq-axial_T2w_label-SC_seg.nii.gz"
         },
         {
-            "image": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/sub-unfErssm030/anat/sub-unfErssm030_T1w.nii.gz",
-            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/derivatives/labels/sub-unfErssm030/anat/sub-unfErssm030_T1w_label-SC_seg.nii.gz"
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/sub-108/ses-M0/anat/sub-108_ses-M0_acq-axial_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/derivatives/labels/sub-108/ses-M0/anat/sub-108_ses-M0_acq-axial_T2w_label-SC_seg.nii.gz"
         },
         {
-            "image": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/sub-amuMT/anat/sub-amuMT_T2w.nii.gz",
-            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/derivatives/labels/sub-amuMT/anat/sub-amuMT_T1w_label-SC_seg.nii.gz"
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/sub-156/ses-M0/anat/sub-156_ses-M0_acq-axial_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/derivatives/labels/sub-156/ses-M0/anat/sub-156_ses-M0_acq-axial_T2w_label-SC_seg.nii.gz"
         },
         {
-            "image": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/sub-amuCR/anat/sub-amuCR_T1w.nii.gz",
-            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/derivatives/labels/sub-amuCR/anat/sub-amuCR_T1w_label-SC_seg.nii.gz"
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/sub-141/ses-M0/anat/sub-141_ses-M0_acq-axial_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/derivatives/labels/sub-141/ses-M0/anat/sub-141_ses-M0_acq-axial_T2w_label-SC_seg.nii.gz"
         },
         {
-            "image": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/sub-unfErssm017/anat/sub-unfErssm017_T1w.nii.gz",
-            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/derivatives/labels/sub-unfErssm017/anat/sub-unfErssm017_T1w_label-SC_seg.nii.gz"
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/sub-125/ses-M0/anat/sub-125_ses-M0_acq-axial_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/derivatives/labels/sub-125/ses-M0/anat/sub-125_ses-M0_acq-axial_T2w_label-SC_seg.nii.gz"
         },
         {
-            "image": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/sub-unfPain005/anat/sub-unfPain005_T2w.nii.gz",
-            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/derivatives/labels/sub-unfPain005/anat/sub-unfPain005_T1w_label-SC_seg.nii.gz"
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/sub-103/ses-M0/anat/sub-103_ses-M0_acq-axial_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/derivatives/labels/sub-103/ses-M0/anat/sub-103_ses-M0_acq-axial_T2w_label-SC_seg.nii.gz"
         },
         {
-            "image": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/sub-amuMT/anat/sub-amuMT_T1w.nii.gz",
-            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/derivatives/labels/sub-amuMT/anat/sub-amuMT_T1w_label-SC_seg.nii.gz"
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/sub-159/ses-M0/anat/sub-159_ses-M0_acq-axial_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/derivatives/labels/sub-159/ses-M0/anat/sub-159_ses-M0_acq-axial_T2w_label-SC_seg.nii.gz"
         },
         {
-            "image": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/sub-unfErssm007/anat/sub-unfErssm007_T2w.nii.gz",
-            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/derivatives/labels/sub-unfErssm007/anat/sub-unfErssm007_T2w_label-SC_seg.nii.gz"
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/sub-056/ses-M0/anat/sub-056_ses-M0_acq-axial_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/derivatives/labels/sub-056/ses-M0/anat/sub-056_ses-M0_acq-axial_T2w_label-SC_seg.nii.gz"
         },
         {
-            "image": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/sub-unfErssm014/anat/sub-unfErssm014_T2w.nii.gz",
-            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/derivatives/labels/sub-unfErssm014/anat/sub-unfErssm014_T1w_label-SC_seg.nii.gz"
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/sub-028/ses-M0/anat/sub-028_ses-M0_acq-axial_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/derivatives/labels/sub-028/ses-M0/anat/sub-028_ses-M0_acq-axial_T2w_label-SC_seg.nii.gz"
         },
         {
-            "image": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/sub-amuFR/anat/sub-amuFR_T2w.nii.gz",
-            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/derivatives/labels/sub-amuFR/anat/sub-amuFR_T1w_label-SC_seg.nii.gz"
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/sub-003/ses-M0/anat/sub-003_ses-M0_acq-axial_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/derivatives/labels/sub-003/ses-M0/anat/sub-003_ses-M0_acq-axial_T2w_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/sub-012/ses-M0/anat/sub-012_ses-M0_acq-axial_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/derivatives/labels/sub-012/ses-M0/anat/sub-012_ses-M0_acq-axial_T2w_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/sub-129/ses-M0/anat/sub-129_ses-M0_acq-axial_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/derivatives/labels/sub-129/ses-M0/anat/sub-129_ses-M0_acq-axial_T2w_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/sub-130/ses-M0/anat/sub-130_ses-M0_acq-axial_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/derivatives/labels/sub-130/ses-M0/anat/sub-130_ses-M0_acq-axial_T2w_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/sub-019/ses-M0/anat/sub-019_ses-M0_acq-axial_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/derivatives/labels/sub-019/ses-M0/anat/sub-019_ses-M0_acq-axial_T2w_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/sub-089/ses-M0/anat/sub-089_ses-M0_acq-axial_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/derivatives/labels/sub-089/ses-M0/anat/sub-089_ses-M0_acq-axial_T2w_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/sub-171/ses-M0/anat/sub-171_ses-M0_acq-axial_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/derivatives/labels/sub-171/ses-M0/anat/sub-171_ses-M0_acq-axial_T2w_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/sub-075/ses-M0/anat/sub-075_ses-M0_acq-axial_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/derivatives/labels/sub-075/ses-M0/anat/sub-075_ses-M0_acq-axial_T2w_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/sub-068/ses-M0/anat/sub-068_ses-M0_acq-axial_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/derivatives/labels/sub-068/ses-M0/anat/sub-068_ses-M0_acq-axial_T2w_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/sub-158/ses-M0/anat/sub-158_ses-M0_acq-axial_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/derivatives/labels/sub-158/ses-M0/anat/sub-158_ses-M0_acq-axial_T2w_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/sub-097/ses-M0/anat/sub-097_ses-M0_acq-axial_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/derivatives/labels/sub-097/ses-M0/anat/sub-097_ses-M0_acq-axial_T2w_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/sub-134/ses-M0/anat/sub-134_ses-M0_acq-axial_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/derivatives/labels/sub-134/ses-M0/anat/sub-134_ses-M0_acq-axial_T2w_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/sub-067/ses-M0/anat/sub-067_ses-M0_acq-axial_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/derivatives/labels/sub-067/ses-M0/anat/sub-067_ses-M0_acq-axial_T2w_label-SC_seg.nii.gz"
         }
     ],
     "VALIDATION": [
         {
-            "image": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/sub-unfErssm026/anat/sub-unfErssm026_T2w.nii.gz",
-            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/derivatives/labels/sub-unfErssm026/anat/sub-unfErssm026_T2w_label-SC_seg.nii.gz"
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/sub-146/ses-M0/anat/sub-146_ses-M0_acq-axial_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/derivatives/labels/sub-146/ses-M0/anat/sub-146_ses-M0_acq-axial_T2w_label-SC_seg.nii.gz"
         },
         {
-            "image": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/sub-amuALT/anat/sub-amuALT_T2w.nii.gz",
-            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/derivatives/labels/sub-amuALT/anat/sub-amuALT_T2w_label-SC_seg.nii.gz"
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/sub-077/ses-M0/anat/sub-077_ses-M0_acq-axial_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/derivatives/labels/sub-077/ses-M0/anat/sub-077_ses-M0_acq-axial_T2w_label-SC_seg.nii.gz"
         },
         {
-            "image": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/sub-amuVC/anat/sub-amuVC_T1w.nii.gz",
-            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/derivatives/labels/sub-amuVC/anat/sub-amuVC_T1w_label-SC_seg.nii.gz"
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/sub-168/ses-M0/anat/sub-168_ses-M0_acq-axial_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/derivatives/labels/sub-168/ses-M0/anat/sub-168_ses-M0_acq-axial_T2w_label-SC_seg.nii.gz"
         },
         {
-            "image": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/sub-amuMLL/anat/sub-amuMLL_T2w.nii.gz",
-            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/derivatives/labels/sub-amuMLL/anat/sub-amuMLL_T2w_label-SC_seg.nii.gz"
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/sub-135/ses-M0/anat/sub-135_ses-M0_acq-axial_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/derivatives/labels/sub-135/ses-M0/anat/sub-135_ses-M0_acq-axial_T2w_label-SC_seg.nii.gz"
         },
         {
-            "image": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/sub-amuAM/anat/sub-amuAM_T2w.nii.gz",
-            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/derivatives/labels/sub-amuAM/anat/sub-amuAM_T2w_label-SC_seg.nii.gz"
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/sub-114/ses-M0/anat/sub-114_ses-M0_acq-axial_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/derivatives/labels/sub-114/ses-M0/anat/sub-114_ses-M0_acq-axial_T2w_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/sub-093/ses-M0/anat/sub-093_ses-M0_acq-axial_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/derivatives/labels/sub-093/ses-M0/anat/sub-093_ses-M0_acq-axial_T2w_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/sub-052/ses-M0/anat/sub-052_ses-M0_acq-axial_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/derivatives/labels/sub-052/ses-M0/anat/sub-052_ses-M0_acq-axial_T2w_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/sub-164/ses-M0/anat/sub-164_ses-M0_acq-axial_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/derivatives/labels/sub-164/ses-M0/anat/sub-164_ses-M0_acq-axial_T2w_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/sub-160/ses-M0/anat/sub-160_ses-M0_acq-axial_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/derivatives/labels/sub-160/ses-M0/anat/sub-160_ses-M0_acq-axial_T2w_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/sub-005/ses-M0/anat/sub-005_ses-M0_acq-axial_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/derivatives/labels/sub-005/ses-M0/anat/sub-005_ses-M0_acq-axial_T2w_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/sub-029/ses-M0/anat/sub-029_ses-M0_acq-axial_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/derivatives/labels/sub-029/ses-M0/anat/sub-029_ses-M0_acq-axial_T2w_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/sub-127/ses-M0/anat/sub-127_ses-M0_acq-axial_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/derivatives/labels/sub-127/ses-M0/anat/sub-127_ses-M0_acq-axial_T2w_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/sub-031/ses-M0/anat/sub-031_ses-M0_acq-axial_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/derivatives/labels/sub-031/ses-M0/anat/sub-031_ses-M0_acq-axial_T2w_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/sub-122/ses-M0/anat/sub-122_ses-M0_acq-axial_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/derivatives/labels/sub-122/ses-M0/anat/sub-122_ses-M0_acq-axial_T2w_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/sub-080/ses-M0/anat/sub-080_ses-M0_acq-axial_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/derivatives/labels/sub-080/ses-M0/anat/sub-080_ses-M0_acq-axial_T2w_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/sub-070/ses-M0/anat/sub-070_ses-M0_acq-axial_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/derivatives/labels/sub-070/ses-M0/anat/sub-070_ses-M0_acq-axial_T2w_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/sub-054/ses-M0/anat/sub-054_ses-M0_acq-axial_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/derivatives/labels/sub-054/ses-M0/anat/sub-054_ses-M0_acq-axial_T2w_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/sub-136/ses-M0/anat/sub-136_ses-M0_acq-axial_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/derivatives/labels/sub-136/ses-M0/anat/sub-136_ses-M0_acq-axial_T2w_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/sub-148/ses-M0/anat/sub-148_ses-M0_acq-axial_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/derivatives/labels/sub-148/ses-M0/anat/sub-148_ses-M0_acq-axial_T2w_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/sub-008/ses-M0/anat/sub-008_ses-M0_acq-axial_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/derivatives/labels/sub-008/ses-M0/anat/sub-008_ses-M0_acq-axial_T2w_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/sub-111/ses-M0/anat/sub-111_ses-M0_acq-axial_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/derivatives/labels/sub-111/ses-M0/anat/sub-111_ses-M0_acq-axial_T2w_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/sub-009/ses-M0/anat/sub-009_ses-M0_acq-axial_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/derivatives/labels/sub-009/ses-M0/anat/sub-009_ses-M0_acq-axial_T2w_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/sub-014/ses-M0/anat/sub-014_ses-M0_acq-axial_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/derivatives/labels/sub-014/ses-M0/anat/sub-014_ses-M0_acq-axial_T2w_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/sub-162/ses-M0/anat/sub-162_ses-M0_acq-axial_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/derivatives/labels/sub-162/ses-M0/anat/sub-162_ses-M0_acq-axial_T2w_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/sub-104/ses-M0/anat/sub-104_ses-M0_acq-axial_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/derivatives/labels/sub-104/ses-M0/anat/sub-104_ses-M0_acq-axial_T2w_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/sub-004/ses-M0/anat/sub-004_ses-M0_acq-axial_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/derivatives/labels/sub-004/ses-M0/anat/sub-004_ses-M0_acq-axial_T2w_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/sub-036/ses-M0/anat/sub-036_ses-M0_acq-axial_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/derivatives/labels/sub-036/ses-M0/anat/sub-036_ses-M0_acq-axial_T2w_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/sub-025/ses-M0/anat/sub-025_ses-M0_acq-axial_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/derivatives/labels/sub-025/ses-M0/anat/sub-025_ses-M0_acq-axial_T2w_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/sub-006/ses-M0/anat/sub-006_ses-M0_acq-axial_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/derivatives/labels/sub-006/ses-M0/anat/sub-006_ses-M0_acq-axial_T2w_label-SC_seg.nii.gz"
+        },
+        {
+            "image": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/sub-002/ses-M0/anat/sub-002_ses-M0_acq-axial_T2w.nii.gz",
+            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/dcm-zurich/derivatives/labels/sub-002/ses-M0/anat/sub-002_ses-M0_acq-axial_T2w_label-SC_seg.nii.gz"
         }
     ],
-    "TEST": [
-        {
-            "image": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/sub-amuAL/anat/sub-amuAL_T2w.nii.gz",
-            "labels": "/home/ge.polymtl.ca/p123239/data_downstream/whole-spine/derivatives/labels/sub-amuAL/anat/sub-amuAL_T1w_label-SC_seg.nii.gz"
-        }
-    ]
+    "TEST": []
 }

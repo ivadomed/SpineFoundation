@@ -6,6 +6,10 @@ import numpy as np
 from tqdm import tqdm
 import matplotlib.pyplot as plt
 import shutil
+import json
+import csv
+from collections import defaultdict
+import matplotlib.pyplot as plt
 
 
 from model.build import build_model
@@ -88,6 +92,23 @@ class InferenceRunner:
         fig = plot_6_middle_slices(image, gt, pred)
         fig.savefig(out_path)
         plt.close(fig)
+    def _dataset_from_path_5th_after_home(self, full_path: str) -> str:
+        parts = os.path.abspath(full_path).split(os.sep)
+        # parts: ["", "home", "xxx", "yyy", ...]
+        try:
+            home_idx = parts.index("home")
+            target_idx = home_idx + 5  # 5e entité en partant de /home/
+            if target_idx < len(parts) and parts[target_idx]:
+                return parts[target_idx]
+        except ValueError:
+            pass
+        return "unknown_dataset"
+
+    def _per_sample_l1(self, pred: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
+        # pred/target: (B, C, D, H, W) ou (B, 1, D, H, W)
+        # retourne (B,)
+        dims = tuple(range(1, pred.ndim))
+        return (pred - target).abs().mean(dim=dims)
 
     @torch.no_grad()
     def _infer_batch(self, batch):
@@ -95,7 +116,18 @@ class InferenceRunner:
         spacings = [torch.as_tensor(b['image'].meta['spacing_dhw'], dtype=torch.float32, device=self.device) for b in batch]
         x,infos = self.gpu_tf(images, spacings)
         pred = self.model(x)
-        return x, pred, infos
+        per_sample_loss = self._per_sample_l1(pred, x)
+        return x, pred, infos, per_sample_loss
+
+    def _get_dataset_name(self, meta):
+        full_path = os.path.abspath(meta["filename_or_obj"])
+        root = os.path.abspath(self.data_path)
+        try:
+            rel = os.path.relpath(full_path, root)
+            parts = rel.split(os.sep)
+            return parts[0] if len(parts) > 0 else "unknown_dataset"
+        except Exception:
+            return "unknown_dataset"
 
     def _reconstruct_volume(self, pred_vol: torch.Tensor, info: dict, meta: dict) -> np.ndarray:
         # pred_vol : (D_t, H_t, W_t) sur img_size
@@ -156,14 +188,66 @@ class InferenceRunner:
             out_recon = os.path.join(out_dir, f"{dataset_name}__{stem}_RECON.nii.gz")
             nib.save(recon_img, out_recon)
 
-
+    def summarize(self,v):
+        v = np.asarray(v)
+        return {
+            "n": int(len(v)),
+            "mean": float(v.mean()),
+            "std": float(v.std(ddof=1)) if len(v) > 1 else 0.0,
+            "min": float(v.min()),
+            "median": float(np.median(v)),
+            "max": float(v.max()),
+        }
 
 
     def run(self):
         split_name = "val"
         loader = self.val_loader
+        losses_by_dataset = defaultdict(list)
         for i, batch in tqdm(enumerate(loader), total=len(loader), desc=f"Infer {split_name}"):
-            x, pred, infos = self._infer_batch(batch)
+            x, pred, infos, per_sample_loss = self._infer_batch(batch)
+            for b in range(len(batch)):
+                meta = batch[b]["image"].meta
+                dataset_name = self._get_dataset_name(meta)
+                l = float(per_sample_loss[b].cpu().item())
+                losses_by_dataset[dataset_name].append(l)
             idx_start = i * self.val_loader.batch_size
-            self._save_pred(batch, x, pred, infos, split_name, idx_start)
+            #self._save_pred(batch, x, pred, infos, split_name, idx_start)
+    
+        stats = {k: self.summarize(v) for k, v in losses_by_dataset.items()}
+        datasets = sorted(losses_by_dataset.keys())
+        means, stds, mins, maxs = [], [], [], []
 
+        for d in datasets:
+            v = np.asarray(losses_by_dataset[d], dtype=np.float32)
+            means.append(v.mean())
+            stds.append(v.std(ddof=1) if v.size > 1 else 0.0)
+            mins.append(v.min())
+            maxs.append(v.max())
+
+        x = np.arange(len(datasets))
+
+        plt.figure(figsize=(max(6, 0.8 * len(datasets)), 4))
+
+        # barres mean ± std
+        plt.bar(
+            x,
+            means,
+            yerr=stds,
+            capsize=6,
+            alpha=0.8,
+            label="mean ± std"
+        )
+
+        # triangles min / max par dataset
+        plt.scatter(x, mins, marker="v", s=60, label="min")
+        plt.scatter(x, maxs, marker="^", s=60, label="max")
+
+        plt.xticks(x, datasets, rotation=45, ha="right")
+        plt.ylabel("Loss (L1)")
+        plt.title("Loss statistics per dataset")
+        plt.legend()
+        plt.tight_layout()
+
+        plt.savefig(os.path.join(self.outdir, "loss_bar_by_dataset.png"), dpi=150)
+plt.close()

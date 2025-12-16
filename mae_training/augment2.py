@@ -270,9 +270,9 @@ import torch.nn.functional as F
 
 
 class GPUResampleAug3D(nn.Module):
-    def __init__(self,img_size=(256,256,256),target_res=(1.0,1.0,1.0),prob_flip=0.2,inference=False):
+    def __init__(self,patch_size,target_res=(1.0,1.0,1.0),prob_flip=0.2,inference=False):
         super().__init__()
-        self.img_size=img_size
+        self.patch_size = patch_size
         self.target_res=target_res
         self.prob_flip=prob_flip
         self.inference=inference
@@ -293,30 +293,6 @@ class GPUResampleAug3D(nn.Module):
         x=F.interpolate(x,size=size,mode=mode,align_corners=False if mode!="nearest" else None)
         return x.squeeze(0)
 
-    def _center_crop_pad(self,x,target):
-        D,H,W=x.shape[-3:]
-        Td,Th,Tw=target
-
-        dz=max(Td-D,0); dh=max(Th-H,0); dw=max(Tw-W,0)
-        pdw0=dw//2; pdw1=dw-pdw0
-        pdh0=dh//2; pdh1=dh-pdh0
-        pdz0=dz//2; pdz1=dz-pdz0
-        pad=(pdw0,pdw1,pdh0,pdh1,pdz0,pdz1)
-
-        if dz>0 or dh>0 or dw>0: x=F.pad(x,pad)
-
-        D2,H2,W2=x.shape[-3:]
-        sd=max((D2-Td)//2,0)
-        sh=max((H2-Th)//2,0)
-        sw=max((W2-Tw)//2,0)
-
-        z0=sd; z1=sd+Td
-        y0=sh; y1=sh+Th
-        x0=sw; x1=sw+Tw
-
-        x_crop=x[...,z0:z1,y0:y1,x0:x1]
-        crop_slices=(z0,z1,y0,y1,x0,x1)
-        return x_crop,crop_slices,pad
 
     def _norm(self,x):
         flat=x.reshape(1,-1)
@@ -333,27 +309,94 @@ class GPUResampleAug3D(nn.Module):
             flipped=True
         return img,lab,flipped
 
-    def forward_single(self,img,spacing,lab=None):
-        if img.ndim==4 and img.shape[0]>1: img=img.mean(dim=0,keepdim=True)
 
+    def pad_to_patch_multiple_dhw(img,mode="pad"):
+        """
+        img: (1, D, H, W) or (B, C, D, H, W)
+        patch_size: (pD, pH, pW)
+        mode: "pad" (to next multiple) or "crop" (to lower multiple)
+
+        returns:
+        img2: padded/cropped tensor
+        grid_size_dhw: (gD, gH, gW)
+        op: dict with details to store in your `info`
+        """
+        pD, pH, pW = self.patch_size
+
+        if img.ndim == 4:
+            _, D, H, W = img.shape
+            has_batch_chan = False
+        elif img.ndim == 5:
+            _, _, D, H, W = img.shape
+            has_batch_chan = True
+        else:
+            raise ValueError("img must be 4D (1,D,H,W) or 5D (B,C,D,H,W)")
+
+        if mode == "pad":
+            D2 = ((D + pD - 1) // pD) * pD
+            H2 = ((H + pH - 1) // pH) * pH
+            W2 = ((W + pW - 1) // pW) * pW
+            pad_d = D2 - D
+            pad_h = H2 - H
+            pad_w = W2 - W
+            # F.pad order: (W_left,W_right,H_left,H_right,D_left,D_right)
+            img2 = F.pad(img, (0, pad_w, 0, pad_h, 0, pad_d))
+            op = {"patch_mode":"pad","patch_multiple_pad":(pad_d,pad_h,pad_w),"patch_multiple_crop":(0,0,0),"patch_multiple_shape_dhw":(D2,H2,W2)}
+        
+        elif mode == "crop":
+
+            D2 = (D // pD) * pD
+            H2 = (H // pH) * pH
+            W2 = (W // pW) * pW
+            crop_d = D - D2
+            crop_h = H - H2
+            crop_w = W - W2
+            if img.ndim == 4:
+                img2 = img[:, :D2, :H2, :W2]
+            else:
+                img2 = img[:, :, :D2, :H2, :W2]
+            op = {"patch_mode":"crop","patch_multiple_pad":(0,0,0),"patch_multiple_crop":(crop_d,crop_h,crop_w),"patch_multiple_shape_dhw":(D2,H2,W2)}
+        else:
+            raise ValueError("mode must be 'pad' or 'crop'")
+
+        gD, gH, gW = D2 // pD, H2 // pH, W2 // pW
+        return img2, (gD, gH, gW), op
+
+    def forward_single(self,img,spacing,lab=None):
+
+        if img.ndim==4 and img.shape[0]>1: 
+            img=img.mean(dim=0,keepdim=True)
 
         orig_shape=tuple(img.shape[-3:])
         Dz,Dh,Dw=self._compute_out_size(orig_shape,spacing)
 
         img=self._resize(img,(Dz,Dh,Dw),"trilinear")
-        if lab is not None: lab=self._resize(lab,(Dz,Dh,Dw),"nearest")
+        if lab is not None: 
+            lab=self._resize(lab,(Dz,Dh,Dw),"nearest")
 
         img,lab,flipped=self._flip(img,lab)
 
         img,m,s=self._norm(img)
-        img,img_crop_slices,img_pad=self._center_crop_pad(img,self.img_size)
 
-        lab_crop_slices=None
-        lab_pad=None
+
+
+        img_before_patch_multiple_shape = tuple(img.shape[-3:])
+
+        img, grid_size_dhw, patch_multiple = pad_to_patch_multiple_dhw(img, mode="pad")
+
         if lab is not None:
-            lab,lab_crop_slices,lab_pad=self._center_crop_pad(lab,self.img_size)
+            lab, _, _ = pad_to_patch_multiple_dhw(lab, mode="pad")
 
-        info={"orig_shape_dhw":orig_shape,"resampled_shape_dhw":(Dz,Dh,Dw),"img_crop_slices":img_crop_slices,"img_pad":img_pad,"lab_crop_slices":lab_crop_slices,"lab_pad":lab_pad,"norm_mean":m,"norm_std":s,"flipped_D":flipped}
+        info={
+            "orig_shape_dhw":orig_shape,
+            "resampled_shape_dhw":(Dz,Dh,Dw),
+            "norm_mean":m,
+            "norm_std":s,
+            "flipped_D":flipped,
+            "img_before_patch_multiple_shape_dhw": img_before_patch_multiple_shape,
+            "grid_size_dhw": grid_size_dhw,
+            **patch_multiple,
+        }
         return img,lab,info
 
     def forward(self,images,spacings,labels=None):

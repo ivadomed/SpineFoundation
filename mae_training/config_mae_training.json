@@ -23,20 +23,19 @@
     "json_manifest": false
 },
 "Model":{
-  "model_name": "spine_mae",
+  "model_name": "spine_maev2",
   "in_channels": 1,
-  "img_size": [96, 84, 324],
-  "patch_size": [12, 12, 12],
+  "patch_size": [16, 16, 16],
   "img_resolution": [1, 1, 1],
   "enc_embed_dim": 768,
   "enc_num_heads": 12,
   "enc_layers": 12,
   "enc_mlp_dim": 3072,
   "dropout": 0,
-  "mask_ratio": 0.75,
-  "dec_embed_dim": 128,
-  "dec_layers": 4,
-  "dec_num_heads": 4,
-  "dec_mlp_dim": 512
+  "mask_ratio": 0.8,
+  "dec_embed_dim": 512,
+  "dec_layers": 8,
+  "dec_num_heads": 16,
+  "dec_mlp_dim": 2048
 }
 }
