@@ -9,7 +9,7 @@ import nibabel as nib
 from nibabel.orientations import aff2axcodes
 from tqdm import tqdm
 import matplotlib.pyplot as plt
-
+from pathlib import Path
 
 def find_nii_files(folder: str):
     pattern = "**/*.nii.gz"
@@ -17,7 +17,8 @@ def find_nii_files(folder: str):
     files = [f for f in files
              if os.path.isfile(f)
              and "derivatives" not in f.lower()
-             and "preproc" not in f.lower()]
+             and "preproc" not in f.lower()
+             and ("lowres" not in f.lower() or Path(f.replace("lowres", "highres")).exists())]
 
     files = sorted(files)
     return files
@@ -201,6 +202,7 @@ def plot_spacings(records, out_png: str = "spacing_hist.png"):
 
     ax = plt.subplot(1, 3, 3)
     ax.hist(spacing_z, bins=40)
+    
     ax.axvline(min_z, color='r', linestyle='--', linewidth=1)
     ax.set_xlabel("Spacing Z (mm) [S-I]")
     ax.set_title(f"Spacing Z (min {min_z:.2f} mm)")

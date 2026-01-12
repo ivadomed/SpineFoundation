@@ -17,7 +17,7 @@ from torch.profiler import profile, record_function, ProfilerActivity
 from torch.utils.data import DataLoader
 from torch.utils.data.distributed import DistributedSampler
 import torch.distributed as dist
-
+import psutil
 os.environ["WANDB_SILENT"] = "true" 
 
 from model.build import build_model
@@ -52,18 +52,20 @@ class Trainer:
         self.model_name=model_params["model_name"]
         self.img_resolution=tuple(model_params["img_resolution"])
         self.patch_size=tuple(model_params["patch_size"])
+        #self.window_size = tuple(model_params.get("window_size", None))
 
         self.batch_size = data_params["batch_size"]      
         self.train_ratio = data_params["train_ratio"]
         self.val_ratio = data_params["val_ratio"]
         self.test_ratio = data_params["test_ratio"]
         self.seed = data_params["seed"]
-        self.data_path = data_params["data_path"]
+        self.data_path = data_params["data_path"]  
         self.json_manifest = data_params.get("json_manifest", None)
         
 
         self.global_step = 0
-        
+        self.accum_steps = 16
+
         self.epochs = training_params["epochs"]
         self.work_dir = training_params["work_dir"]
         self.num_workers = training_params["num_workers"]
@@ -96,10 +98,11 @@ class Trainer:
         self.model = build_model(self.model_name, model_params,rank=self.rank)
         self.model.to(self.device)
 
+        self.divisible_by=32
+        self.max_prod=9_400_000 #9_400_000 avec checkpoint on 7_200_000 sans
 
-
-        self.gpu_tf_train=GPUResampleAug3D(patch_size=self.patch_size,target_res=self.img_resolution).to(self.device)
-        self.gpu_tf_eval=GPUResampleAug3D(patch_size=self.patch_size,target_res=self.img_resolution).to(self.device)
+        self.gpu_tf_train=GPUResampleAug3D(window_size=self.patch_size, target_res=self.img_resolution).to(self.device)
+        self.gpu_tf_eval=GPUResampleAug3D(window_size=self.patch_size, target_res=self.img_resolution).to(self.device)
 
         train_ds, val_ds, test_ds = build_datasets(
                                                     data_path=self.data_path,
@@ -124,7 +127,7 @@ class Trainer:
             self.test_loader = DataLoader(test_ds,batch_size=self.batch_size,shuffle=False,num_workers=self.num_workers,pin_memory=True,persistent_workers=True,prefetch_factor=1,collate_fn=collate_fn)    
         
         #GELER LES POPIDS QUI NE SERVENT A RIEN PENDANT L'ENTRAINEMENT (CROSS ATTENTION)
-        for layer in self.model.encoder.transformer_layers:
+        """for layer in self.model.encoder.transformer_layers:
             if hasattr(layer, "cross_attn"):
                 for p in layer.cross_attn.parameters():
                     p.requires_grad = False
@@ -138,7 +141,7 @@ class Trainer:
                     p.requires_grad = False
             if hasattr(block, "norm_cross_attn"):
                 for p in block.norm_cross_attn.parameters():
-                    p.requires_grad = False
+                    p.requires_grad = False"""
 
         self.optimizer = AdamW([p for p in self.model.parameters() if p.requires_grad],lr=self.lr,weight_decay=self.weight_decay)
 
@@ -168,67 +171,97 @@ class Trainer:
             self.model = DDP(self.model, device_ids=[self.rank], output_device=self.rank,find_unused_parameters=False)
 
     def train_step(self, batch, iteration: int, epoch: int):
-        self.global_step += 1
-        self.model.train()
-
-        if TIME_CHECK:
-            t0_total = _now(self.device)         
-            t0 = _now(self.device)
-
-        images = [b["image"].to(self.device, non_blocking=True) for b in batch]
-        #labels = [b["label"].to(self.device, non_blocking=True) for b in batch]
-        spacings = [torch.as_tensor(b["image"].meta["spacing_dhw"],dtype=torch.float32,device=self.device) for b in batch]
-        if TIME_CHECK:
-            t_batch_load = _now(self.device) - t0
-            t0 = _now(self.device)
-        #x, mask = self.gpu_tf_train(images, spacings)
-        x = self.gpu_tf_train(images, spacings)
-        if TIME_CHECK:
-            t_gpu_tf_train = _now(self.device) - t0
-
-        with autocast(device_type=self.device.type, enabled=self.amp):
+            self.global_step += 1
+            self.model.train()
 
             if TIME_CHECK:
+                t0_total = _now(self.device)
                 t0 = _now(self.device)
 
-            pred = self.model(x)
-
+            images = [b["image"].to(self.device, non_blocking=True) for b in batch]
+            spacings = [torch.as_tensor(b["image"].meta["spacing_dhw"], dtype=torch.float32, device=self.device) for b in batch]
             if TIME_CHECK:
-                t_forward = _now(self.device) - t0
+                t_batch_load = _now(self.device) - t0
                 t0 = _now(self.device)
-            loss = self.criterion(pred, x)
 
+            x = self.gpu_tf_train(images, spacings)
+            #print("Images size : ",images[0].shape, flush=True)
+            del images, spacings
+
+            D,H,W = x.shape[-3], x.shape[-2], x.shape[-1]
+            #print("Prod x : ", x.shape,flush=True)
             if TIME_CHECK:
-                t_loss = _now(self.device) - t0
+                t_gpu_tf_train = _now(self.device) - t0
+
+            if (self.global_step - 1) % self.accum_steps == 0:
+                self.optimizer.zero_grad(set_to_none=True)
+
+            with autocast(device_type=self.device.type, enabled=self.amp):
+                if TIME_CHECK:
+                    t0 = _now(self.device)
+
+                pred = self.model(x)
+                if TIME_CHECK:
+                    t_forward = _now(self.device) - t0
+                    t0 = _now(self.device)
+
+                loss = self.criterion(pred, x) / float(self.accum_steps)
+
+                if TIME_CHECK:
+                    t_loss = _now(self.device) - t0
 
             if self.is_main and self.wandb and self.global_step % (10 * self.log_image_interval) == 0:
-                fig = plot_6_middle_slices(image=x[0, 0].cpu(),gt=x[0, 0].cpu(),pred=pred[0, 0].cpu())
-                wandb.log({"Train/Images": wandb.Image(fig)}, step=self.global_step)
-                plt.close(fig)
+                with torch.no_grad():   
+                    fig = plot_6_middle_slices(
+                        image=x[0, 0].detach().cpu(),
+                        gt=x[0, 0].detach().cpu(),
+                        pred=pred[0, 0].detach().cpu(),
+                    )
+                    wandb.log({"Train/Images": wandb.Image(fig)}, step=self.global_step)
+                    plt.close(fig)
 
-        self.optimizer.zero_grad(set_to_none=True)
+            if TIME_CHECK:
+                t0 = _now(self.device)
+
+            
+
+            
+
+            did_step = (self.global_step % self.accum_steps == 0)
 
 
-        if TIME_CHECK:
-            t0 = _now(self.device)
+            if self.ddp and (not did_step):
+                with self.model.no_sync():
+                    self.scaler.scale(loss).backward()
+            else:
+                self.scaler.scale(loss).backward()
 
-        self.scaler.scale(loss).backward()
+            if did_step:
+                self.scaler.step(self.optimizer)
+                self.scaler.update()
+            if TIME_CHECK:
+                t_backward = _now(self.device) - t0
+                t0 = _now(self.device)
+            if TIME_CHECK:
+                t_step = _now(self.device) - t0
+                t_total = _now(self.device) - t0_total
+                timings = {
+                    "batch_load": t_batch_load,
+                    "gpu_tf_train": t_gpu_tf_train,
+                    "forward": t_forward,
+                    "loss": t_loss,
+                    "backward": t_backward,
+                    "step": t_step,
+                    "total": t_total,
+                    "did_step": float(did_step),
+                }
+            else:
+                timings = {"did_step": float(did_step)}
 
-        if TIME_CHECK:
-            t_backward = _now(self.device) - t0
-            t0 = _now(self.device)
+            loss_item=(loss.item() * float(self.accum_steps))
+            del pred, loss, x
 
-        self.scaler.step(self.optimizer)
-        self.scaler.update()
-
-        if TIME_CHECK:
-            t_step = _now(self.device) - t0
-            t_total = _now(self.device) - t0_total
-            timings = {"batch_load": t_batch_load,"gpu_tf_train": t_gpu_tf_train,"forward": t_forward,"loss": t_loss,"backward": t_backward,"step": t_step,"total": t_total}
-
-        else : timings = {}
-
-        return loss.item(), timings
+            return loss_item, timings
 
 
     def train_one_epoch(self, epoch: int):
@@ -244,7 +277,12 @@ class Trainer:
         pbar = tqdm(self.train_loader,desc=f"Train Epoch {epoch}",disable=self.tqdm_disable or (self.ddp and self.rank !=0))
 
         for i, batch in enumerate(pbar, start=1):
+            # try:
             loss, timings = self.train_step(batch, i, epoch)
+            # except Exception as e:
+            #     print(f"Error in train_step at batch {i}, epoch {epoch}: {e}")
+            #     print(batch[0]["image"].meta)
+            #     continue
             self.scheduler.step()
             running_loss += loss
             if TIME_CHECK:
@@ -345,7 +383,6 @@ class Trainer:
         if self.wandb and self.is_main:
             run=wandb.init(project="SpineMAE", config={
                 "model_name": self.model_name,
-                "img_size": self.img_size,
                 "batch_size": self.batch_size,
                 "lr": self.lr,
                 "weight_decay": self.weight_decay,

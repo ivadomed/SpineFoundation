@@ -19,15 +19,15 @@ class PosEmbedCache:
         gD, gH, gW = grid_size_dhw
         key = (embed_dim, gD, gH, gW, str(device), str(dtype))
 
-        if key in self._cache:
-            self._cache.move_to_end(key)
-            return self._cache[key]
+        #if key in self._cache:
+        #    self._cache.move_to_end(key)
+        #    return self._cache[key]
 
         pe = get_3d_sincos_pos_embed(embed_dim, (gD, gH, gW), device=device).to(dtype=dtype)
-        self._cache[key] = pe
+        #self._cache[key] = pe
 
-        if len(self._cache) > self.max_items:
-            self._cache.popitem(last=False)  # evict LRU
+        #if len(self._cache) > self.max_items:
+            #self._cache.popitem(last=False)  # evict LRU
         return pe
 
 
@@ -183,7 +183,7 @@ class SpineDecoder(nn.Module):
         self.patch_size = patch_size
         self.in_channels = in_channels
         self.dec_embed_dim = dec_embed_dim
-
+        self.pos_cache = pos_cache
 
         self.decoder_embed = nn.Linear(enc_embed_dim, dec_embed_dim)
         self.mask_token = nn.Parameter(torch.zeros(1, 1, dec_embed_dim))
@@ -246,7 +246,7 @@ class SpineMAE(nn.Module):
                  enc_embed_dim=120, enc_num_heads=12, enc_layers=12, enc_mlp_dim=3072, dropout=0, mask_ratio=0,
                  dec_embed_dim=128, dec_layers=4, dec_num_heads=4, dec_mlp_dim=3072):
         super().__init__()
-        pos_cache = PosEmbedCache(max_items=32)
+        pos_cache = None #PosEmbedCache(max_items=32)
         self.encoder = SpineEncoder(
             in_channels=in_channels, patch_size=patch_size,
             enc_embed_dim=enc_embed_dim, enc_num_heads=enc_num_heads, enc_layers=enc_layers,

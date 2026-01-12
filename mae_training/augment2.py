@@ -264,53 +264,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
-
-
-class GPUResampleAug3D(nn.Module):
-    def __init__(self,patch_size,target_res=(1.0,1.0,1.0),prob_flip=0.2,inference=False):
-        super().__init__()
-        self.patch_size = patch_size
-        self.target_res=target_res
-        self.prob_flip=prob_flip
-        self.inference=inference
-
-    def _compute_out_size(self,shape,spacing):
-        D,H,W=shape
-        if isinstance(spacing,torch.Tensor): sz,sy,sx=spacing.tolist()
-        else: sz,sy,sx=spacing
-        tz,ty,tx=self.target_res
-        Dz=max(1,int(round(D*sz/tz)))
-        Dh=max(1,int(round(H*sy/ty)))
-        Dw=max(1,int(round(W*sx/tx)))
-        return Dz,Dh,Dw
-
-    def _resize(self,x,size,mode):
-        if x.ndim==3: x=x.unsqueeze(0).unsqueeze(0)
-        elif x.ndim==4: x=x.unsqueeze(0)
-        x=F.interpolate(x,size=size,mode=mode,align_corners=False if mode!="nearest" else None)
-        return x.squeeze(0)
-
-
-    def _norm(self,x):
-        flat=x.reshape(1,-1)
-        m=flat.mean(-1,keepdim=True)
-        s=flat.std(-1,keepdim=True)+1e-6
-        return ((flat-m)/s).reshape_as(x),float(m.item()),float(s.item())
-
-    def _flip(self,img,lab=None):
-        if self.inference: return img,lab,False
-        flipped=False
-        if torch.rand(1).item()<self.prob_flip:
-            img=torch.flip(img,dims=[1])
-            if lab is not None: lab=torch.flip(lab,dims=[1])
-            flipped=True
-        return img,lab,flipped
-
-
-    def pad_to_patch_multiple_dhw(img,mode="pad"):
+def pad_to_patch_multiple_dhw(img,window_size,mode="pad"):
         """
         img: (1, D, H, W) or (B, C, D, H, W)
         patch_size: (pD, pH, pW)
@@ -321,7 +275,7 @@ class GPUResampleAug3D(nn.Module):
         grid_size_dhw: (gD, gH, gW)
         op: dict with details to store in your `info`
         """
-        pD, pH, pW = self.patch_size
+        pD, pH, pW = window_size
 
         if img.ndim == 4:
             _, D, H, W = img.shape
@@ -362,63 +316,118 @@ class GPUResampleAug3D(nn.Module):
         gD, gH, gW = D2 // pD, H2 // pH, W2 // pW
         return img2, (gD, gH, gW), op
 
-    def forward_single(self,img,spacing,lab=None):
+class GPUResampleAug3D(nn.Module):
+    def __init__(self, window_size, target_res=(1.0,1.0,1.0), prob_flip=0.2, inference=False, max_resampled_dhw=(500,210,210)):
+        super().__init__()
+        self.window_size = window_size
+        self.target_res = target_res
+        self.prob_flip = prob_flip
+        self.inference = inference
+        # max_resampled_dhw is in (D,H,W). Set to None to disable.
+        self.max_resampled_dhw = max_resampled_dhw
 
-        if img.ndim==4 and img.shape[0]>1: 
-            img=img.mean(dim=0,keepdim=True)
+    def _compute_out_size(self, shape, spacing):
+        D,H,W = shape
+        if isinstance(spacing, torch.Tensor): sz,sy,sx = spacing.tolist()
+        else: sz,sy,sx = spacing
+        tz,ty,tx = self.target_res
+        Dz = max(1, int(round(D*sz/tz)))
+        Dh = max(1, int(round(H*sy/ty)))
+        Dw = max(1, int(round(W*sx/tx)))
+        return Dz,Dh,Dw
 
-        orig_shape=tuple(img.shape[-3:])
-        Dz,Dh,Dw=self._compute_out_size(orig_shape,spacing)
+    def _resize(self, x, size, mode):
+        if x.ndim == 3: x = x.unsqueeze(0).unsqueeze(0)
+        elif x.ndim == 4: x = x.unsqueeze(0)
+        x = F.interpolate(x, size=size, mode=mode, align_corners=False if mode!="nearest" else None)
+        return x.squeeze(0)
 
-        img=self._resize(img,(Dz,Dh,Dw),"trilinear")
-        if lab is not None: 
-            lab=self._resize(lab,(Dz,Dh,Dw),"nearest")
+    def _cap_resampled_size(self, img, lab, dhw):
+        if self.max_resampled_dhw is None:
+            return img, lab, dhw, False
+        maxD, maxH, maxW = self.max_resampled_dhw
+        D,H,W = dhw
+        D2 = min(D, maxD) if maxD is not None else D
+        H2 = min(H, maxH) if maxH is not None else H
+        W2 = min(W, maxW) if maxW is not None else W
+        capped = (D2 != D) or (H2 != H) or (W2 != W)
+        if not capped:
+            return img, lab, (D,H,W), False
+        img = self._resize(img, (D2,H2,W2), "trilinear")
+        if lab is not None:
+            lab = self._resize(lab, (D2,H2,W2), "nearest")
+        return img, lab, (D2,H2,W2), True
 
-        img,lab,flipped=self._flip(img,lab)
+    def _norm(self, x):
+        flat = x.reshape(1,-1)
+        m = flat.mean(-1, keepdim=True)
+        s = flat.std(-1, keepdim=True) + 1e-6
+        return ((flat-m)/s).reshape_as(x), float(m.item()), float(s.item())
 
-        img,m,s=self._norm(img)
+    def _flip(self, img, lab=None):
+        if self.inference: return img, lab, False
+        flipped = False
+        if torch.rand(1).item() < self.prob_flip:
+            img = torch.flip(img, dims=[1])
+            if lab is not None: lab = torch.flip(lab, dims=[1])
+            flipped = True
+        return img, lab, flipped
 
+    def forward_single(self, img, spacing, lab=None):
+        if img.ndim == 4 and img.shape[0] > 1:
+            img = img.mean(dim=0, keepdim=True)
 
+        orig_shape = tuple(img.shape[-3:])
+        Dz,Dh,Dw = self._compute_out_size(orig_shape, spacing)
+
+        # (1) resample to target_res
+        img = self._resize(img, (Dz,Dh,Dw), "trilinear")
+        if lab is not None:
+            lab = self._resize(lab, (Dz,Dh,Dw), "nearest")
+
+        # (2) enforce caps AFTER resampling: H,W <= 210 and D <= 500 (with default max_resampled_dhw=(500,210,210))
+        img, lab, capped_shape_dhw, was_capped = self._cap_resampled_size(img, lab, (Dz,Dh,Dw))
+
+        img, lab, flipped = self._flip(img, lab)
+        img, m, s = self._norm(img)
 
         img_before_patch_multiple_shape = tuple(img.shape[-3:])
-
-        img, grid_size_dhw, patch_multiple = pad_to_patch_multiple_dhw(img, mode="pad")
-
+        img, grid_size_dhw, patch_multiple = pad_to_patch_multiple_dhw(img, self.window_size, mode="pad")
         if lab is not None:
-            lab, _, _ = pad_to_patch_multiple_dhw(lab, mode="pad")
+            lab, _, _ = pad_to_patch_multiple_dhw(lab, self.window_size, mode="crop")
 
-        info={
-            "orig_shape_dhw":orig_shape,
-            "resampled_shape_dhw":(Dz,Dh,Dw),
-            "norm_mean":m,
-            "norm_std":s,
-            "flipped_D":flipped,
+        info = {
+            "orig_shape_dhw": orig_shape,
+            "resampled_shape_dhw": (Dz,Dh,Dw),
+            "capped_resampled_shape_dhw": capped_shape_dhw,
+            "was_capped_after_resample": was_capped,
+            "norm_mean": m,
+            "norm_std": s,
+            "flipped_D": flipped,
             "img_before_patch_multiple_shape_dhw": img_before_patch_multiple_shape,
-            "grid_size_dhw": grid_size_dhw,
-            **patch_multiple,
         }
-        return img,lab,info
+        return img, lab, info
 
-    def forward(self,images,spacings,labels=None):
+    def forward(self, images, spacings, labels=None):
         out_i=[]; out_l=[]; infos=[]
         if not self.inference:
             if labels is None:
-                for img,sp in zip(images,spacings):
-                    img_aug,_,_=self.forward_single(img,sp,lab=None)
+                for img, sp in zip(images, spacings):
+                    img_aug, _, _ = self.forward_single(img, sp, lab=None)
                     out_i.append(img_aug)
-                return torch.stack(out_i,0)
-            for img,lab,sp in zip(images,labels,spacings):
-                img_aug,lab_aug,_=self.forward_single(img,sp,lab)
+                return torch.stack(out_i, 0)
+            for img, lab, sp in zip(images, labels, spacings):
+                img_aug, lab_aug, _ = self.forward_single(img, sp, lab)
                 out_i.append(img_aug); out_l.append(lab_aug)
-            return torch.stack(out_i,0),torch.stack(out_l,0)
+            return torch.stack(out_i, 0), torch.stack(out_l, 0)
 
         if labels is None:
-            for img,sp in zip(images,spacings):
-                img_aug,_,info=self.forward_single(img,sp,lab=None)
+            for img, sp in zip(images, spacings):
+                img_aug, _, info = self.forward_single(img, sp, lab=None)
                 out_i.append(img_aug); infos.append(info)
-            return torch.stack(out_i,0),infos
+            return torch.stack(out_i, 0), infos
 
-        for img,lab,sp in zip(images,labels,spacings):
-            img_aug,lab_aug,info=self.forward_single(img,sp,lab)
+        for img, lab, sp in zip(images, labels, spacings):
+            img_aug, lab_aug, info = self.forward_single(img, sp, lab)
             out_i.append(img_aug); out_l.append(lab_aug); infos.append(info)
-        return torch.stack(out_i,0),torch.stack(out_l,0),infos
+        return torch.stack(out_i, 0), torch.stack(out_l, 0), infos
