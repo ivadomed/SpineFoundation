@@ -1,0 +1,1 @@
+python lossplot.py /home/ge.polymtl.ca/p123239/dinov2-training-HF/outputs_384/custom/log_files/main_rank0.log -o plots --every 5 --smooth 50 
