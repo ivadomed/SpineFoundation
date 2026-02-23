@@ -65,7 +65,6 @@ def get_default_configs(resume, config_file='ssl_default_config'):
     try:
         dinov2_default_config = load_config(config_file)
         default_cfg = OmegaConf.create(dinov2_default_config)
-        
         # Make paths absolute
         output_dir = os.path.abspath(default_cfg.output_folders.main_output)
         default_cfg.output_folders.main_output = output_dir
@@ -99,7 +98,7 @@ def get_default_configs(resume, config_file='ssl_default_config'):
                         shutil.rmtree(model_path)
                 except Exception as e:
                     print(f"Node: {hostname}, Rank: {rank} - Error removing model path: {e}")
-        
+
         return default_cfg
     except Exception as e:
         hostname, rank, _, _ = get_node_info()
@@ -143,10 +142,8 @@ def setup(config_file='ssl_default_config', resume=True):
     if dist.is_initialized():
         dist.barrier()
     
-    # Get the configuration
-    cfg = get_default_configs(resume, config_file=config_file)
-    
-    # Absolute paths
+    # Get the 
+    cfg = get_default_configs(resume, config_file=config_file)    # Absolute paths
     output_dir = os.path.abspath(cfg.output_folders.main_output)
     cfg.output_folders.main_output = output_dir
     

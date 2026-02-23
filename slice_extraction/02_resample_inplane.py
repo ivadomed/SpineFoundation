@@ -78,7 +78,20 @@ def main() -> None:
     ap.add_argument("--splits", nargs="*", default=["train", "val"])
     ap.add_argument("--out-root", type=Path, default=None)
     ap.add_argument("--inplace", action="store_true")
+    ap.set_defaults(skip_existing=True)
+    ap.add_argument("--skip-existing", dest="skip_existing", action="store_true")
+    ap.add_argument("--no-skip-existing", dest="skip_existing", action="store_false")
     args = ap.parse_args()
+
+    print("=== Resample config ===")
+    print(f"root      : {args.root}")
+    print(f"target    : {args.target}")
+    print(f"interp    : {args.interp}")
+    print(f"splits    : {args.splits}")
+    print(f"inplace   : {args.inplace}")
+    print(f"out-root  : {args.out_root}")
+    print(f"skip-exist: {args.skip_existing}")
+    print("=======================")
 
     if not args.inplace and args.out_root is None:
         raise RuntimeError("Use --inplace or provide --out-root")
@@ -88,11 +101,22 @@ def main() -> None:
     if not image_root.exists() or not label_root.exists():
         raise RuntimeError("Expected folders: root/image and root/label")
 
+    total_processed = 0
+    total_missing = 0
+    total_skipped_existing = 0
+
     for split in args.splits:
         files = list_split_files(image_root, split)
-        for img_fp in tqdm(files, desc=f"Resample {split}", unit="img"):
+        print(f"[info] split={split} files={len(files)}")
+        pbar = tqdm(files, desc=f"Resample {split}", unit="img", total=len(files))
+        split_processed = 0
+        split_missing = 0
+        for img_fp in pbar:
             lbl_fp = label_root / split / img_fp.name
             if not lbl_fp.exists():
+                split_missing += 1
+                total_missing += 1
+                pbar.set_postfix(done=split_processed, missing=split_missing)
                 continue
 
             if args.inplace:
@@ -102,7 +126,24 @@ def main() -> None:
                 out_img = args.out_root / "image" / split / img_fp.name
                 out_lbl = args.out_root / "label" / split / lbl_fp.name
 
+            m = RE_SP.search(img_fp.name)
+            if m is None:
+                continue
+            target_token = f"__sp{fmt_sp(args.target)}x{fmt_sp(args.target)}"
+            new_name = RE_SP.sub(target_token, img_fp.name)
+            final_img = out_img.with_name(new_name)
+            final_lbl = out_lbl.with_name(new_name)
+
+            if args.skip_existing and final_img.exists() and final_lbl.exists():
+                split_missing += 0
+                total_skipped_existing += 1
+                pbar.set_postfix(done=split_processed, missing=split_missing, skip_exist=total_skipped_existing)
+                continue
+
             process_pair(img_fp, lbl_fp, out_img, out_lbl, args.target, args.interp)
+            split_processed += 1
+            total_processed += 1
+            pbar.set_postfix(done=split_processed, missing=split_missing, skip_exist=total_skipped_existing)
 
             if args.inplace:
                 m_old = RE_SP.search(img_fp.name)
@@ -116,6 +157,10 @@ def main() -> None:
                             img_old.unlink()
                         if lbl_old.exists():
                             lbl_old.unlink()
+
+        print(f"[ok] split={split} processed={split_processed} missing_labels={split_missing}")
+
+    print(f"[SUMMARY] processed={total_processed} missing_labels={total_missing} skipped_existing={total_skipped_existing}")
 
 
 if __name__ == "__main__":

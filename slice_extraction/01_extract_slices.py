@@ -7,7 +7,7 @@ import hashlib
 import traceback
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, Iterable, List, Tuple
+from typing import Iterable, List, Tuple
 
 import nibabel as nib
 import numpy as np
@@ -22,10 +22,13 @@ def is_ignored(path: Path) -> bool:
     return any(p.name.lower() in {"derivatives", ".git", "sourcedata"} for p in path.parents)
 
 
-def iter_nii_gz(root: Path) -> Iterable[Path]:
+def iter_nii_gz(root: Path, apply_filters: bool = True) -> Iterable[Path]:
     for p in root.rglob("*.nii.gz"):
-        if p.is_file() and not is_ignored(p):
-            yield p
+        if not p.is_file():
+            continue
+        if apply_filters and is_ignored(p):
+            continue
+        yield p
 
 
 def load_ras(path: Path) -> nib.Nifti1Image:
@@ -102,35 +105,19 @@ def make_sliding_positions(full_size: int, tile_size: int, overlap: int) -> List
     return positions
 
 
+def overlap_pct_to_pixels(tile_size: int, overlap_pct: float) -> int:
+    if overlap_pct < 0.0 or overlap_pct >= 100.0:
+        raise RuntimeError("tile-overlap-pct must satisfy 0 <= pct < 100")
+    overlap_px = int(round(tile_size * (overlap_pct / 100.0)))
+    overlap_px = max(0, min(tile_size - 1, overlap_px))
+    return overlap_px
+
+
 def tile_pair(
     img_u8: np.ndarray,
     lbl_u8: np.ndarray,
-    tile_size: int,
-    tile_overlap: int,
-    tile_threshold: int,
 ) -> List[Tuple[int, np.ndarray, np.ndarray]]:
-    h, w = img_u8.shape
-    must_tile = max(h, w) > tile_threshold
-
-    if not must_tile:
-        return [(0, img_u8, lbl_u8)]
-
-    img_pad = pad_to_min_hw(img_u8, tile_size, tile_size, fill=0)
-    lbl_pad = pad_to_min_hw(lbl_u8, tile_size, tile_size, fill=0)
-    hp, wp = img_pad.shape
-
-    xs = make_sliding_positions(wp, tile_size, tile_overlap)
-    ys = make_sliding_positions(hp, tile_size, tile_overlap)
-
-    out = []
-    tid = 0
-    for y0 in ys:
-        for x0 in xs:
-            it = img_pad[y0 : y0 + tile_size, x0 : x0 + tile_size]
-            lt = lbl_pad[y0 : y0 + tile_size, x0 : x0 + tile_size]
-            out.append((tid, it, lt))
-            tid += 1
-    return out
+    return [(0, img_u8, lbl_u8)]
 
 
 def extract_plane_slices(
@@ -174,15 +161,22 @@ def sanitize_token(s: str) -> str:
     return "".join((c if (c.isalnum() or c in "._-") else "-") for c in s)
 
 
-def find_label_match(img_path: Path, img_root: Path, label_root: Path, label_index: Dict[str, Path]) -> Path | None:
-    rel = img_path.relative_to(img_root)
-    direct = label_root / rel
-    if direct.exists():
-        return direct
+def normalize_label_suffix(label_suffix: str) -> str:
+    if label_suffix == "":
+        return ""
+    if label_suffix.startswith("_"):
+        return label_suffix
+    return f"_{label_suffix}"
 
-    key = img_path.name.replace(".nii.gz", "")
-    if key in label_index:
-        return label_index[key]
+
+def find_label_match(img_path: Path, img_root: Path, label_root: Path, label_suffix: str) -> Path | None:
+    rel = img_path.relative_to(img_root)
+    if rel.name.endswith(".nii.gz"):
+        rel_seg = rel.with_name(rel.name.replace(".nii.gz", f"{label_suffix}.nii.gz"))
+        direct_seg = label_root / rel_seg
+        if direct_seg.exists():
+            return direct_seg
+
     return None
 
 
@@ -218,31 +212,63 @@ def main() -> None:
     ap.add_argument("--clip-pct", type=float, nargs=2, default=(0.5, 99.5))
     ap.add_argument("--iso-tol", type=float, default=0.1)
     ap.add_argument("--iso-eps-mm", type=float, default=None)
-    ap.add_argument("--tile-size", type=int, default=224)
-    ap.add_argument("--tile-overlap", type=int, default=56)
-    ap.add_argument("--tile-threshold", type=int, default=512)
+    ap.add_argument("--label-suffix", type=str, default="_seg", help="Suffix appended to image basename to find label (e.g. _seg, _spine)")
+    ap.set_defaults(skip_existing=True)
+    ap.add_argument("--skip-existing", dest="skip_existing", action="store_true")
+    ap.add_argument("--no-skip-existing", dest="skip_existing", action="store_false")
     args = ap.parse_args()
+    args.label_suffix = normalize_label_suffix(args.label_suffix)
 
-    if args.tile_overlap < 0 or args.tile_overlap >= args.tile_size:
-        raise RuntimeError("tile-overlap must satisfy 0 <= tile-overlap < tile-size")
+    print("=== Extract slices config ===")
+    print(f"input-images     : {args.input_images}")
+    print(f"input-labels     : {args.input_labels}")
+    print(f"output-root      : {args.output_root}")
+    print(f"train-ratio      : {args.train_ratio}")
+    print(f"seed             : {args.seed}")
+    print(f"clip-pct         : {tuple(args.clip_pct)}")
+    print(f"label-suffix     : {args.label_suffix}")
+    print(f"skip-existing    : {args.skip_existing}")
+    print("tiling           : disabled in stage 01 (moved after resampling)")
+    print("=============================")
 
     image_root: Path = args.input_images
     label_root: Path = args.input_labels
     out_dirs = build_out_dirs(args.output_root)
+    no_match_log_path = args.output_root / "no_matching_labels.txt"
+    unmatched_labels_log_path = args.output_root / "labels_not_matched_to_images.txt"
+    no_match_log_path.parent.mkdir(parents=True, exist_ok=True)
+    no_match_log_path.write_text("")
+    unmatched_labels_log_path.write_text("")
 
-    label_files = list(iter_nii_gz(label_root))
-    label_index = {p.name.replace(".nii.gz", ""): p for p in label_files}
+    images = sorted(iter_nii_gz(image_root, apply_filters=True))
+    expected_label_files = []
+    for img_path in images:
+        rel = img_path.relative_to(image_root)
+        if not rel.name.endswith(".nii.gz"):
+            continue
+        label_rel = rel.with_name(rel.name.replace(".nii.gz", f"{args.label_suffix}.nii.gz"))
+        expected_label_files.append(label_root / label_rel)
+
+    label_files = [p for p in expected_label_files if p.exists()]
+    matched_labels: set[Path] = set()
 
     extracted = skipped = errors = 0
+    total_slices = 0
+    total_outputs = 0
+    skipped_existing = 0
 
-    images = sorted(iter_nii_gz(image_root))
-    for img_path in tqdm(images, desc="Extract", unit="vol"):
+    print(f"[info] candidate images: {len(images)} | candidate labels: {len(label_files)}")
+    pbar = tqdm(images, desc="Extract", unit="vol", total=len(images))
+    for img_path in pbar:
         try:
-            lbl_path = find_label_match(img_path, image_root, label_root, label_index)
+            lbl_path = find_label_match(img_path, image_root, label_root, args.label_suffix)
             if lbl_path is None:
                 skipped += 1
-                print(f"[SKIP] No matching label for {img_path}")
+                with no_match_log_path.open("a") as f:
+                    f.write(str(img_path) + "\n")
+                pbar.set_postfix(extracted=extracted, skipped=skipped, errors=errors, outputs=total_outputs, skip_exist=skipped_existing)
                 continue
+            matched_labels.add(lbl_path.resolve())
 
             img_nii = load_ras(img_path)
             lbl_nii = load_ras(lbl_path)
@@ -258,41 +284,62 @@ def main() -> None:
 
             mode = classify_from_spacing(spacing, args.iso_tol, args.iso_eps_mm)
             slices = extract_plane_slices(img_data, lbl_data, mode, spacing)
+            vol_outputs = 0
 
             src0 = sanitize_token(img_path.relative_to(image_root).parts[0]) if len(img_path.relative_to(image_root).parts) > 1 else "."
             base = sanitize_token(img_path.name.replace(".nii.gz", ""))
 
             for plane, sidx, spacing_hw, sl_img, sl_lbl in slices:
+                total_slices += 1
                 img_u8 = normalize_to_uint8(sl_img, tuple(args.clip_pct))
                 lbl_u8 = labels_to_uint8(sl_lbl)
 
                 tiles = tile_pair(
                     img_u8=img_u8,
                     lbl_u8=lbl_u8,
-                    tile_size=args.tile_size,
-                    tile_overlap=args.tile_overlap,
-                    tile_threshold=args.tile_threshold,
                 )
                 sp_tok = fmt_spacing(spacing_hw)
 
                 for tidx, tile_img, tile_lbl in tiles:
+                    vol_outputs += 1
+                    total_outputs += 1
                     fname = f"{src0}__{base}__{plane}__s{sidx:04d}__t{tidx:03d}__{sp_tok}.png"
                     split_train = deterministic_split(f"{base}__{plane}__s{sidx:04d}", args.seed) < args.train_ratio
 
                     img_out = out_dirs.img_train / fname if split_train else out_dirs.img_val / fname
                     lbl_out = out_dirs.lbl_train / fname if split_train else out_dirs.lbl_val / fname
 
+                    if args.skip_existing and img_out.exists() and lbl_out.exists():
+                        skipped_existing += 1
+                        continue
+
                     Image.fromarray(tile_img, mode="L").save(img_out)
                     Image.fromarray(tile_lbl, mode="L").save(lbl_out)
 
             extracted += 1
+            pbar.set_postfix(extracted=extracted, skipped=skipped, errors=errors, outputs=total_outputs, skip_exist=skipped_existing)
 
         except Exception as exc:
             errors += 1
             print(f"[ERROR] {img_path.name} | {type(exc).__name__}: {exc}")
             traceback.print_exc()
+            pbar.set_postfix(extracted=extracted, skipped=skipped, errors=errors, outputs=total_outputs, skip_exist=skipped_existing)
 
-    print(f"[SUMMARY] extracted={extracted} skipped={skipped} errors={errors}")
+    print(
+        f"[SUMMARY] extracted={extracted} skipped={skipped} errors={errors} "
+        f"total_slices={total_slices} total_outputs={total_outputs} skipped_existing={skipped_existing}"
+    )
+    print(f"[SUMMARY] no-matching-labels log: {no_match_log_path}")
+
+    unmatched_labels = [p for p in label_files if p.resolve() not in matched_labels]
+    if unmatched_labels:
+        with unmatched_labels_log_path.open("w") as f:
+            for p in unmatched_labels:
+                f.write(str(p) + "\n")
+        print(f"[SUMMARY] labels not matched to images: {len(unmatched_labels)}")
+        print(f"[SUMMARY] unmatched-labels log: {unmatched_labels_log_path}")
+    else:
+        print("[SUMMARY] labels not matched to images: 0")
 
 
 if __name__ == "__main__":

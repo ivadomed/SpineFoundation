@@ -7,6 +7,7 @@ import re
 from pathlib import Path
 
 from PIL import Image
+from tqdm import tqdm
 
 
 IMG_EXTS = {".png", ".jpg", ".jpeg", ".tif", ".tiff", ".bmp", ".webp"}
@@ -28,6 +29,12 @@ def main() -> int:
     ap.add_argument("--splits", nargs="*", default=["train", "val"])
     ap.add_argument("--max-issues", type=int, default=200)
     args = ap.parse_args()
+
+    print("=== Sanity config ===")
+    print(f"root       : {args.root}")
+    print(f"splits     : {args.splits}")
+    print(f"max-issues : {args.max_issues}")
+    print("=====================")
 
     issues: list[str] = []
 
@@ -52,11 +59,15 @@ def main() -> int:
             add_issue(f"[empty] no files in {img_dir}")
             continue
 
-        for img_fp in imgs:
+        print(f"[info] split={split} files={len(imgs)}")
+
+        pbar = tqdm(imgs, desc=f"Sanity {split}", unit="img", total=len(imgs))
+        for img_fp in pbar:
             total += 1
             lbl_fp = lbl_dir / img_fp.name
             if not lbl_fp.exists():
                 add_issue(f"[pair] missing label for {split}/{img_fp.name}")
+                pbar.set_postfix(checked=total, issues=len(issues))
                 continue
 
             if NAME_RE.match(img_fp.stem) is None:
@@ -68,6 +79,8 @@ def main() -> int:
                         add_issue(f"[shape] mismatch {split}/{img_fp.name}: image={i.size} label={l.size}")
             except Exception as exc:
                 add_issue(f"[read] cannot read pair {split}/{img_fp.name}: {exc}")
+
+            pbar.set_postfix(checked=total, issues=len(issues))
 
     print("=== SANITY SUMMARY ===")
     print(f"Root: {args.root}")
