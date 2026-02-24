@@ -97,6 +97,7 @@ def renumber_split(
     src_root: Path,
     dst_root: Path,
     split: str,
+    with_labels: bool,
     tiling: bool,
     tile_size: int,
     tile_overlap_pct: float,
@@ -124,7 +125,8 @@ def renumber_split(
         print(f"[info] split={split} tiling=disabled")
 
     dst_img.mkdir(parents=True, exist_ok=True)
-    dst_lbl.mkdir(parents=True, exist_ok=True)
+    if with_labels:
+        dst_lbl.mkdir(parents=True, exist_ok=True)
 
     written = 0
     missing = 0
@@ -133,14 +135,18 @@ def renumber_split(
     pbar = tqdm(imgs, desc=f"Renumber {split}", unit="img", total=len(imgs))
     for img_fp in pbar:
         lbl_fp = src_lbl / img_fp.name
-        if not lbl_fp.exists():
+        if with_labels and not lbl_fp.exists():
             missing += 1
             pbar.set_postfix(written=written, missing=missing, tiles=total_tiles, skip_exist=skipped_existing)
             continue
 
-        with Image.open(img_fp) as i, Image.open(lbl_fp) as l:
+        with Image.open(img_fp) as i:
             img_u8 = np.array(i.convert("L"), dtype=np.uint8)
-            lbl_u8 = np.array(l.convert("L"), dtype=np.uint8)
+        if with_labels:
+            with Image.open(lbl_fp) as l:
+                lbl_u8 = np.array(l.convert("L"), dtype=np.uint8)
+        else:
+            lbl_u8 = np.zeros_like(img_u8, dtype=np.uint8)
 
         if tiling:
             tiles = tile_pair(
@@ -162,24 +168,34 @@ def renumber_split(
             out_img = dst_img / new_name
             out_lbl = dst_lbl / new_name
 
-            if skip_existing and out_img.exists() and out_lbl.exists():
-                skipped_existing += 1
-                continue
-
-            if out_img.exists() or out_lbl.exists():
-                raise RuntimeError(f"Collision detected for {new_name}")
+            if with_labels:
+                if skip_existing and out_img.exists() and out_lbl.exists():
+                    skipped_existing += 1
+                    continue
+                if out_img.exists() or out_lbl.exists():
+                    raise RuntimeError(f"Collision detected for {new_name}")
+            else:
+                if skip_existing and out_img.exists():
+                    skipped_existing += 1
+                    continue
+                if out_img.exists():
+                    raise RuntimeError(f"Collision detected for {new_name}")
 
             Image.fromarray(tile_img, mode="L").save(out_img)
-            Image.fromarray(tile_lbl, mode="L").save(out_lbl)
+            if with_labels:
+                Image.fromarray(tile_lbl, mode="L").save(out_lbl)
             written += 1
             total_tiles += 1
 
         pbar.set_postfix(written=written, missing=missing, tiles=total_tiles, skip_exist=skipped_existing)
 
-    print(
-        f"[ok] split={split} written={written} missing_labels={missing} "
-        f"tiles={total_tiles} skipped_existing={skipped_existing}"
-    )
+    if with_labels:
+        print(
+            f"[ok] split={split} written={written} missing_labels={missing} "
+            f"tiles={total_tiles} skipped_existing={skipped_existing}"
+        )
+    else:
+        print(f"[ok] split={split} written={written} tiles={total_tiles} skipped_existing={skipped_existing} mode=image-only")
 
 
 def main() -> None:
@@ -187,6 +203,9 @@ def main() -> None:
     ap.add_argument("--src-root", type=Path, required=True)
     ap.add_argument("--dst-root", type=Path, required=True)
     ap.add_argument("--splits", nargs="*", default=["train", "val"])
+    ap.set_defaults(with_labels=True)
+    ap.add_argument("--with-labels", dest="with_labels", action="store_true")
+    ap.add_argument("--no-labels", dest="with_labels", action="store_false")
     ap.set_defaults(tiling=True)
     ap.add_argument("--tiling", dest="tiling", action="store_true")
     ap.add_argument("--no-tiling", dest="tiling", action="store_false")
@@ -202,6 +221,7 @@ def main() -> None:
     print(f"src-root : {args.src_root}")
     print(f"dst-root : {args.dst_root}")
     print(f"splits   : {args.splits}")
+    print(f"with-labels: {args.with_labels}")
     print(f"tiling   : {args.tiling}")
     print(f"tile-size: {args.tile_size}")
     print(f"overlap% : {args.tile_overlap_pct}")
@@ -214,6 +234,7 @@ def main() -> None:
             src_root=args.src_root,
             dst_root=args.dst_root,
             split=split,
+            with_labels=args.with_labels,
             tiling=args.tiling,
             tile_size=args.tile_size,
             tile_overlap_pct=args.tile_overlap_pct,

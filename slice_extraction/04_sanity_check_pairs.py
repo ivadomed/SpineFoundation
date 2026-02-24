@@ -28,12 +28,16 @@ def main() -> int:
     ap.add_argument("--root", type=Path, required=True)
     ap.add_argument("--splits", nargs="*", default=["train", "val"])
     ap.add_argument("--max-issues", type=int, default=200)
+    ap.set_defaults(with_labels=True)
+    ap.add_argument("--with-labels", dest="with_labels", action="store_true")
+    ap.add_argument("--no-labels", dest="with_labels", action="store_false")
     args = ap.parse_args()
 
     print("=== Sanity config ===")
     print(f"root       : {args.root}")
     print(f"splits     : {args.splits}")
     print(f"max-issues : {args.max_issues}")
+    print(f"with-labels: {args.with_labels}")
     print("=====================")
 
     issues: list[str] = []
@@ -50,7 +54,7 @@ def main() -> int:
         if not img_dir.exists():
             add_issue(f"[missing] image split folder: {img_dir}")
             continue
-        if not lbl_dir.exists():
+        if args.with_labels and not lbl_dir.exists():
             add_issue(f"[missing] label split folder: {lbl_dir}")
             continue
 
@@ -64,19 +68,20 @@ def main() -> int:
         pbar = tqdm(imgs, desc=f"Sanity {split}", unit="img", total=len(imgs))
         for img_fp in pbar:
             total += 1
-            lbl_fp = lbl_dir / img_fp.name
-            if not lbl_fp.exists():
-                add_issue(f"[pair] missing label for {split}/{img_fp.name}")
-                pbar.set_postfix(checked=total, issues=len(issues))
-                continue
-
             if NAME_RE.match(img_fp.stem) is None:
                 add_issue(f"[name] bad filename pattern: {img_fp.name}")
 
             try:
-                with Image.open(img_fp) as i, Image.open(lbl_fp) as l:
-                    if i.size != l.size:
-                        add_issue(f"[shape] mismatch {split}/{img_fp.name}: image={i.size} label={l.size}")
+                with Image.open(img_fp) as i:
+                    if args.with_labels:
+                        lbl_fp = lbl_dir / img_fp.name
+                        if not lbl_fp.exists():
+                            add_issue(f"[pair] missing label for {split}/{img_fp.name}")
+                            pbar.set_postfix(checked=total, issues=len(issues))
+                            continue
+                        with Image.open(lbl_fp) as l:
+                            if i.size != l.size:
+                                add_issue(f"[shape] mismatch {split}/{img_fp.name}: image={i.size} label={l.size}")
             except Exception as exc:
                 add_issue(f"[read] cannot read pair {split}/{img_fp.name}: {exc}")
 

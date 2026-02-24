@@ -29,7 +29,7 @@ def require_dir(path: Path, stage_name: str) -> None:
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--input-images", type=Path, required=True)
-    ap.add_argument("--input-labels", type=Path, required=True)
+    ap.add_argument("--input-labels", type=Path, default=None)
     ap.add_argument("--work-root", type=Path, required=True, help="Root folder used for intermediate/final outputs")
     ap.add_argument("--train-ratio", type=float, default=0.9)
     ap.add_argument("--seed", type=int, default=42)
@@ -50,10 +50,12 @@ def main() -> None:
     ap.add_argument("--skip-existing", dest="skip_existing", action="store_true", help="Skip files already processed in stages 1/2/3")
     ap.add_argument("--no-skip-existing", dest="skip_existing", action="store_false", help="Recompute and overwrite checks in stages 1/2/3")
     args = ap.parse_args()
+    with_labels = args.input_labels is not None
 
     print("=== Pipeline config ===")
     print(f"input-images     : {args.input_images}")
     print(f"input-labels     : {args.input_labels}")
+    print(f"with-labels      : {with_labels}")
     print(f"work-root        : {args.work_root}")
     print(f"train-ratio      : {args.train_ratio}")
     print(f"seed             : {args.seed}")
@@ -96,8 +98,6 @@ def main() -> None:
                     str(extract_py),
                     "--input-images",
                     str(args.input_images),
-                    "--input-labels",
-                    str(args.input_labels),
                     "--output-root",
                     str(out_extract),
                     "--train-ratio",
@@ -110,6 +110,7 @@ def main() -> None:
                     "--iso-tol",
                     str(args.iso_tol),
                 ]
+                + (["--input-labels", str(args.input_labels)] if with_labels else [])
                 + (["--skip-existing"] if args.skip_existing else ["--no-skip-existing"])
                 + (["--iso-eps-mm", str(args.iso_eps_mm)] if args.iso_eps_mm is not None else [])
             )
@@ -132,6 +133,7 @@ def main() -> None:
                     str(args.interp),
                     "--out-root",
                     str(out_resample),
+                    "--with-labels" if with_labels else "--no-labels",
                 ]
                 + (["--skip-existing"] if args.skip_existing else ["--no-skip-existing"])
             )
@@ -152,6 +154,7 @@ def main() -> None:
                     str(out_resample),
                     "--dst-root",
                     str(out_final),
+                    "--with-labels" if with_labels else "--no-labels",
                     "--tiling" if args.tiling else "--no-tiling",
                     "--tile-size",
                     str(args.tile_size),
@@ -177,6 +180,7 @@ def main() -> None:
                     str(sanity_py),
                     "--root",
                     str(out_final),
+                    "--with-labels" if with_labels else "--no-labels",
                 ]
             )
             print(f"[stage 4/4 done] {time.perf_counter() - t_stage:.1f}s")

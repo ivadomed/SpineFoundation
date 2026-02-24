@@ -55,7 +55,7 @@ crops:
   local_crops_size: 160
 
 dataset:
-  dataset_path: /home/ge.polymtl.ca/p123239/slice_extractor/resample1
+  dataset_path: /home/ge.polymtl.ca/p123239/slice_extractor/resample05
   shuffle: true
   size: 512
 

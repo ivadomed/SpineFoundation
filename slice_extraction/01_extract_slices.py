@@ -205,7 +205,7 @@ def build_out_dirs(root: Path) -> OutDirs:
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--input-images", type=Path, required=True)
-    ap.add_argument("--input-labels", type=Path, required=True)
+    ap.add_argument("--input-labels", type=Path, default=None)
     ap.add_argument("--output-root", type=Path, required=True)
     ap.add_argument("--train-ratio", type=float, default=0.9)
     ap.add_argument("--seed", type=int, default=42)
@@ -218,10 +218,12 @@ def main() -> None:
     ap.add_argument("--no-skip-existing", dest="skip_existing", action="store_false")
     args = ap.parse_args()
     args.label_suffix = normalize_label_suffix(args.label_suffix)
+    with_labels = args.input_labels is not None
 
     print("=== Extract slices config ===")
     print(f"input-images     : {args.input_images}")
     print(f"input-labels     : {args.input_labels}")
+    print(f"with-labels      : {with_labels}")
     print(f"output-root      : {args.output_root}")
     print(f"train-ratio      : {args.train_ratio}")
     print(f"seed             : {args.seed}")
@@ -232,24 +234,27 @@ def main() -> None:
     print("=============================")
 
     image_root: Path = args.input_images
-    label_root: Path = args.input_labels
+    label_root: Path | None = args.input_labels
     out_dirs = build_out_dirs(args.output_root)
     no_match_log_path = args.output_root / "no_matching_labels.txt"
     unmatched_labels_log_path = args.output_root / "labels_not_matched_to_images.txt"
-    no_match_log_path.parent.mkdir(parents=True, exist_ok=True)
-    no_match_log_path.write_text("")
-    unmatched_labels_log_path.write_text("")
+    if with_labels:
+        no_match_log_path.parent.mkdir(parents=True, exist_ok=True)
+        no_match_log_path.write_text("")
+        unmatched_labels_log_path.write_text("")
 
     images = sorted(iter_nii_gz(image_root, apply_filters=True))
-    expected_label_files = []
-    for img_path in images:
-        rel = img_path.relative_to(image_root)
-        if not rel.name.endswith(".nii.gz"):
-            continue
-        label_rel = rel.with_name(rel.name.replace(".nii.gz", f"{args.label_suffix}.nii.gz"))
-        expected_label_files.append(label_root / label_rel)
+    label_files: list[Path] = []
+    if with_labels and label_root is not None:
+        expected_label_files = []
+        for img_path in images:
+            rel = img_path.relative_to(image_root)
+            if not rel.name.endswith(".nii.gz"):
+                continue
+            label_rel = rel.with_name(rel.name.replace(".nii.gz", f"{args.label_suffix}.nii.gz"))
+            expected_label_files.append(label_root / label_rel)
 
-    label_files = [p for p in expected_label_files if p.exists()]
+        label_files = [p for p in expected_label_files if p.exists()]
     matched_labels: set[Path] = set()
 
     extracted = skipped = errors = 0
@@ -257,27 +262,39 @@ def main() -> None:
     total_outputs = 0
     skipped_existing = 0
 
-    print(f"[info] candidate images: {len(images)} | candidate labels: {len(label_files)}")
+    if with_labels:
+        print(f"[info] candidate images: {len(images)} | candidate labels: {len(label_files)}")
+    else:
+        print(f"[info] candidate images: {len(images)} | mode=image-only")
     pbar = tqdm(images, desc="Extract", unit="vol", total=len(images))
     for img_path in pbar:
         try:
-            lbl_path = find_label_match(img_path, image_root, label_root, args.label_suffix)
-            if lbl_path is None:
-                skipped += 1
-                with no_match_log_path.open("a") as f:
-                    f.write(str(img_path) + "\n")
-                pbar.set_postfix(extracted=extracted, skipped=skipped, errors=errors, outputs=total_outputs, skip_exist=skipped_existing)
-                continue
-            matched_labels.add(lbl_path.resolve())
+            lbl_path = None
+            if with_labels:
+                if label_root is None:
+                    raise RuntimeError("with_labels is enabled but input-labels is missing")
+                lbl_path = find_label_match(img_path, image_root, label_root, args.label_suffix)
+                if lbl_path is None:
+                    skipped += 1
+                    with no_match_log_path.open("a") as f:
+                        f.write(str(img_path) + "\n")
+                    pbar.set_postfix(extracted=extracted, skipped=skipped, errors=errors, outputs=total_outputs, skip_exist=skipped_existing)
+                    continue
+                matched_labels.add(lbl_path.resolve())
 
             img_nii = load_ras(img_path)
-            lbl_nii = load_ras(lbl_path)
             spacing = get_spacing_ras(img_nii)
 
             img_data = img_nii.get_fdata(dtype=np.float32)
-            lbl_data = lbl_nii.get_fdata(dtype=np.float32)
+            if with_labels:
+                if lbl_path is None:
+                    raise RuntimeError("Label path unexpectedly missing")
+                lbl_nii = load_ras(lbl_path)
+                lbl_data = lbl_nii.get_fdata(dtype=np.float32)
+            else:
+                lbl_data = np.zeros_like(img_data, dtype=np.float32)
 
-            if img_data.shape[:3] != lbl_data.shape[:3]:
+            if with_labels and img_data.shape[:3] != lbl_data.shape[:3]:
                 skipped += 1
                 print(f"[SKIP] Shape mismatch image/label: {img_path.name}")
                 continue
@@ -309,12 +326,18 @@ def main() -> None:
                     img_out = out_dirs.img_train / fname if split_train else out_dirs.img_val / fname
                     lbl_out = out_dirs.lbl_train / fname if split_train else out_dirs.lbl_val / fname
 
-                    if args.skip_existing and img_out.exists() and lbl_out.exists():
-                        skipped_existing += 1
-                        continue
+                    if with_labels:
+                        if args.skip_existing and img_out.exists() and lbl_out.exists():
+                            skipped_existing += 1
+                            continue
+                    else:
+                        if args.skip_existing and img_out.exists():
+                            skipped_existing += 1
+                            continue
 
                     Image.fromarray(tile_img, mode="L").save(img_out)
-                    Image.fromarray(tile_lbl, mode="L").save(lbl_out)
+                    if with_labels:
+                        Image.fromarray(tile_lbl, mode="L").save(lbl_out)
 
             extracted += 1
             pbar.set_postfix(extracted=extracted, skipped=skipped, errors=errors, outputs=total_outputs, skip_exist=skipped_existing)
@@ -329,17 +352,20 @@ def main() -> None:
         f"[SUMMARY] extracted={extracted} skipped={skipped} errors={errors} "
         f"total_slices={total_slices} total_outputs={total_outputs} skipped_existing={skipped_existing}"
     )
-    print(f"[SUMMARY] no-matching-labels log: {no_match_log_path}")
+    if with_labels:
+        print(f"[SUMMARY] no-matching-labels log: {no_match_log_path}")
 
-    unmatched_labels = [p for p in label_files if p.resolve() not in matched_labels]
-    if unmatched_labels:
-        with unmatched_labels_log_path.open("w") as f:
-            for p in unmatched_labels:
-                f.write(str(p) + "\n")
-        print(f"[SUMMARY] labels not matched to images: {len(unmatched_labels)}")
-        print(f"[SUMMARY] unmatched-labels log: {unmatched_labels_log_path}")
+        unmatched_labels = [p for p in label_files if p.resolve() not in matched_labels]
+        if unmatched_labels:
+            with unmatched_labels_log_path.open("w") as f:
+                for p in unmatched_labels:
+                    f.write(str(p) + "\n")
+            print(f"[SUMMARY] labels not matched to images: {len(unmatched_labels)}")
+            print(f"[SUMMARY] unmatched-labels log: {unmatched_labels_log_path}")
+        else:
+            print("[SUMMARY] labels not matched to images: 0")
     else:
-        print("[SUMMARY] labels not matched to images: 0")
+        print("[SUMMARY] labels disabled: image-only extraction")
 
 
 if __name__ == "__main__":
