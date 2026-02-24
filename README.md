@@ -1,4 +1,4 @@
-# THIS IS A FORK FROM https://github.com/mselmangokmen/dinov2-training-HF 
+# THIS IS A FORK OF https://github.com/mselmangokmen/dinov2-training-HF
 
 # DINOv2 Training Framework
 
@@ -28,11 +28,11 @@ SpineFoundation/
 │       ├── models.json ← model config file (see 'curia')
 ```
 
-Precise your checkpoint path and data location in there.
+Specify your checkpoint path and data location there.
 
 ## Data
 
-Data must be ImageNet like :
+Data must be ImageNet-like:
 
 ```text
 data/
@@ -55,16 +55,16 @@ data/
 │   │   └── n0001_000101.JPEG
 ```
 
-Note : class n000X doesn't represent something but are mandatory (put everything in the same class).
+Note: class `n000X` does not represent a real category but is mandatory (you can put everything in the same class).
 
-You can extract data (with or without label) from a 3D Nifty volumes data folder root using 
+You can extract data (with or without labels) from a 3D NIfTI volumes root folder using:
 ```text
-slice_extarction/extract.sh
+slice_extraction/extract.sh
 ```
 
-##Downstream task
+## Downstream tasks
 
 You can train downstream tasks using :
 ```text
-slice_extarction/extract.sh
+slice_extraction/extract.sh
 ```
