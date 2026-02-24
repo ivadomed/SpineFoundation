@@ -61,6 +61,11 @@ You can extract data (with or without labels) from a 3D NIfTI volumes root folde
 ```text
 slice_extraction/extract.sh
 ```
+## Curia finetune 
+
+'''bash 
+bash runcuria.sh
+'''
 
 ## Downstream tasks
 
