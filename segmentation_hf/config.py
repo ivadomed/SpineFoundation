@@ -45,7 +45,6 @@ def parse_args() -> TrainConfig:
     parser.add_argument("--output_dir", type=str, default="outputs_seg")
     parser.add_argument("--image_size", type=int, default=224)
     parser.add_argument("--tile_overlap_pct", type=float, default=25.0)
-    parser.add_argument("--tile_overlap", type=int, default=None, help="Deprecated: overlap in pixels, converted to percentage")
     parser.add_argument("--tile_threshold", type=int, default=512)
     parser.add_argument("--epochs", type=int, default=50)
     parser.add_argument("--batch_size", type=int, default=16)
@@ -81,10 +80,6 @@ def parse_args() -> TrainConfig:
     if args.no_amp:
         amp = False
 
-    tile_overlap_pct = args.tile_overlap_pct
-    if args.tile_overlap is not None:
-        tile_overlap_pct = (100.0 * float(args.tile_overlap)) / float(args.image_size)
-
     return TrainConfig(
         model_dir=args.model_dir,
         train_images=args.train_images,
@@ -93,7 +88,7 @@ def parse_args() -> TrainConfig:
         val_masks=args.val_masks,
         output_dir=args.output_dir,
         image_size=args.image_size,
-        tile_overlap_pct=tile_overlap_pct,
+        tile_overlap_pct=args.tile_overlap_pct,
         tile_threshold=args.tile_threshold,
         epochs=args.epochs,
         batch_size=args.batch_size,
