@@ -63,13 +63,13 @@ slice_extraction/extract.sh
 ```
 ## Curia finetune 
 
-'''bash 
+```bash 
 bash runcuria.sh
-'''
+```
 
 ## Downstream tasks
 
 You can train downstream tasks using :
 ```text
 slice_extraction/extract.sh
-```
+
