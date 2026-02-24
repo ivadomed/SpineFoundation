@@ -11,7 +11,8 @@ class TrainConfig:
     val_masks: str
     output_dir: str = "outputs_seg"
     image_size: int = 224
-    tile_overlap: int = 56
+    tile_overlap_pct: float = 25.0
+    tile_threshold: int = 512
     epochs: int = 50
     batch_size: int = 16
     lr: float = 1e-4
@@ -22,6 +23,14 @@ class TrainConfig:
     save_every: int = 1
     bce_weight: float = 0.5
     dice_weight: float = 0.5
+    use_wandb: bool = False
+    wandb_project: str = "spine-seg"
+    wandb_entity: str | None = None
+    wandb_run_name: str | None = None
+    wandb_mode: str = "online"
+    wandb_log_val_images: bool = True
+    wandb_val_images_count: int = 4
+    wandb_val_images_every: int = 1
 
 
 def parse_args() -> TrainConfig:
@@ -35,7 +44,9 @@ def parse_args() -> TrainConfig:
 
     parser.add_argument("--output_dir", type=str, default="outputs_seg")
     parser.add_argument("--image_size", type=int, default=224)
-    parser.add_argument("--tile_overlap", type=int, default=56)
+    parser.add_argument("--tile_overlap_pct", type=float, default=25.0)
+    parser.add_argument("--tile_overlap", type=int, default=None, help="Deprecated: overlap in pixels, converted to percentage")
+    parser.add_argument("--tile_threshold", type=int, default=512)
     parser.add_argument("--epochs", type=int, default=50)
     parser.add_argument("--batch_size", type=int, default=16)
     parser.add_argument("--lr", type=float, default=1e-4)
@@ -50,12 +61,29 @@ def parse_args() -> TrainConfig:
     parser.add_argument("--bce_weight", type=float, default=0.5)
     parser.add_argument("--dice_weight", type=float, default=0.5)
 
+    parser.set_defaults(use_wandb=False)
+    parser.add_argument("--wandb", dest="use_wandb", action="store_true", help="Enable Weights & Biases logging")
+    parser.add_argument("--no-wandb", dest="use_wandb", action="store_false", help="Disable Weights & Biases logging")
+    parser.add_argument("--wandb_project", type=str, default="spine-seg")
+    parser.add_argument("--wandb_entity", type=str, default=None)
+    parser.add_argument("--wandb_run_name", type=str, default=None)
+    parser.add_argument("--wandb_mode", type=str, default="online", choices=["online", "offline", "disabled"])
+    parser.set_defaults(wandb_log_val_images=True)
+    parser.add_argument("--wandb_log_val_images", dest="wandb_log_val_images", action="store_true")
+    parser.add_argument("--no_wandb_log_val_images", dest="wandb_log_val_images", action="store_false")
+    parser.add_argument("--wandb_val_images_count", type=int, default=4)
+    parser.add_argument("--wandb_val_images_every", type=int, default=1)
+
     args = parser.parse_args()
     amp = True
     if args.amp:
         amp = True
     if args.no_amp:
         amp = False
+
+    tile_overlap_pct = args.tile_overlap_pct
+    if args.tile_overlap is not None:
+        tile_overlap_pct = (100.0 * float(args.tile_overlap)) / float(args.image_size)
 
     return TrainConfig(
         model_dir=args.model_dir,
@@ -65,7 +93,8 @@ def parse_args() -> TrainConfig:
         val_masks=args.val_masks,
         output_dir=args.output_dir,
         image_size=args.image_size,
-        tile_overlap=args.tile_overlap,
+        tile_overlap_pct=tile_overlap_pct,
+        tile_threshold=args.tile_threshold,
         epochs=args.epochs,
         batch_size=args.batch_size,
         lr=args.lr,
@@ -76,4 +105,12 @@ def parse_args() -> TrainConfig:
         save_every=args.save_every,
         bce_weight=args.bce_weight,
         dice_weight=args.dice_weight,
+        use_wandb=args.use_wandb,
+        wandb_project=args.wandb_project,
+        wandb_entity=args.wandb_entity,
+        wandb_run_name=args.wandb_run_name,
+        wandb_mode=args.wandb_mode,
+        wandb_log_val_images=args.wandb_log_val_images,
+        wandb_val_images_count=args.wandb_val_images_count,
+        wandb_val_images_every=args.wandb_val_images_every,
     )

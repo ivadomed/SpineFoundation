@@ -36,6 +36,9 @@ def main() -> None:
     ap.add_argument("--clip-pct", type=float, nargs=2, default=(0.5, 99.5))
     ap.add_argument("--iso-tol", type=float, default=0.1)
     ap.add_argument("--iso-eps-mm", type=float, default=None)
+    ap.set_defaults(tiling=True)
+    ap.add_argument("--tiling", dest="tiling", action="store_true", help="Enable tiling during stage 3")
+    ap.add_argument("--no-tiling", dest="tiling", action="store_false", help="Disable tiling during stage 3")
     ap.add_argument("--tile-size", type=int, default=224)
     ap.add_argument("--tile-overlap-pct", type=float, default=25.0)
     ap.add_argument("--tile-threshold", type=int, default=512)
@@ -54,6 +57,7 @@ def main() -> None:
     print(f"work-root        : {args.work_root}")
     print(f"train-ratio      : {args.train_ratio}")
     print(f"seed             : {args.seed}")
+    print(f"tiling           : {args.tiling}")
     print(f"tile-size        : {args.tile_size}")
     print(f"tile-overlap-pct : {args.tile_overlap_pct}")
     print(f"tile-threshold   : {args.tile_threshold}")
@@ -148,6 +152,7 @@ def main() -> None:
                     str(out_resample),
                     "--dst-root",
                     str(out_final),
+                    "--tiling" if args.tiling else "--no-tiling",
                     "--tile-size",
                     str(args.tile_size),
                     "--tile-overlap-pct",

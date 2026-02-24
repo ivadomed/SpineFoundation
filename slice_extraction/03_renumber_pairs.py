@@ -97,6 +97,7 @@ def renumber_split(
     src_root: Path,
     dst_root: Path,
     split: str,
+    tiling: bool,
     tile_size: int,
     tile_overlap_pct: float,
     tile_threshold: int,
@@ -114,10 +115,13 @@ def renumber_split(
 
     print(f"[info] split={split} images={len(imgs)}")
     tile_overlap_px = overlap_pct_to_pixels(tile_size=tile_size, overlap_pct=tile_overlap_pct)
-    print(
-        f"[info] split={split} tiling params: tile_size={tile_size}, "
-        f"tile_overlap_pct={tile_overlap_pct}, tile_overlap_px={tile_overlap_px}, tile_threshold={tile_threshold}"
-    )
+    if tiling:
+        print(
+            f"[info] split={split} tiling=enabled | tile_size={tile_size}, "
+            f"tile_overlap_pct={tile_overlap_pct}, tile_overlap_px={tile_overlap_px}, tile_threshold={tile_threshold}"
+        )
+    else:
+        print(f"[info] split={split} tiling=disabled")
 
     dst_img.mkdir(parents=True, exist_ok=True)
     dst_lbl.mkdir(parents=True, exist_ok=True)
@@ -138,13 +142,16 @@ def renumber_split(
             img_u8 = np.array(i.convert("L"), dtype=np.uint8)
             lbl_u8 = np.array(l.convert("L"), dtype=np.uint8)
 
-        tiles = tile_pair(
-            img_u8=img_u8,
-            lbl_u8=lbl_u8,
-            tile_size=tile_size,
-            tile_overlap_px=tile_overlap_px,
-            tile_threshold=tile_threshold,
-        )
+        if tiling:
+            tiles = tile_pair(
+                img_u8=img_u8,
+                lbl_u8=lbl_u8,
+                tile_size=tile_size,
+                tile_overlap_px=tile_overlap_px,
+                tile_threshold=tile_threshold,
+            )
+        else:
+            tiles = [(0, img_u8, lbl_u8)]
 
         base = img_fp.stem
 
@@ -180,6 +187,9 @@ def main() -> None:
     ap.add_argument("--src-root", type=Path, required=True)
     ap.add_argument("--dst-root", type=Path, required=True)
     ap.add_argument("--splits", nargs="*", default=["train", "val"])
+    ap.set_defaults(tiling=True)
+    ap.add_argument("--tiling", dest="tiling", action="store_true")
+    ap.add_argument("--no-tiling", dest="tiling", action="store_false")
     ap.add_argument("--tile-size", type=int, default=224)
     ap.add_argument("--tile-overlap-pct", type=float, default=25.0)
     ap.add_argument("--tile-threshold", type=int, default=512)
@@ -192,6 +202,7 @@ def main() -> None:
     print(f"src-root : {args.src_root}")
     print(f"dst-root : {args.dst_root}")
     print(f"splits   : {args.splits}")
+    print(f"tiling   : {args.tiling}")
     print(f"tile-size: {args.tile_size}")
     print(f"overlap% : {args.tile_overlap_pct}")
     print(f"threshold: {args.tile_threshold}")
@@ -203,6 +214,7 @@ def main() -> None:
             src_root=args.src_root,
             dst_root=args.dst_root,
             split=split,
+            tiling=args.tiling,
             tile_size=args.tile_size,
             tile_overlap_pct=args.tile_overlap_pct,
             tile_threshold=args.tile_threshold,

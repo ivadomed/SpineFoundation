@@ -1,9 +1,10 @@
-import random
+from dataclasses import dataclass
 from pathlib import Path
 from typing import List, Tuple
 
 import numpy as np
 import torch
+import torch.nn.functional as F
 from PIL import Image, ImageFile, PngImagePlugin
 from torch.utils.data import DataLoader, Dataset
 
@@ -14,10 +15,26 @@ Image.MAX_IMAGE_PIXELS = None
 PngImagePlugin.MAX_TEXT_CHUNK = 16 * (1024**2)
 
 
+@dataclass
+class TileRecord:
+    pair_idx: int
+    x0: int
+    y0: int
+    must_tile: bool
+
+
 def zscore_normalize(t: torch.Tensor, eps: float = 1e-6) -> torch.Tensor:
     mean = t.mean()
     std = t.std()
     return (t - mean) / (std + eps)
+
+
+def overlap_pct_to_pixels(tile_size: int, overlap_pct: float) -> int:
+    if overlap_pct < 0.0 or overlap_pct >= 100.0:
+        raise ValueError("tile_overlap_pct must satisfy 0 <= pct < 100")
+    overlap_px = int(round(tile_size * (overlap_pct / 100.0)))
+    overlap_px = max(0, min(tile_size - 1, overlap_px))
+    return overlap_px
 
 
 def pad_to_min_hw(arr: np.ndarray, min_h: int, min_w: int, fill: int = 0) -> np.ndarray:
@@ -37,8 +54,8 @@ def pad_to_min_hw(arr: np.ndarray, min_h: int, min_w: int, fill: int = 0) -> np.
     return np.pad(arr, ((top, bottom), (left, right), (0, 0)), mode="constant", constant_values=fill)
 
 
-def make_sliding_positions(full_size: int, tile_size: int, overlap: int) -> List[int]:
-    stride = max(1, tile_size - overlap)
+def make_sliding_positions(full_size: int, tile_size: int, overlap_px: int) -> List[int]:
+    stride = max(1, tile_size - overlap_px)
     if full_size <= tile_size:
         return [0]
 
@@ -49,22 +66,8 @@ def make_sliding_positions(full_size: int, tile_size: int, overlap: int) -> List
     return positions
 
 
-def extract_tile_pair(
-    image: np.ndarray,
-    mask: np.ndarray,
-    x0: int,
-    y0: int,
-    tile_size: int,
-) -> Tuple[np.ndarray, np.ndarray]:
-    image = pad_to_min_hw(image, tile_size, tile_size, fill=0)
-    mask = pad_to_min_hw(mask, tile_size, tile_size, fill=0)
-    image_tile = image[y0 : y0 + tile_size, x0 : x0 + tile_size]
-    mask_tile = mask[y0 : y0 + tile_size, x0 : x0 + tile_size]
-    return image_tile, mask_tile
-
-
 def list_image_files(folder: Path) -> List[Path]:
-    exts = {".png", ".jpg", ".jpeg", ".bmp", ".tif", ".tiff"}
+    exts = {".png", ".jpg", ".jpeg", ".bmp", ".tif", ".tiff", ".webp"}
     files = [p for p in folder.iterdir() if p.is_file() and p.suffix.lower() in exts]
     return sorted(files)
 
@@ -75,19 +78,17 @@ class PairedSegmentationDataset(Dataset):
         image_dir: str,
         mask_dir: str,
         image_size: int,
-        tile_overlap: int,
+        tile_overlap_pct: float,
+        tile_threshold: int,
         split: str = "train",
-        seed: int = 42,
     ):
         self.image_dir = Path(image_dir)
         self.mask_dir = Path(mask_dir)
         self.image_size = image_size
-        self.tile_overlap = tile_overlap
+        self.tile_overlap_pct = tile_overlap_pct
+        self.tile_threshold = tile_threshold
         self.split = split
-        self.rng = random.Random(seed)
-
-        if self.tile_overlap < 0 or self.tile_overlap >= self.image_size:
-            raise ValueError("tile_overlap must satisfy 0 <= tile_overlap < image_size")
+        self.tile_overlap_px = overlap_pct_to_pixels(tile_size=image_size, overlap_pct=tile_overlap_pct)
 
         if not self.image_dir.exists():
             raise FileNotFoundError(f"Image directory not found: {self.image_dir}")
@@ -114,20 +115,26 @@ class PairedSegmentationDataset(Dataset):
             )
 
         self.pairs = pairs
-        self.tiles: List[Tuple[int, int, int]] = []
+        self.tiles: List[TileRecord] = []
 
         for pair_idx, (img_path, _) in enumerate(self.pairs):
-            img = Image.open(img_path).convert("L")
-            arr = np.array(img, dtype=np.float32)
-            arr = pad_to_min_hw(arr, self.image_size, self.image_size, fill=0)
-            h, w = arr.shape[:2]
+            with Image.open(img_path) as img:
+                arr = np.array(img.convert("L"), dtype=np.uint8)
 
-            xs = make_sliding_positions(w, self.image_size, self.tile_overlap)
-            ys = make_sliding_positions(h, self.image_size, self.tile_overlap)
+            h, w = arr.shape[:2]
+            must_tile = max(h, w) > self.tile_threshold
+            if not must_tile:
+                self.tiles.append(TileRecord(pair_idx=pair_idx, x0=0, y0=0, must_tile=False))
+                continue
+
+            arr_pad = pad_to_min_hw(arr, self.image_size, self.image_size, fill=0)
+            hp, wp = arr_pad.shape[:2]
+            xs = make_sliding_positions(wp, self.image_size, self.tile_overlap_px)
+            ys = make_sliding_positions(hp, self.image_size, self.tile_overlap_px)
 
             for y0 in ys:
                 for x0 in xs:
-                    self.tiles.append((pair_idx, x0, y0))
+                    self.tiles.append(TileRecord(pair_idx=pair_idx, x0=x0, y0=y0, must_tile=True))
 
     def __len__(self) -> int:
         return len(self.tiles)
@@ -139,16 +146,19 @@ class PairedSegmentationDataset(Dataset):
     def _load_mask(self, path: Path) -> np.ndarray:
         mask = Image.open(path).convert("L")
         mask_np = np.array(mask, dtype=np.float32)
-        mask_np = (mask_np > 0).astype(np.float32)
-        return mask_np
+        return (mask_np > 0).astype(np.float32)
 
     def __getitem__(self, idx: int) -> Tuple[torch.Tensor, torch.Tensor]:
-        pair_idx, x0, y0 = self.tiles[idx]
-        img_path, mask_path = self.pairs[pair_idx]
+        rec = self.tiles[idx]
+        img_path, mask_path = self.pairs[rec.pair_idx]
         image = self._load_image_grayscale(img_path)
         mask = self._load_mask(mask_path)
 
-        image, mask = extract_tile_pair(image, mask, x0=x0, y0=y0, tile_size=self.image_size)
+        if rec.must_tile:
+            image = pad_to_min_hw(image, self.image_size, self.image_size, fill=0)
+            mask = pad_to_min_hw(mask, self.image_size, self.image_size, fill=0)
+            image = image[rec.y0 : rec.y0 + self.image_size, rec.x0 : rec.x0 + self.image_size]
+            mask = mask[rec.y0 : rec.y0 + self.image_size, rec.x0 : rec.x0 + self.image_size]
 
         image_t = torch.from_numpy(image).unsqueeze(0) / 255.0
         image_t = zscore_normalize(image_t)
@@ -156,38 +166,55 @@ class PairedSegmentationDataset(Dataset):
         return image_t, mask_t
 
 
-def build_dataloaders(cfg: TrainConfig) -> Tuple[DataLoader, DataLoader]:
+def collate_pad_batch(batch: List[Tuple[torch.Tensor, torch.Tensor]], pad_to_multiple: int = 8) -> Tuple[torch.Tensor, torch.Tensor]:
+    images = [b[0] for b in batch]
+    masks = [b[1] for b in batch]
+
+    max_h = max(t.shape[-2] for t in images)
+    max_w = max(t.shape[-1] for t in images)
+
+    if pad_to_multiple > 1:
+        max_h = ((max_h + pad_to_multiple - 1) // pad_to_multiple) * pad_to_multiple
+        max_w = ((max_w + pad_to_multiple - 1) // pad_to_multiple) * pad_to_multiple
+
+    padded_images = []
+    padded_masks = []
+    for image, mask in zip(images, masks):
+        pad_h = max_h - image.shape[-2]
+        pad_w = max_w - image.shape[-1]
+        padded_images.append(F.pad(image, (0, pad_w, 0, pad_h), mode="constant", value=0.0))
+        padded_masks.append(F.pad(mask, (0, pad_w, 0, pad_h), mode="constant", value=0.0))
+
+    return torch.stack(padded_images, dim=0), torch.stack(padded_masks, dim=0)
+
+
+def build_datasets(cfg: TrainConfig) -> Tuple[PairedSegmentationDataset, PairedSegmentationDataset]:
     train_ds = PairedSegmentationDataset(
         image_dir=cfg.train_images,
         mask_dir=cfg.train_masks,
         image_size=cfg.image_size,
-        tile_overlap=cfg.tile_overlap,
+        tile_overlap_pct=cfg.tile_overlap_pct,
+        tile_threshold=cfg.tile_threshold,
         split="train",
-        seed=cfg.seed,
     )
     val_ds = PairedSegmentationDataset(
         image_dir=cfg.val_images,
         mask_dir=cfg.val_masks,
         image_size=cfg.image_size,
-        tile_overlap=cfg.tile_overlap,
+        tile_overlap_pct=cfg.tile_overlap_pct,
+        tile_threshold=cfg.tile_threshold,
         split="val",
-        seed=cfg.seed,
     )
+    return train_ds, val_ds
 
-    train_loader = DataLoader(
+
+def build_train_dataloader(cfg: TrainConfig, train_ds: PairedSegmentationDataset) -> DataLoader:
+    return DataLoader(
         train_ds,
         batch_size=cfg.batch_size,
         shuffle=True,
         num_workers=cfg.num_workers,
         pin_memory=True,
         drop_last=False,
+        collate_fn=collate_pad_batch,
     )
-    val_loader = DataLoader(
-        val_ds,
-        batch_size=cfg.batch_size,
-        shuffle=False,
-        num_workers=cfg.num_workers,
-        pin_memory=True,
-        drop_last=False,
-    )
-    return train_loader, val_loader
