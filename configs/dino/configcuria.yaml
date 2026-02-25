@@ -26,7 +26,7 @@ train:
   warmup_iterations: 10000
   teacher_temp: 0.07
   warmup_teacher_temp: 0.04
-  freeze_backbone_layers: 0
+  freeze_backbone_layers: 6
   momentum_teacher: 0.9992
   centering: 'centering'
   ibot_separate_head: true
@@ -55,7 +55,7 @@ crops:
   local_crops_size: 160
 
 dataset:
-  dataset_path: /home/ge.polymtl.ca/p123239/slice_extractor/resample05
+  dataset_path: /home/ge.polymtl.ca/p123239/slice_extractor/out_raw_numero
   shuffle: true
   size: 512
 

@@ -5,7 +5,7 @@ from accelerate.utils import (
     DistributedType, 
 )
  
-from dataloaders.datasetloader_custom import RGBDatasetLoader
+from dataloaders.datasetloader_curia import RGBDatasetLoader
 from dino_arch.main_dino_trainer import Trainer as MainTrainer
 from utils.config import setup as setup_config
 from utils.dist_utils import  initialize_ddp_accelerator_from_config, print_cluster_info

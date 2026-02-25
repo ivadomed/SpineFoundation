@@ -1,1 +1,1 @@
-python lossplot.py /home/ge.polymtl.ca/p123239/SpineFoundation/outputs_384/custom/log_files/main_rank0.log -o plots --every 5 --smooth 50 
+python lossplot.py /home/ge.polymtl.ca/p123239/SpineFoundation/outputs_curia/custom_curia_512/log_files/main_rank0.log -o plots --every 5 --smooth 50 
