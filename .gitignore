@@ -83,3 +83,5 @@ configs/dino/gazi_fingerprint.yaml
 *.safetensors
 outputs*
 /curia_model/
+*.pt
+*.csv

@@ -1,4 +1,6 @@
 import random
+import sys
+import importlib
 from contextlib import nullcontext
 from dataclasses import asdict
 from pathlib import Path
@@ -20,6 +22,39 @@ from .dataset import (
 )
 from .losses import compute_dice_score, dice_loss_with_logits
 from .model import FrozenBackboneWithSegHead
+
+
+def safe_import_wandb():
+    wandb = importlib.import_module("wandb")
+    if callable(getattr(wandb, "init", None)):
+        return wandb
+
+    cwd = str(Path.cwd().resolve())
+    removed: list[tuple[int, str]] = []
+    for i in reversed(range(len(sys.path))):
+        p = sys.path[i]
+        p_resolved = cwd if p == "" else str(Path(p).resolve())
+        if p == "" or p_resolved == cwd:
+            removed.append((i, p))
+            sys.path.pop(i)
+
+    try:
+        importlib.invalidate_caches()
+        sys.modules.pop("wandb", None)
+        wandb = importlib.import_module("wandb")
+    finally:
+        for i, p in sorted(removed, key=lambda t: t[0]):
+            sys.path.insert(i, p)
+
+    if callable(getattr(wandb, "init", None)):
+        return wandb
+
+    wandb_file = getattr(wandb, "__file__", None)
+    raise RuntimeError(
+        "Imported 'wandb' module has no 'init'. "
+        f"Resolved module file: {wandb_file}. "
+        "Possible local module shadowing (e.g., a local 'wandb' folder/file) or broken installation."
+    )
 
 
 def set_seed(seed: int) -> None:
@@ -229,6 +264,7 @@ def run_val_epoch_detiled(
     running_dice = 0.0
     num_samples = 0
     examples: list[dict] = []
+    fallback_examples: list[dict] = []
 
     pbar = tqdm(val_ds.pairs, desc="val(detiled)", leave=False)
     for img_path, mask_path in pbar:
@@ -254,22 +290,35 @@ def run_val_epoch_detiled(
 
         dice = compute_dice_score(logits.unsqueeze(0), mask_t)
 
-        if capture_examples and len(examples) < max_examples:
+        if capture_examples:
             pred_mask = (torch.sigmoid(logits).squeeze(0).numpy() > 0.5).astype(np.uint8)
             gt_mask = mask.astype(np.uint8)
             panel = make_overlay_panel(image_2d=image, gt_mask=gt_mask, pred_mask=pred_mask)
-            examples.append(
-                {
-                    "name": img_path.name,
-                    "overlay": panel,
-                    "dice": float(dice),
-                }
-            )
+            gt_pixels = int(gt_mask.sum())
+            pred_pixels = int(pred_mask.sum())
+
+            sample = {
+                "name": img_path.name,
+                "overlay": panel,
+                "dice": float(dice),
+                "gt_pixels": gt_pixels,
+                "pred_pixels": pred_pixels,
+            }
+
+            if gt_pixels > 0 or pred_pixels > 0:
+                if len(examples) < max_examples:
+                    examples.append(sample)
+            elif len(fallback_examples) < max_examples:
+                fallback_examples.append(sample)
 
         running_loss += loss.item()
         running_dice += dice
         num_samples += 1
         pbar.set_postfix(loss=f"{running_loss / num_samples:.4f}", dice=f"{running_dice / num_samples:.4f}")
+
+    if len(examples) < max_examples:
+        need = max_examples - len(examples)
+        examples.extend(fallback_examples[:need])
 
     if num_samples == 0:
         return 0.0, 0.0, examples
@@ -293,7 +342,7 @@ def train(cfg: TrainConfig) -> None:
     wandb_run = None
     if cfg.use_wandb and cfg.wandb_mode != "disabled":
         try:
-            import wandb
+            wandb = safe_import_wandb()
 
             wandb_run = wandb.init(
                 project=cfg.wandb_project,
@@ -363,6 +412,7 @@ def train(cfg: TrainConfig) -> None:
                     "val/loss": val_loss,
                     "val/dice": val_dice,
                     "best/val_dice": max(best_val_dice, val_dice),
+                    "val/overlays_count": 0,
                 }
 
                 if (
@@ -371,14 +421,22 @@ def train(cfg: TrainConfig) -> None:
                     and (epoch % max(1, cfg.wandb_val_images_every) == 0)
                     and len(val_examples) > 0
                 ):
-                    import wandb
+                    wandb = safe_import_wandb()
 
                     val_examples = normalize_overlay_sizes(val_examples)
+                    payload["val/overlays_count"] = len(val_examples)
 
                     payload["val/overlays"] = [
-                        wandb.Image(ex["overlay"], caption=f"{ex['name']} | dice={ex['dice']:.4f}")
+                        wandb.Image(
+                            ex["overlay"],
+                            caption=(
+                                f"{ex['name']} | dice={ex['dice']:.4f} "
+                                f"| gt_px={ex.get('gt_pixels', -1)} | pred_px={ex.get('pred_pixels', -1)}"
+                            ),
+                        )
                         for ex in val_examples
                     ]
+                    print(f"[wandb] overlays logged: {len(val_examples)}")
 
                 wandb_run.log(payload)
 

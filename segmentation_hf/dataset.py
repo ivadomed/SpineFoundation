@@ -66,9 +66,11 @@ def make_sliding_positions(full_size: int, tile_size: int, overlap_px: int) -> L
     return positions
 
 
-def list_image_files(folder: Path) -> List[Path]:
+def list_image_files(folder: Path, only_sagittal: bool = False) -> List[Path]:
     exts = {".png", ".jpg", ".jpeg", ".bmp", ".tif", ".tiff", ".webp"}
     files = [p for p in folder.iterdir() if p.is_file() and p.suffix.lower() in exts]
+    if only_sagittal:
+        files = [p for p in files if "sag" in p.name.lower()]
     return sorted(files)
 
 
@@ -78,6 +80,7 @@ class PairedSegmentationDataset(Dataset):
         image_dir: str,
         mask_dir: str,
         image_size: int,
+        only_sagittal: bool,
         tile_overlap_pct: float,
         tile_threshold: int,
         split: str = "train",
@@ -85,6 +88,7 @@ class PairedSegmentationDataset(Dataset):
         self.image_dir = Path(image_dir)
         self.mask_dir = Path(mask_dir)
         self.image_size = image_size
+        self.only_sagittal = only_sagittal
         self.tile_overlap_pct = tile_overlap_pct
         self.tile_threshold = tile_threshold
         self.split = split
@@ -95,9 +99,10 @@ class PairedSegmentationDataset(Dataset):
         if not self.mask_dir.exists():
             raise FileNotFoundError(f"Mask directory not found: {self.mask_dir}")
 
-        image_files = list_image_files(self.image_dir)
+        image_files = list_image_files(self.image_dir, only_sagittal=self.only_sagittal)
         if not image_files:
-            raise ValueError(f"No images found in {self.image_dir}")
+            mode = "sagittal-only" if self.only_sagittal else "all-planes"
+            raise ValueError(f"No images found in {self.image_dir} (mode={mode})")
 
         pairs: List[Tuple[Path, Path]] = []
         missing = []
@@ -193,6 +198,7 @@ def build_datasets(cfg: TrainConfig) -> Tuple[PairedSegmentationDataset, PairedS
         image_dir=cfg.train_images,
         mask_dir=cfg.train_masks,
         image_size=cfg.image_size,
+        only_sagittal=cfg.only_sagittal,
         tile_overlap_pct=cfg.tile_overlap_pct,
         tile_threshold=cfg.tile_threshold,
         split="train",
@@ -201,6 +207,7 @@ def build_datasets(cfg: TrainConfig) -> Tuple[PairedSegmentationDataset, PairedS
         image_dir=cfg.val_images,
         mask_dir=cfg.val_masks,
         image_size=cfg.image_size,
+        only_sagittal=cfg.only_sagittal,
         tile_overlap_pct=cfg.tile_overlap_pct,
         tile_threshold=cfg.tile_threshold,
         split="val",

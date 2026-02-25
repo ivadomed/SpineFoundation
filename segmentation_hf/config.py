@@ -1,5 +1,6 @@
 import argparse
 from dataclasses import dataclass
+from pathlib import Path
 
 
 @dataclass
@@ -11,6 +12,7 @@ class TrainConfig:
     val_masks: str
     output_dir: str = "outputs_seg"
     image_size: int = 224
+    only_sagittal: bool = False
     tile_overlap_pct: float = 25.0
     tile_threshold: int = 512
     epochs: int = 50
@@ -44,6 +46,9 @@ def parse_args() -> TrainConfig:
 
     parser.add_argument("--output_dir", type=str, default="outputs_seg")
     parser.add_argument("--image_size", type=int, default=224)
+    parser.set_defaults(only_sagittal=False)
+    parser.add_argument("--only_sagittal", dest="only_sagittal", action="store_true", help="Use only sagittal files")
+    parser.add_argument("--all_planes", dest="only_sagittal", action="store_false", help="Use all files (default)")
     parser.add_argument("--tile_overlap_pct", type=float, default=25.0)
     parser.add_argument("--tile_threshold", type=int, default=512)
     parser.add_argument("--epochs", type=int, default=50)
@@ -65,7 +70,7 @@ def parse_args() -> TrainConfig:
     parser.add_argument("--no-wandb", dest="use_wandb", action="store_false", help="Disable Weights & Biases logging")
     parser.add_argument("--wandb_project", type=str, default="spine-seg")
     parser.add_argument("--wandb_entity", type=str, default=None)
-    parser.add_argument("--wandb_run_name", type=str, default=None)
+    parser.add_argument("--wandb_run_name", type=str, default=None, help="W&B run name (default: basename of output_dir)")
     parser.add_argument("--wandb_mode", type=str, default="online", choices=["online", "offline", "disabled"])
     parser.set_defaults(wandb_log_val_images=True)
     parser.add_argument("--wandb_log_val_images", dest="wandb_log_val_images", action="store_true")
@@ -80,6 +85,10 @@ def parse_args() -> TrainConfig:
     if args.no_amp:
         amp = False
 
+    wandb_run_name = args.wandb_run_name
+    if wandb_run_name is None:
+        wandb_run_name = Path(args.output_dir).name or "run"
+
     return TrainConfig(
         model_dir=args.model_dir,
         train_images=args.train_images,
@@ -88,6 +97,7 @@ def parse_args() -> TrainConfig:
         val_masks=args.val_masks,
         output_dir=args.output_dir,
         image_size=args.image_size,
+        only_sagittal=args.only_sagittal,
         tile_overlap_pct=args.tile_overlap_pct,
         tile_threshold=args.tile_threshold,
         epochs=args.epochs,
@@ -103,7 +113,7 @@ def parse_args() -> TrainConfig:
         use_wandb=args.use_wandb,
         wandb_project=args.wandb_project,
         wandb_entity=args.wandb_entity,
-        wandb_run_name=args.wandb_run_name,
+        wandb_run_name=wandb_run_name,
         wandb_mode=args.wandb_mode,
         wandb_log_val_images=args.wandb_log_val_images,
         wandb_val_images_count=args.wandb_val_images_count,
