@@ -85,3 +85,4 @@ outputs*
 /curia_model/
 *.pt
 *.csv
+curia*

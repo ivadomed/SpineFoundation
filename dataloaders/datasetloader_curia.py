@@ -93,7 +93,7 @@ class ZScoreNormalize:
         return (x - mean) / (std + self.eps)
 
 class RGBDatasetWithAugmentation(Dataset):
-    def __init__(self, root='dataset/remote', split='train',  augmentation=None, resize=True, size=384,seed=28):
+    def __init__(self, root='dataset/remote', split='train', augmentation=None, resize=True, size=384):
         
         self.split = split
         self.resize = resize
@@ -102,7 +102,7 @@ class RGBDatasetWithAugmentation(Dataset):
             self.resize_hw = (self.size, self.size)
         else:
             self.resize_hw = tuple(self.size)
-        self.rng=random.Random(seed)
+        self.rng=random.Random()
 
         folder_path = os.path.join(root, split) 
 

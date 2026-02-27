@@ -93,6 +93,9 @@ class DINOLoss(nn.Module):
     @torch.no_grad()
     def update_center(self, teacher_output):
         batch_center = torch.sum(teacher_output, dim=0, keepdim=True)
-        dist.all_reduce(batch_center)
-        batch_center = batch_center / (teacher_output.shape[0] * dist.get_world_size())
+        world_size = 1
+        if dist.is_initialized():
+            dist.all_reduce(batch_center)
+            world_size = dist.get_world_size()
+        batch_center = batch_center / (teacher_output.shape[0] * world_size)
         self.center = self.center * self.center_momentum + batch_center * (1 - self.center_momentum)

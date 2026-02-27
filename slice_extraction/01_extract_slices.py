@@ -79,18 +79,18 @@ def labels_to_uint8(lbl: np.ndarray) -> np.ndarray:
     return y
 
 
-def pad_to_min_hw(arr: np.ndarray, min_h: int, min_w: int, fill: int = 0) -> np.ndarray:
-    h, w = arr.shape[:2]
-    pad_h = max(0, min_h - h)
-    pad_w = max(0, min_w - w)
-    if pad_h == 0 and pad_w == 0:
-        return arr
+# def pad_to_min_hw(arr: np.ndarray, min_h: int, min_w: int, fill: int = 0) -> np.ndarray:
+#     h, w = arr.shape[:2]
+#     pad_h = max(0, min_h - h)
+#     pad_w = max(0, min_w - w)
+#     if pad_h == 0 and pad_w == 0:
+#         return arr
 
-    top = pad_h // 2
-    bottom = pad_h - top
-    left = pad_w // 2
-    right = pad_w - left
-    return np.pad(arr, ((top, bottom), (left, right)), mode="constant", constant_values=fill)
+#     top = pad_h // 2
+#     bottom = pad_h - top
+#     left = pad_w // 2
+#     right = pad_w - left
+#     return np.pad(arr, ((top, bottom), (left, right)), mode="constant", constant_values=fill)
 
 
 def make_sliding_positions(full_size: int, tile_size: int, overlap: int) -> List[int]:
@@ -230,7 +230,6 @@ def main() -> None:
     print(f"clip-pct         : {tuple(args.clip_pct)}")
     print(f"label-suffix     : {args.label_suffix}")
     print(f"skip-existing    : {args.skip_existing}")
-    print("tiling           : disabled in stage 01 (moved after resampling)")
     print("=============================")
 
     image_root: Path = args.input_images

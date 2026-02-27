@@ -88,10 +88,20 @@ def plot_series(
     prefix: str,
     every: int,
     smooth: int,
+    tail_percent: float,
     include: List[str],
     exclude: List[str],
 ) -> None:
     out_dir.mkdir(parents=True, exist_ok=True)
+
+    # Keep only the latest tail_percent of the timeline (e.g., 50% = second half)
+    tp = min(100.0, max(0.0, tail_percent))
+    if tp < 100.0 and iters:
+        start_idx = int(len(iters) * (1.0 - tp / 100.0))
+        if start_idx >= len(iters):
+            start_idx = len(iters) - 1
+        iters = iters[start_idx:]
+        series = {k: v[start_idx:] for k, v in series.items()}
 
     keys = list(series.keys())
 
@@ -162,6 +172,7 @@ def main() -> None:
     ap.add_argument("-o", "--out", default="plots", help="output directory")
     ap.add_argument("--every", type=int, default=1, help="keep 1 point every N (downsample)")
     ap.add_argument("--smooth", type=int, default=1, help="moving average window (in plotted points)")
+    ap.add_argument("--tail-percent", type=float, default=30.0, help="plot only the latest X%% of timeline (default: 50)")
     ap.add_argument("--include", nargs="*", default=[], help="keep metrics whose name contains any of these substrings")
     ap.add_argument("--exclude", nargs="*", default=["Teacher momentum", "Teacher temp"], help="drop metrics containing these substrings")
     args = ap.parse_args()
@@ -186,6 +197,7 @@ def main() -> None:
             prefix=prefix,
             every=max(1, args.every),
             smooth=max(1, args.smooth),
+            tail_percent=args.tail_percent,
             include=args.include,
             exclude=args.exclude,
         )

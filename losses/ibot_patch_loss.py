@@ -105,7 +105,7 @@ class iBOTPatchLoss(nn.Module):
     def reduce_center_update(self, teacher_patch_tokens):
         self.updated = False
         self.len_teacher_patch_tokens = len(teacher_patch_tokens)
-        self.async_batch_center = torch.sum(teacher_patch_tokens.mean(1), dim=0, keepdim=True)
+        self.async_batch_center = teacher_patch_tokens.sum(0, keepdim=True).unsqueeze(0)
         if dist.is_initialized():
             self.reduce_handle = dist.all_reduce(self.async_batch_center, async_op=True)
 

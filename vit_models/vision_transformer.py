@@ -187,7 +187,15 @@ class DINOHead(nn.Module):
 def build_transformer_model_from_config(model_type, accelerator, custom_config, load_pretrained, checkpoint_path=None,level_awareness=None):
     # 1. Load or create configuration
     try:
-        model_config = AutoConfig.from_pretrained(model_type)
+        local_ckpt  = os.path.join('checkpoints', model_type)
+        local_model = f"{model_type}_model"
+        config_source = (
+            checkpoint_path if (checkpoint_path and os.path.exists(checkpoint_path)) else
+            local_ckpt      if os.path.exists(local_ckpt) else
+            local_model     if os.path.exists(local_model) else
+            model_type  # HF fallback en dernier recours
+        )
+        model_config = AutoConfig.from_pretrained(config_source)
         for key, value in vars(custom_config).items():
             if key != "architectures":
                 setattr(model_config, key, value)
@@ -211,8 +219,8 @@ def build_transformer_model_from_config(model_type, accelerator, custom_config, 
     write_to_main_log(accelerator=accelerator, result=f"Model initialized from configuration")
     
     # 3. Load weights (if needed)
-    if checkpoint_path and not load_pretrained:
-        # Load from checkpoint
+    if checkpoint_path:
+        # Load from explicit checkpoint path first
         try:
             model = AutoModel.from_pretrained(checkpoint_path)
             write_to_main_log(accelerator=accelerator, result=f'Weights loaded from: {checkpoint_path}')
@@ -230,14 +238,16 @@ def build_transformer_model_from_config(model_type, accelerator, custom_config, 
 def _load_pretrained_weights(model, model_type, accelerator):
     """Helper function to load pretrained weights."""
     try:
-        checkpoint_path = os.path.join('checkpoints', model_type) 
-        source_path = checkpoint_path if os.path.exists(checkpoint_path) else None
+        checkpoint_path = os.path.join('checkpoints', model_type)
+        local_model_path = f"{model_type}_model"
+        source_path = (checkpoint_path if os.path.exists(checkpoint_path)
+                       else local_model_path if os.path.exists(local_model_path)
+                       else None)
         print('source_path: ',source_path, model_type)
-        if source_path: 
+        if source_path:
             pretrained_model = AutoModel.from_pretrained(source_path)
-
             write_to_main_log(accelerator=accelerator, result=f'Model weights loaded from local: {source_path}')
-        else: 
+        else:
             pretrained_model = AutoModel.from_pretrained(model_type)
             write_to_main_log(accelerator=accelerator, result=f'Model weights loaded from repo: {model_type}')
             
@@ -267,7 +277,10 @@ def _transfer_from_closest_model(model, custom_config, model_type, accelerator):
     try:
         # Try local checkpoint first, then remote
         checkpoint_path = os.path.join('checkpoints', closest_model_type)
-        source_path = checkpoint_path if os.path.exists(checkpoint_path) else closest_model_type
+        local_model_path = f"{closest_model_type}_model"
+        source_path = (checkpoint_path if os.path.exists(checkpoint_path)
+                       else local_model_path if os.path.exists(local_model_path)
+                       else closest_model_type)
         
         source_model = AutoModel.from_pretrained(source_path)
         write_to_main_log(accelerator=accelerator, result=f"Source model loaded from {source_path}")

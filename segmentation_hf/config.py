@@ -13,6 +13,7 @@ class TrainConfig:
     output_dir: str = "outputs_seg"
     image_size: int = 224
     only_sagittal: bool = False
+    only_axial: bool = False
     tile_overlap_pct: float = 25.0
     tile_threshold: int = 512
     epochs: int = 50
@@ -46,9 +47,10 @@ def parse_args() -> TrainConfig:
 
     parser.add_argument("--output_dir", type=str, default="outputs_seg")
     parser.add_argument("--image_size", type=int, default=224)
-    parser.set_defaults(only_sagittal=False)
+    parser.set_defaults(only_sagittal=False, only_axial=False)
     parser.add_argument("--only_sagittal", dest="only_sagittal", action="store_true", help="Use only sagittal files")
-    parser.add_argument("--all_planes", dest="only_sagittal", action="store_false", help="Use all files (default)")
+    parser.add_argument("--only_axial", dest="only_axial", action="store_true", help="Use only axial files")
+    parser.add_argument("--all_planes", action="store_true", help="Use all files (default)")
     parser.add_argument("--tile_overlap_pct", type=float, default=25.0)
     parser.add_argument("--tile_threshold", type=int, default=512)
     parser.add_argument("--epochs", type=int, default=50)
@@ -79,6 +81,12 @@ def parse_args() -> TrainConfig:
     parser.add_argument("--wandb_val_images_every", type=int, default=1)
 
     args = parser.parse_args()
+    if args.only_sagittal and args.only_axial:
+        parser.error("--only_sagittal and --only_axial are mutually exclusive")
+    if args.all_planes:
+        args.only_sagittal = False
+        args.only_axial = False
+
     amp = True
     if args.amp:
         amp = True
@@ -98,6 +106,7 @@ def parse_args() -> TrainConfig:
         output_dir=args.output_dir,
         image_size=args.image_size,
         only_sagittal=args.only_sagittal,
+        only_axial=args.only_axial,
         tile_overlap_pct=args.tile_overlap_pct,
         tile_threshold=args.tile_threshold,
         epochs=args.epochs,

@@ -208,8 +208,8 @@ def freeze_layers(student_model,accelerator,   num_layers_to_freeze=0):
     '''
         # Freeze layers
     layers = getattr(encoder, layers_attr)
-    freeze_layers = min(num_layers_to_freeze, len(layers))
-    for i in range(freeze_layers): 
+    n_layers_to_freeze = min(num_layers_to_freeze, len(layers))
+    for i in range(n_layers_to_freeze):
             for param in layers[i].parameters():
 
                 param.requires_grad = False
@@ -237,10 +237,49 @@ def init_dino_training_models(config, accelerator,   use_ibot=True ):
 
     level_awareness=getattr(config.train, "level_awareness", None)
     
-    checkpoint_path = getattr(config.train, 'checkpoint_path', None)
-    if checkpoint_path and config.train.use_pretrained: 
-        if  os.path.exists(checkpoint_path):
-            checkpoint_path=config.train.checkpoint_path
+    train_checkpoint_dir = os.path.join(
+        config.output_folders.main_output,
+        config.train.model_name,
+        config.output_folders.train_checkpoint_dir
+    )
+
+    has_output_checkpoint = False
+    if os.path.isdir(train_checkpoint_dir):
+        for dirname in os.listdir(train_checkpoint_dir):
+            if not dirname.startswith("iter_"):
+                continue
+            current_dir = os.path.join(train_checkpoint_dir, dirname)
+            if not os.path.isdir(current_dir):
+                continue
+
+            required_files = [
+                os.path.join(current_dir, "model.pt"),
+                os.path.join(current_dir, "optimizer.pt"),
+                os.path.join(current_dir, "app_state.pt"),
+            ]
+            if all(os.path.exists(path) for path in required_files):
+                has_output_checkpoint = True
+                break
+
+    checkpoint_path = None
+    config_checkpoint_path = getattr(config.train, "checkpoint_path", None)
+    if has_output_checkpoint:
+        write_to_main_log(
+            accelerator=accelerator,
+            result=f"Found training checkpoint in output folder ({train_checkpoint_dir}). Model init checkpoint from config is skipped."
+        )
+    elif config_checkpoint_path and os.path.exists(config_checkpoint_path):
+        checkpoint_path = config_checkpoint_path
+        write_to_main_log(
+            accelerator=accelerator,
+            result=f"No training checkpoint found in output folder. Initializing model from config checkpoint: {checkpoint_path}"
+        )
+    elif config_checkpoint_path:
+        write_to_main_log(
+            accelerator=accelerator,
+            result=f"Config checkpoint path does not exist: {config_checkpoint_path}",
+            type='warning'
+        )
     
     student_backbone, student_config = build_transformer_model_from_config(
             load_pretrained=config.train.use_pretrained, 
@@ -324,14 +363,17 @@ def init_dino_evaluiaton_model(config, accelerator):
             return  AutoModel.from_pretrained(model_path)
     else:  
 
-            checkpoint_path = os.path.join('checkpoints', model_type) 
-            source_path = checkpoint_path if os.path.exists(checkpoint_path) else None
-            print('source_path: ',source_path, model_type)
-            if source_path: 
+            checkpoint_path = os.path.join('checkpoints', model_type)
+            local_model_path = f"{model_type}_model"
+            source_path = (checkpoint_path if os.path.exists(checkpoint_path)
+                           else local_model_path if os.path.exists(local_model_path)
+                           else None)
+            write_to_main_log(accelerator=accelerator, result=f"source_path: {source_path}, model_type: {model_type}")
+            if source_path:
                 return AutoModel.from_pretrained(source_path)
-            
+
             write_to_main_log(accelerator=accelerator, result = f"Building transformer. Load pretrained: {model_type}")
-            return AutoModel.from_pretrained(model_type) 
+            return AutoModel.from_pretrained(model_type)
  
 def print_model_info(accelerator, model):
     

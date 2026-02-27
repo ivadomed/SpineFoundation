@@ -1,7 +1,21 @@
 from torchvision import transforms
 from utils.dino_utils import GaussianBlur
 from torchvision.transforms.functional import InterpolationMode
-import torch 
+import torch
+import random
+
+
+class AddGaussianNoise:
+    """Simule le bruit d'acquisition MRI (Rician ≈ Gaussien à haut SNR)."""
+    def __init__(self, std_range=(0.0, 0.1), p=0.5):
+        self.std_range = std_range
+        self.p = p
+
+    def __call__(self, x: torch.Tensor) -> torch.Tensor:
+        if random.random() < self.p:
+            std = random.uniform(*self.std_range)
+            return x + torch.randn_like(x) * std
+        return x
 
 
 class ZScoreNormalize:
@@ -46,34 +60,47 @@ class DataAugmentationDINO(object):
 
 
 
+        intensity_aug = transforms.RandomApply(
+            [transforms.ColorJitter(brightness=0.3, contrast=0.3)],
+            p=0.8
+        )
+
+        noise_aug = AddGaussianNoise(std_range=(0.0, 0.1), p=0.5)
+
         # first global crop
         self.global_transfo1 = transforms.Compose([
-            transforms.RandomResizedCrop(global_crops_size, scale=global_crops_scale,ratio=(1.0, 1.0), interpolation=InterpolationMode.BICUBIC),
-            
+            transforms.RandomHorizontalFlip(p=0.5),
+            transforms.RandomRotation(degrees=15, fill=0),
+            intensity_aug,
+            transforms.RandomResizedCrop(global_crops_size, scale=global_crops_scale, ratio=(1.0, 1.0), interpolation=InterpolationMode.BICUBIC),
             GaussianBlur(1.0),
             transforms.ToTensor(),
-            ZScoreNormalize()
-            
+            ZScoreNormalize(),
+            noise_aug,
         ])
-        
+
         # second global crop
         self.global_transfo2 = transforms.Compose([
+            transforms.RandomHorizontalFlip(p=0.5),
+            transforms.RandomRotation(degrees=15, fill=0),
+            intensity_aug,
             transforms.RandomResizedCrop(global_crops_size, scale=global_crops_scale, ratio=(1.0, 1.0), interpolation=InterpolationMode.BICUBIC),
-            
             GaussianBlur(0.1),
             transforms.ToTensor(),
-            ZScoreNormalize()
+            ZScoreNormalize(),
+            noise_aug,
         ])
-        
+
         # transformation for the local small crops
         self.local_transfo = transforms.Compose([
+            transforms.RandomHorizontalFlip(p=0.5),
+            transforms.RandomRotation(degrees=15, fill=0),
+            intensity_aug,
             transforms.RandomResizedCrop(local_crops_size, scale=local_crops_scale, ratio=(1.0, 1.0), interpolation=InterpolationMode.BICUBIC),
-            #transforms.RandomRotation(degrees=10),
-            
             GaussianBlur(p=0.5),
             transforms.ToTensor(),
-            ZScoreNormalize()
-            
+            ZScoreNormalize(),
+            noise_aug,
         ])
     
     def __call__(self, image):

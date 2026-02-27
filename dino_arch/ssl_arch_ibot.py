@@ -17,10 +17,7 @@ from utils.dino_utils import (
     init_schedulers 
 ) 
 from losses.ibot_patch_loss import iBOTPatchLoss
-from utils.logger_utils import write_to_main_log 
-
-import torch
-import torch.distributed as dist
+from utils.logger_utils import write_to_main_log
 
 @torch.no_grad()
 def debug_check_teacher_sync(teacher_model, accelerator, every=500, iteration=0):
@@ -167,14 +164,9 @@ class SSLMetaArch(nn.Module):
 
         now = datetime.now()
          
-        display_dict = {} 
+        display_dict = {}
         for key, value in loss_dict.items():
-            if key == 'ibot_loss':
-                display_dict[key] = value.item() / 2  
-            else:
-                display_dict[key] = value.item()
-
-
+            display_dict[key] = value.item()
 
         display_total = 0
         if 'dino_local_loss' in display_dict:
@@ -182,7 +174,7 @@ class SSLMetaArch(nn.Module):
         if 'dino_global_loss' in display_dict:
             display_total += display_dict['dino_global_loss']
         if 'ibot_loss' in display_dict:
-            display_total += display_dict['ibot_loss']  # Zaten 2'ye bölünmüş değer
+            display_total += display_dict['ibot_loss']
         # Format loss names the same way as the original
         loss_strings = []
         if 'dino_local_loss' in display_dict:

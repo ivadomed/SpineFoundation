@@ -97,7 +97,7 @@ class SSLMetaArch(nn.Module):
             loss = self.dino_loss(student_output, teacher_output, iteration)
 
             if not math.isfinite(loss['total_loss'].item()):
-                write_to_main_log( accelerator=self.accelerator, result="Loss is {}, stopping training".format(total_loss.item()), type='error')  
+                write_to_main_log( accelerator=self.accelerator, result="Loss is {}, stopping training".format(loss['total_loss'].item()), type='error')
                 sys.exit(1)
     
             self.param_norms = None

@@ -113,15 +113,15 @@ def create_output_dirs(cfg):
         output_dir = os.path.abspath(cfg.output_folders.main_output)
         main_model_dir = os.path.join(output_dir, cfg.train.model_name)
         
-        # Ana dizin + cfg.output_folders içindeki tüm string değerler
+        # Répertoire principal + tous les sous-répertoires définis dans cfg.output_folders
         dirs_to_create = [main_model_dir]
         for attr_name in dir(cfg.output_folders):
             if not attr_name.startswith('_') and attr_name != 'main_output':
                 attr_value = getattr(cfg.output_folders, attr_name, None)
                 if isinstance(attr_value, str):
                     dirs_to_create.append(os.path.join(main_model_dir, attr_value))
-        
-        # Dizinleri oluştur
+
+        # Créer les répertoires
         for directory in dirs_to_create:
             if not os.path.exists(directory):
                 os.makedirs(directory, exist_ok=True)

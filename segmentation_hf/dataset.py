@@ -66,11 +66,15 @@ def make_sliding_positions(full_size: int, tile_size: int, overlap_px: int) -> L
     return positions
 
 
-def list_image_files(folder: Path, only_sagittal: bool = False) -> List[Path]:
+def list_image_files(folder: Path, only_sagittal: bool = False, only_axial: bool = False) -> List[Path]:
     exts = {".png", ".jpg", ".jpeg", ".bmp", ".tif", ".tiff", ".webp"}
     files = [p for p in folder.iterdir() if p.is_file() and p.suffix.lower() in exts]
+    if only_sagittal and only_axial:
+        raise ValueError("only_sagittal and only_axial cannot both be enabled")
     if only_sagittal:
         files = [p for p in files if "sag" in p.name.lower()]
+    if only_axial:
+        files = [p for p in files if "ax" in p.name.lower()]
     return sorted(files)
 
 
@@ -81,6 +85,7 @@ class PairedSegmentationDataset(Dataset):
         mask_dir: str,
         image_size: int,
         only_sagittal: bool,
+        only_axial: bool,
         tile_overlap_pct: float,
         tile_threshold: int,
         split: str = "train",
@@ -89,6 +94,7 @@ class PairedSegmentationDataset(Dataset):
         self.mask_dir = Path(mask_dir)
         self.image_size = image_size
         self.only_sagittal = only_sagittal
+        self.only_axial = only_axial
         self.tile_overlap_pct = tile_overlap_pct
         self.tile_threshold = tile_threshold
         self.split = split
@@ -99,9 +105,9 @@ class PairedSegmentationDataset(Dataset):
         if not self.mask_dir.exists():
             raise FileNotFoundError(f"Mask directory not found: {self.mask_dir}")
 
-        image_files = list_image_files(self.image_dir, only_sagittal=self.only_sagittal)
+        image_files = list_image_files(self.image_dir, only_sagittal=self.only_sagittal, only_axial=self.only_axial)
         if not image_files:
-            mode = "sagittal-only" if self.only_sagittal else "all-planes"
+            mode = "sagittal-only" if self.only_sagittal else ("axial-only" if self.only_axial else "all-planes")
             raise ValueError(f"No images found in {self.image_dir} (mode={mode})")
 
         pairs: List[Tuple[Path, Path]] = []
@@ -199,6 +205,7 @@ def build_datasets(cfg: TrainConfig) -> Tuple[PairedSegmentationDataset, PairedS
         mask_dir=cfg.train_masks,
         image_size=cfg.image_size,
         only_sagittal=cfg.only_sagittal,
+        only_axial=cfg.only_axial,
         tile_overlap_pct=cfg.tile_overlap_pct,
         tile_threshold=cfg.tile_threshold,
         split="train",
@@ -208,6 +215,7 @@ def build_datasets(cfg: TrainConfig) -> Tuple[PairedSegmentationDataset, PairedS
         mask_dir=cfg.val_masks,
         image_size=cfg.image_size,
         only_sagittal=cfg.only_sagittal,
+        only_axial=cfg.only_axial,
         tile_overlap_pct=cfg.tile_overlap_pct,
         tile_threshold=cfg.tile_threshold,
         split="val",

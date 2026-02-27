@@ -38,10 +38,8 @@ def setup_accelerate_logger(accelerator, config):
             print(f"Log directory created at: {log_dir}")
          
         accelerator.wait_for_everyone()
-         
-        time.sleep(1)
-         
-        if accelerator.is_main_process or local_rank == 0: 
+
+        if accelerator.is_main_process or local_rank == 0:
             log_file = os.path.join(
                 log_dir, 
                 f"{'main' if accelerator.is_main_process else hostname}_rank{rank}.log"

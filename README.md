@@ -71,5 +71,5 @@ bash runcuria.sh
 
 You can train downstream tasks using :
 ```text
-slice_extraction/extract.sh
+segmentation_hf/train.sh
 
