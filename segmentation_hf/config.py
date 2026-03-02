@@ -26,6 +26,7 @@ class TrainConfig:
     save_every: int = 1
     bce_weight: float = 0.5
     dice_weight: float = 0.5
+    augment: bool = True
     use_wandb: bool = False
     wandb_project: str = "spine-seg"
     wandb_entity: str | None = None
@@ -66,6 +67,10 @@ def parse_args() -> TrainConfig:
 
     parser.add_argument("--bce_weight", type=float, default=0.5)
     parser.add_argument("--dice_weight", type=float, default=0.5)
+
+    parser.set_defaults(augment=True)
+    parser.add_argument("--augment", dest="augment", action="store_true", help="Enable training augmentations (default: on)")
+    parser.add_argument("--no_augment", dest="augment", action="store_false", help="Disable training augmentations")
 
     parser.set_defaults(use_wandb=False)
     parser.add_argument("--wandb", dest="use_wandb", action="store_true", help="Enable Weights & Biases logging")
@@ -119,6 +124,7 @@ def parse_args() -> TrainConfig:
         save_every=args.save_every,
         bce_weight=args.bce_weight,
         dice_weight=args.dice_weight,
+        augment=args.augment,
         use_wandb=args.use_wandb,
         wandb_project=args.wandb_project,
         wandb_entity=args.wandb_entity,

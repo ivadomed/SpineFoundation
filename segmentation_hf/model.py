@@ -40,6 +40,12 @@ class FrozenBackboneWithSegHead(nn.Module):
 
         self.seg_head = PatchWiseSegHead(in_channels=hidden_size)
 
+    def train(self, mode: bool = True):
+        """Keep backbone permanently in eval mode regardless of the training mode flag."""
+        super().train(mode)
+        self.backbone.eval()
+        return self
+
     @torch.no_grad()
     def extract_patch_tokens(self, x: torch.Tensor) -> tuple[torch.Tensor, int, int]:
         outputs = self.backbone(pixel_values=x, output_hidden_states=False, return_dict=True)

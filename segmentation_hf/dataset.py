@@ -1,3 +1,4 @@
+import random
 from dataclasses import dataclass
 from pathlib import Path
 from typing import List, Tuple
@@ -24,9 +25,21 @@ class TileRecord:
 
 
 def zscore_normalize(t: torch.Tensor, eps: float = 1e-6) -> torch.Tensor:
+    """Per-tensor z-score normalization (kept for backward compatibility)."""
     mean = t.mean()
     std = t.std()
     return (t - mean) / (std + eps)
+
+
+def normalize_image_array(arr: np.ndarray, eps: float = 1e-6) -> np.ndarray:
+    """Per-image z-score normalization on a float32 array (values in [0, 1]).
+
+    Normalizing the full image before tiling prevents unstable statistics on
+    nearly-uniform tiles (e.g. background-only tiles whose std ≈ 0).
+    """
+    mean = arr.mean()
+    std = arr.std()
+    return (arr - mean) / (std + eps)
 
 
 def overlap_pct_to_pixels(tile_size: int, overlap_pct: float) -> int:
@@ -37,7 +50,7 @@ def overlap_pct_to_pixels(tile_size: int, overlap_pct: float) -> int:
     return overlap_px
 
 
-def pad_to_min_hw(arr: np.ndarray, min_h: int, min_w: int, fill: int = 0) -> np.ndarray:
+def pad_to_min_hw(arr: np.ndarray, min_h: int, min_w: int, fill: float = 0.0) -> np.ndarray:
     h, w = arr.shape[:2]
     pad_h = max(0, min_h - h)
     pad_w = max(0, min_w - w)
@@ -89,6 +102,7 @@ class PairedSegmentationDataset(Dataset):
         tile_overlap_pct: float,
         tile_threshold: int,
         split: str = "train",
+        augment: bool = False,
     ):
         self.image_dir = Path(image_dir)
         self.mask_dir = Path(mask_dir)
@@ -98,6 +112,7 @@ class PairedSegmentationDataset(Dataset):
         self.tile_overlap_pct = tile_overlap_pct
         self.tile_threshold = tile_threshold
         self.split = split
+        self.augment = augment
         self.tile_overlap_px = overlap_pct_to_pixels(tile_size=image_size, overlap_pct=tile_overlap_pct)
 
         if not self.image_dir.exists():
@@ -128,24 +143,27 @@ class PairedSegmentationDataset(Dataset):
         self.pairs = pairs
         self.tiles: List[TileRecord] = []
 
+        # Read only image headers (no pixel data) to compute tile grid.
         for pair_idx, (img_path, _) in enumerate(self.pairs):
             with Image.open(img_path) as img:
-                arr = np.array(img.convert("L"), dtype=np.uint8)
+                w, h = img.size  # PIL returns (width, height) without decoding pixels
 
-            h, w = arr.shape[:2]
             must_tile = max(h, w) > self.tile_threshold
             if not must_tile:
                 self.tiles.append(TileRecord(pair_idx=pair_idx, x0=0, y0=0, must_tile=False))
                 continue
 
-            arr_pad = pad_to_min_hw(arr, self.image_size, self.image_size, fill=0)
-            hp, wp = arr_pad.shape[:2]
-            xs = make_sliding_positions(wp, self.image_size, self.tile_overlap_px)
-            ys = make_sliding_positions(hp, self.image_size, self.tile_overlap_px)
+            xs = make_sliding_positions(w, self.image_size, self.tile_overlap_px)
+            ys = make_sliding_positions(h, self.image_size, self.tile_overlap_px)
 
             for y0 in ys:
                 for x0 in xs:
                     self.tiles.append(TileRecord(pair_idx=pair_idx, x0=x0, y0=y0, must_tile=True))
+
+        # Per-worker lazy cache: populated on first access within each worker process.
+        # Avoids reloading the same image from disk N times per epoch when it produces N tiles.
+        self._img_cache: dict[int, np.ndarray] = {}
+        self._mask_cache: dict[int, np.ndarray] = {}
 
     def __len__(self) -> int:
         return len(self.tiles)
@@ -159,21 +177,57 @@ class PairedSegmentationDataset(Dataset):
         mask_np = np.array(mask, dtype=np.float32)
         return (mask_np > 0).astype(np.float32)
 
+    def _get_cached_image(self, pair_idx: int, path: Path) -> np.ndarray:
+        if pair_idx not in self._img_cache:
+            self._img_cache[pair_idx] = self._load_image_grayscale(path)
+        return self._img_cache[pair_idx]
+
+    def _get_cached_mask(self, pair_idx: int, path: Path) -> np.ndarray:
+        if pair_idx not in self._mask_cache:
+            self._mask_cache[pair_idx] = self._load_mask(path)
+        return self._mask_cache[pair_idx]
+
+    def load_raw_pair(self, pair_idx: int) -> Tuple[np.ndarray, np.ndarray]:
+        """Return (image_float32_0_255, mask_float32_binary) for a given pair index."""
+        img_path, mask_path = self.pairs[pair_idx]
+        return self._get_cached_image(pair_idx, img_path), self._get_cached_mask(pair_idx, mask_path)
+
+    @staticmethod
+    def _augment(image: np.ndarray, mask: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+        """Random spatial + intensity augmentations applied consistently to image and mask."""
+        if random.random() < 0.5:
+            image = np.fliplr(image).copy()
+            mask = np.fliplr(mask).copy()
+        if random.random() < 0.5:
+            image = np.flipud(image).copy()
+            mask = np.flipud(mask).copy()
+        # Small additive Gaussian noise on the already-normalized image
+        if random.random() < 0.5:
+            image = image + np.random.normal(0.0, 0.05, image.shape).astype(np.float32)
+        return image, mask
+
     def __getitem__(self, idx: int) -> Tuple[torch.Tensor, torch.Tensor]:
         rec = self.tiles[idx]
         img_path, mask_path = self.pairs[rec.pair_idx]
-        image = self._load_image_grayscale(img_path)
-        mask = self._load_mask(mask_path)
+
+        image = self._get_cached_image(rec.pair_idx, img_path)  # float32, values in [0, 255]
+        mask = self._get_cached_mask(rec.pair_idx, mask_path)   # float32, values in {0, 1}
+
+        # Normalize the full image before tiling so every tile shares the same statistics.
+        # Filling padded regions with 0 is consistent: after z-score 0 == the image mean.
+        image_norm = normalize_image_array(image / 255.0)
 
         if rec.must_tile:
-            image = pad_to_min_hw(image, self.image_size, self.image_size, fill=0)
-            mask = pad_to_min_hw(mask, self.image_size, self.image_size, fill=0)
-            image = image[rec.y0 : rec.y0 + self.image_size, rec.x0 : rec.x0 + self.image_size]
-            mask = mask[rec.y0 : rec.y0 + self.image_size, rec.x0 : rec.x0 + self.image_size]
+            image_norm = pad_to_min_hw(image_norm, self.image_size, self.image_size, fill=0.0)
+            mask = pad_to_min_hw(mask, self.image_size, self.image_size, fill=0.0)
+            image_norm = image_norm[rec.y0 : rec.y0 + self.image_size, rec.x0 : rec.x0 + self.image_size].copy()
+            mask = mask[rec.y0 : rec.y0 + self.image_size, rec.x0 : rec.x0 + self.image_size].copy()
 
-        image_t = torch.from_numpy(image).unsqueeze(0) / 255.0
-        image_t = zscore_normalize(image_t)
-        mask_t = torch.from_numpy(mask).unsqueeze(0)
+        if self.augment:
+            image_norm, mask = self._augment(image_norm, mask)
+
+        image_t = torch.from_numpy(np.ascontiguousarray(image_norm)).unsqueeze(0)
+        mask_t = torch.from_numpy(np.ascontiguousarray(mask)).unsqueeze(0)
         return image_t, mask_t
 
 
@@ -209,6 +263,7 @@ def build_datasets(cfg: TrainConfig) -> Tuple[PairedSegmentationDataset, PairedS
         tile_overlap_pct=cfg.tile_overlap_pct,
         tile_threshold=cfg.tile_threshold,
         split="train",
+        augment=cfg.augment,
     )
     val_ds = PairedSegmentationDataset(
         image_dir=cfg.val_images,
@@ -219,6 +274,7 @@ def build_datasets(cfg: TrainConfig) -> Tuple[PairedSegmentationDataset, PairedS
         tile_overlap_pct=cfg.tile_overlap_pct,
         tile_threshold=cfg.tile_threshold,
         split="val",
+        augment=False,
     )
     return train_ds, val_ds
 
@@ -228,6 +284,18 @@ def build_train_dataloader(cfg: TrainConfig, train_ds: PairedSegmentationDataset
         train_ds,
         batch_size=cfg.batch_size,
         shuffle=True,
+        num_workers=cfg.num_workers,
+        pin_memory=True,
+        drop_last=False,
+        collate_fn=collate_pad_batch,
+    )
+
+
+def build_val_dataloader(cfg: TrainConfig, val_ds: PairedSegmentationDataset) -> DataLoader:
+    return DataLoader(
+        val_ds,
+        batch_size=cfg.batch_size,
+        shuffle=False,
         num_workers=cfg.num_workers,
         pin_memory=True,
         drop_last=False,

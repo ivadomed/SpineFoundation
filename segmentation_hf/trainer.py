@@ -16,9 +16,9 @@ from .dataset import (
     build_datasets,
     build_train_dataloader,
     make_sliding_positions,
+    normalize_image_array,
     overlap_pct_to_pixels,
     pad_to_min_hw,
-    zscore_normalize,
 )
 from .losses import compute_dice_score, dice_loss_with_logits
 from .model import FrozenBackboneWithSegHead
@@ -165,7 +165,7 @@ def run_train_epoch(
 
         optimizer.zero_grad(set_to_none=True)
 
-        with autocast_context(device=device, enabled=amp and device.type == "cuda"):
+        with autocast_context(device=device, enabled=amp):
             logits = model(images)
             bce = bce_loss_fn(logits, masks)
             dloss = dice_loss_with_logits(logits, masks)
@@ -199,19 +199,27 @@ def predict_full_image_detiled(
     tile_batch_size: int,
 ) -> torch.Tensor:
     h, w = image_2d.shape
+
+    # Normalize the full image once, before any tiling.
+    # Tiles are extracted from the normalized array, so every tile shares the same
+    # image-level statistics — consistent with __getitem__ in the dataset.
+    # Padding fills with 0, which equals the image mean after z-score normalization.
+    image_norm = normalize_image_array(image_2d / 255.0)
+
     must_tile = max(h, w) > tile_threshold
 
     if not must_tile:
-        image_t = torch.from_numpy(image_2d).unsqueeze(0).unsqueeze(0) / 255.0
-        image_t = zscore_normalize(image_t)
-        image_t = image_t.to(device)
-        with autocast_context(device=device, enabled=amp and device.type == "cuda"):
+        # Pad to tile_size so the backbone sees the same input size as during training.
+        image_pad = pad_to_min_hw(image_norm, tile_size, tile_size, fill=0.0)
+        image_t = torch.from_numpy(image_pad).unsqueeze(0).unsqueeze(0).float().to(device)
+        with autocast_context(device=device, enabled=amp):
             logits = model(image_t)
-        return logits.squeeze(0).cpu()
+        # Crop back to original spatial dimensions
+        return logits[:, :, :h, :w].squeeze(0).cpu()
 
     overlap_px = overlap_pct_to_pixels(tile_size=tile_size, overlap_pct=tile_overlap_pct)
 
-    image_pad = pad_to_min_hw(image_2d, tile_size, tile_size, fill=0).astype(np.float32)
+    image_pad = pad_to_min_hw(image_norm, tile_size, tile_size, fill=0.0)
     hp, wp = image_pad.shape
 
     xs = make_sliding_positions(wp, tile_size, overlap_px)
@@ -227,13 +235,12 @@ def predict_full_image_detiled(
         tile_tensors = []
         for x0, y0 in batch_coords:
             tile = image_pad[y0 : y0 + tile_size, x0 : x0 + tile_size]
-            tile_t = torch.from_numpy(tile).unsqueeze(0) / 255.0
-            tile_t = zscore_normalize(tile_t)
+            tile_t = torch.from_numpy(tile.copy()).unsqueeze(0)  # already normalized
             tile_tensors.append(tile_t)
 
         tiles_batch = torch.stack(tile_tensors, dim=0).to(device)
 
-        with autocast_context(device=device, enabled=amp and device.type == "cuda"):
+        with autocast_context(device=device, enabled=amp):
             logits_batch = model(tiles_batch)
 
         for i, (x0, y0) in enumerate(batch_coords):
@@ -246,30 +253,79 @@ def predict_full_image_detiled(
     return logits_full.cpu()
 
 
-def run_val_epoch_detiled(
+@torch.no_grad()
+def run_full_image_eval(
     model: FrozenBackboneWithSegHead,
-    val_ds,
+    ds,
     device: torch.device,
     bce_weight: float,
     dice_weight: float,
     amp: bool,
     tile_batch_size: int,
-    capture_examples: bool = False,
-    max_examples: int = 0,
-) -> Tuple[float, float, list[dict]]:
+    desc: str = "eval",
+) -> Tuple[float, float]:
+    """Full-image evaluation: tile-stitch each image then compute loss/dice.
+
+    Used for both train and val metrics so they are directly comparable —
+    both operate on reconstructed full images, not on individual tiles.
+    """
     model.eval()
     bce_loss_fn = nn.BCEWithLogitsLoss()
-
     running_loss = 0.0
     running_dice = 0.0
     num_samples = 0
+
+    pbar = tqdm(range(len(ds.pairs)), desc=desc, leave=False, total=len(ds.pairs))
+    for pair_idx in pbar:
+        image, mask = ds.load_raw_pair(pair_idx)
+
+        logits = predict_full_image_detiled(
+            model=model,
+            image_2d=image,
+            tile_size=ds.image_size,
+            tile_overlap_pct=ds.tile_overlap_pct,
+            tile_threshold=ds.tile_threshold,
+            device=device,
+            amp=amp,
+            tile_batch_size=tile_batch_size,
+        )
+
+        mask_t = torch.from_numpy(mask).unsqueeze(0).unsqueeze(0).float()
+        bce = bce_loss_fn(logits.unsqueeze(0), mask_t)
+        dloss = dice_loss_with_logits(logits.unsqueeze(0), mask_t)
+        loss = bce_weight * bce + dice_weight * dloss
+        dice = compute_dice_score(logits.unsqueeze(0), mask_t)
+
+        running_loss += loss.item()
+        running_dice += dice
+        num_samples += 1
+        pbar.set_postfix(loss=f"{running_loss / num_samples:.4f}", dice=f"{running_dice / num_samples:.4f}")
+
+    if num_samples == 0:
+        return 0.0, 0.0
+    return running_loss / num_samples, running_dice / num_samples
+
+
+@torch.no_grad()
+def capture_val_overlays(
+    model: FrozenBackboneWithSegHead,
+    val_ds,
+    device: torch.device,
+    amp: bool,
+    tile_batch_size: int,
+    max_examples: int,
+) -> list[dict]:
+    """Full-image reconstruction used only for W&B overlay visualisation."""
+    model.eval()
     examples: list[dict] = []
     fallback_examples: list[dict] = []
 
-    pbar = tqdm(val_ds.pairs, desc="val(detiled)", leave=False)
-    for img_path, mask_path in pbar:
-        image = val_ds._load_image_grayscale(img_path)
-        mask = val_ds._load_mask(mask_path)
+    for pair_idx in range(len(val_ds.pairs)):
+        if len(examples) >= max_examples and len(fallback_examples) >= max_examples:
+            break
+
+        img_path = val_ds.pairs[pair_idx][0]
+        image, mask = val_ds.load_raw_pair(pair_idx)
 
         logits = predict_full_image_detiled(
             model=model,
@@ -282,47 +338,35 @@ def run_val_epoch_detiled(
             tile_batch_size=tile_batch_size,
         )
 
-        mask_t = torch.from_numpy(mask).unsqueeze(0).unsqueeze(0).float()
+        pred_mask = (torch.sigmoid(logits).squeeze(0).numpy() > 0.5).astype(np.uint8)
+        gt_mask = mask.astype(np.uint8)
+        panel = make_overlay_panel(image_2d=image, gt_mask=gt_mask, pred_mask=pred_mask)
+        gt_pixels = int(gt_mask.sum())
+        pred_pixels = int(pred_mask.sum())
+        dice = compute_dice_score(
+            logits.unsqueeze(0),
+            torch.from_numpy(mask).unsqueeze(0).unsqueeze(0).float(),
+        )
 
-        bce = bce_loss_fn(logits.unsqueeze(0), mask_t)
-        dloss = dice_loss_with_logits(logits.unsqueeze(0), mask_t)
-        loss = bce_weight * bce + dice_weight * dloss
+        sample = {
+            "name": img_path.name,
+            "overlay": panel,
+            "dice": float(dice),
+            "gt_pixels": gt_pixels,
+            "pred_pixels": pred_pixels,
+        }
 
-        dice = compute_dice_score(logits.unsqueeze(0), mask_t)
-
-        if capture_examples:
-            pred_mask = (torch.sigmoid(logits).squeeze(0).numpy() > 0.5).astype(np.uint8)
-            gt_mask = mask.astype(np.uint8)
-            panel = make_overlay_panel(image_2d=image, gt_mask=gt_mask, pred_mask=pred_mask)
-            gt_pixels = int(gt_mask.sum())
-            pred_pixels = int(pred_mask.sum())
-
-            sample = {
-                "name": img_path.name,
-                "overlay": panel,
-                "dice": float(dice),
-                "gt_pixels": gt_pixels,
-                "pred_pixels": pred_pixels,
-            }
-
-            if gt_pixels > 0 or pred_pixels > 0:
-                if len(examples) < max_examples:
-                    examples.append(sample)
-            elif len(fallback_examples) < max_examples:
-                fallback_examples.append(sample)
-
-        running_loss += loss.item()
-        running_dice += dice
-        num_samples += 1
-        pbar.set_postfix(loss=f"{running_loss / num_samples:.4f}", dice=f"{running_dice / num_samples:.4f}")
+        if gt_pixels > 0 or pred_pixels > 0:
+            if len(examples) < max_examples:
+                examples.append(sample)
+        elif len(fallback_examples) < max_examples:
+            fallback_examples.append(sample)
 
     if len(examples) < max_examples:
         need = max_examples - len(examples)
         examples.extend(fallback_examples[:need])
 
-    if num_samples == 0:
-        return 0.0, 0.0, examples
-    return running_loss / num_samples, running_dice / num_samples, examples
+    return examples
 
 
 def train(cfg: TrainConfig) -> None:
@@ -367,7 +411,7 @@ def train(cfg: TrainConfig) -> None:
 
     try:
         for epoch in range(1, cfg.epochs + 1):
-            train_loss, train_dice = run_train_epoch(
+            run_train_epoch(
                 model=model,
                 loader=train_loader,
                 optimizer=optimizer,
@@ -378,21 +422,45 @@ def train(cfg: TrainConfig) -> None:
                 amp=cfg.amp,
             )
 
-            val_loss, val_dice, val_examples = run_val_epoch_detiled(
+            train_loss, train_dice = run_full_image_eval(
                 model=model,
-                val_ds=val_ds,
+                ds=train_ds,
                 device=device,
                 bce_weight=cfg.bce_weight,
                 dice_weight=cfg.dice_weight,
                 amp=cfg.amp,
                 tile_batch_size=cfg.batch_size,
-                capture_examples=(
-                    wandb_run is not None
-                    and cfg.wandb_log_val_images
-                    and cfg.wandb_val_images_count > 0
-                    and (epoch % max(1, cfg.wandb_val_images_every) == 0)
-                ),
-                max_examples=max(0, cfg.wandb_val_images_count),
+                desc="train-eval",
+            )
+
+            val_loss, val_dice = run_full_image_eval(
+                model=model,
+                ds=val_ds,
+                device=device,
+                bce_weight=cfg.bce_weight,
+                dice_weight=cfg.dice_weight,
+                amp=cfg.amp,
+                tile_batch_size=cfg.batch_size,
+                desc="val",
+            )
+
+            want_overlays = (
+                wandb_run is not None
+                and cfg.wandb_log_val_images
+                and cfg.wandb_val_images_count > 0
+                and (epoch % max(1, cfg.wandb_val_images_every) == 0)
+            )
+            val_examples = (
+                capture_val_overlays(
+                    model=model,
+                    val_ds=val_ds,
+                    device=device,
+                    amp=cfg.amp,
+                    tile_batch_size=cfg.batch_size,
+                    max_examples=cfg.wandb_val_images_count,
+                )
+                if want_overlays
+                else []
             )
 
             print(
@@ -415,12 +483,7 @@ def train(cfg: TrainConfig) -> None:
                     "val/overlays_count": 0,
                 }
 
-                if (
-                    cfg.wandb_log_val_images
-                    and cfg.wandb_val_images_count > 0
-                    and (epoch % max(1, cfg.wandb_val_images_every) == 0)
-                    and len(val_examples) > 0
-                ):
+                if want_overlays and len(val_examples) > 0:
                     wandb = safe_import_wandb()
 
                     val_examples = normalize_overlay_sizes(val_examples)
