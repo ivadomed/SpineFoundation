@@ -172,7 +172,7 @@ def main() -> None:
     ap.add_argument("-o", "--out", default="plots", help="output directory")
     ap.add_argument("--every", type=int, default=1, help="keep 1 point every N (downsample)")
     ap.add_argument("--smooth", type=int, default=1, help="moving average window (in plotted points)")
-    ap.add_argument("--tail-percent", type=float, default=30.0, help="plot only the latest X%% of timeline (default: 50)")
+    ap.add_argument("--tail-percent", type=float, default=50.0, help="plot only the latest X%% of timeline (default: 50)")
     ap.add_argument("--include", nargs="*", default=[], help="keep metrics whose name contains any of these substrings")
     ap.add_argument("--exclude", nargs="*", default=["Teacher momentum", "Teacher temp"], help="drop metrics containing these substrings")
     args = ap.parse_args()
