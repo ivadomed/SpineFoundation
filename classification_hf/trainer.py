@@ -76,17 +76,45 @@ def save_head(model, output_dir: str):
 # ── instantiate_cache_model_and_dataset (adapted from curia) ─────────────────
 
 
+def _npz_has_features(path: str) -> bool:
+    """Return True if the NPZ file already contains a pre-cached 'features' key."""
+    try:
+        return Path(path).suffix.lower() == ".npz" and "features" in np.load(path).files
+    except Exception:
+        return False
+
+
 def instantiate_cache_model_and_dataset(config, train_dataset, val_dataset):
     """
-    Extract CLS tokens with the frozen backbone (once), cache them in the HF
+    Extract masked-avg-pooled backbone features (once), cache them in the HF
     Dataset, then build a Classifier that trains on those cached features.
-    Mirrors curia's instantiate_cache_model_and_dataset for the 2-D no-mask case.
+
+    Fast path — features pre-cached in NPZ (via cache_features_to_npz.py):
+        The backbone is not loaded at all; features are read directly from disk.
+        This saves ~2 GB of GPU memory and the time needed for a full extraction
+        pass.
+
+    Slow path — features not yet cached:
+        The frozen backbone is run over the full dataset; results are stored in
+        the HF Dataset (in-memory, lost on restart).
     """
     model_name = config.model.model_name
-    backbone = Dinov2Model.from_pretrained(model_name)
-    backbone.cuda()
-    backbone.eval()
-    processor = AutoImageProcessor.from_pretrained(model_name, trust_remote_code=True)
+    processor  = AutoImageProcessor.from_pretrained(model_name, trust_remote_code=True)
+
+    # Peek at the first sample to decide whether to load the backbone
+    first_path  = train_dataset[0]["path"]
+    use_npz_cache = _npz_has_features(first_path)
+
+    if use_npz_cache:
+        print("[cache] NPZ feature cache detected — skipping backbone load.")
+        backbone    = None
+        # Read hidden_size from the cached feature vector shape
+        hidden_size = int(np.load(first_path)["features"].shape[-1])
+    else:
+        backbone = Dinov2Model.from_pretrained(model_name, trust_remote_code=True)
+        backbone.cuda()
+        backbone.eval()
+        hidden_size = backbone.config.hidden_size
 
     _extract = partial(extract_features_fn, processor=processor, backbone=backbone)
 
@@ -99,7 +127,7 @@ def instantiate_cache_model_and_dataset(config, train_dataset, val_dataset):
 
     attention_cfg = OmegaConf.select(config, "model.attention_cfg")
     model = Classifier(
-        backbone.config.hidden_size,
+        hidden_size,
         config.model.num_classes,
         regression=False,
         attention_cfg=attention_cfg,
@@ -120,11 +148,17 @@ def instantiate_model_and_dataset(config, train_dataset, val_dataset):
     """
     Pre-process images with the curia AutoImageProcessor and fine-tune with the
     full backbone frozen — no feature caching.
+
+    If config.model.subfolder is set, it is forwarded to from_pretrained so that
+    the correct task head (e.g. "spinal_canal_stenosis") is loaded.  If the
+    pre-processed dataset contains a "mask" column (from NPZ files), it is kept
+    in the tensor format so the HF Trainer passes it to model(…, mask=…).
     """
     from transformers import AutoModelForImageClassification
 
     model_name = config.model.model_name
-    processor = AutoImageProcessor.from_pretrained(model_name, trust_remote_code=True)
+    subfolder  = OmegaConf.select(config, "model.subfolder", default=None)
+    processor  = AutoImageProcessor.from_pretrained(model_name, trust_remote_code=True)
 
     _preprocess = partial(preprocess_function, processor=processor)
 
@@ -137,16 +171,23 @@ def instantiate_model_and_dataset(config, train_dataset, val_dataset):
         num_proc=config.num_workers,
     )
 
-    model = AutoModelForImageClassification.from_pretrained(
-        model_name,
+    load_kwargs = dict(
         num_labels=config.model.num_classes,
         ignore_mismatched_sizes=True,
         trust_remote_code=True,
     )
+    if subfolder:
+        load_kwargs["subfolder"] = subfolder
+
+    model = AutoModelForImageClassification.from_pretrained(model_name, **load_kwargs)
     model.base_model.requires_grad_(False)
 
+    columns = ["pixel_values", "labels"]
+    if "mask" in train_dataset.column_names:
+        columns.append("mask")
+
     for split in [train_dataset, val_dataset]:
-        split.set_format(type="torch", columns=["pixel_values", "labels"])
+        split.set_format(type="torch", columns=columns)
 
     return model, train_dataset, val_dataset
 
