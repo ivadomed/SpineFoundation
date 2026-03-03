@@ -118,7 +118,7 @@ def extract_and_save_patch(
     out_name = label_path.name.replace(".nii.gz", ".npz")
     out_path = class_dir / out_name
 
-    np.savez_compressed(out_path, slice=t1_yz.astype(np.float32))
+    np.savez_compressed(out_path, slice=t1_yz.astype(np.float32), mask=mask_yz.astype(np.uint8))
 
 
 def main():

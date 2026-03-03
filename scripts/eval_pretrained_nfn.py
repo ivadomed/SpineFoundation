@@ -19,12 +19,40 @@ from pathlib import Path
 
 import numpy as np
 import torch
+import torch.nn.functional as F
 from sklearn.metrics import classification_report, confusion_matrix, roc_auc_score
 from tqdm import tqdm
 from transformers import AutoImageProcessor, AutoModelForImageClassification
 
 CLASS_NAMES = ["0 Normal/Mild", "1 Moderate", "2 Severe"]
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
+
+
+_DINO_PATCH = 14   # DINOv2 patch size; 512/14 = 36 patches per side
+# Dilation radius must cover the 8-pixel dead zone at the edge (512 - 36*14 = 8)
+_DILATE_R = _DINO_PATCH // 2 + 1  # = 8
+
+
+def resize_mask(mask_np: np.ndarray, target_size: int) -> torch.Tensor:
+    """Map a binary (H,W) mask to (1, 1, target_size, target_size) float tensor.
+
+    For sparse (single-voxel) masks, nearest-neighbour interpolation drops the
+    pixel when H > target_size (0.6 output pixels per input pixel on average).
+    We instead compute the scaled coordinates explicitly, place the pixel, then
+    dilate by one ViT-patch radius to guarantee it survives the model's internal
+    max_pool2d downsampling."""
+    H, W = mask_np.shape
+    t = torch.zeros(1, 1, target_size, target_size)
+
+    ys, xs = np.where(mask_np > 0)
+    for y, x in zip(ys, xs):
+        y_out = min(int(y * target_size / H), target_size - 1)
+        x_out = min(int(x * target_size / W), target_size - 1)
+        t[0, 0, y_out, x_out] = 1.0
+
+    # Morphological dilation (max_pool2d stride=1 keeps spatial size)
+    t = F.max_pool2d(t, kernel_size=2 * _DILATE_R + 1, stride=1, padding=_DILATE_R)
+    return t  # (1, 1, target_size, target_size)
 
 
 def run_metrics(labels_np: np.ndarray, probs_np: np.ndarray, preds_np: np.ndarray) -> None:
@@ -73,7 +101,7 @@ def run_metrics(labels_np: np.ndarray, probs_np: np.ndarray, preds_np: np.ndarra
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--data-dir", type=Path,
-                    default=Path("/home/ge.polymtl.ca/p123239/data/RSNA_patches_scs_npz"),
+                    default=Path("/home/ge.polymtl.ca/p123239/data/patches_RSNA_raw_with_mask"),
                     help="Directory with class subfolders 0/ 1/ 2/ containing NPZ slices")
     ap.add_argument("--batch-size", type=int, default=64)
     args = ap.parse_args()
@@ -112,16 +140,43 @@ def main() -> None:
     if len(paths) == 0:
         raise RuntimeError(f"No PNG files found in {args.data_dir}")
 
+    crop_size = processor.crop_size
+    n_missing_mask = 0
+
     # Inference
     all_probs: list[np.ndarray] = []
     for i in tqdm(range(0, len(paths), args.batch_size), desc="Inference"):
         batch_paths = paths[i:i + args.batch_size]
-        images_np = [np.load(p)["slice"].astype(np.float32) for p in batch_paths]
+        batch_data = [np.load(p) for p in batch_paths]
+        images_np = [d["slice"].astype(np.float32) for d in batch_data]
+
+        mask_tensors = []
+        for d in batch_data:
+            if "mask" in d:
+                mask_tensors.append(resize_mask(d["mask"], crop_size))
+            else:
+                n_missing_mask += 1
+                mask_tensors.append(None)
+
         with torch.no_grad():
             inputs = processor(images_np, return_tensors="pt")
             pv = inputs["pixel_values"].to(DEVICE)
-            logits = model(pixel_values=pv)["logits"]
+
+            if all(m is not None for m in mask_tensors):
+                mask_batch = torch.cat(mask_tensors, dim=0).to(DEVICE)  # (B,1,H,W)
+                try:
+                    logits = model(pixel_values=pv, mask=mask_batch)["logits"]
+                except NotImplementedError:
+                    # Mask(s) became empty after patch downsampling → fallback to no-mask
+                    n_missing_mask += len(batch_paths)
+                    logits = model(pixel_values=pv)["logits"]
+            else:
+                logits = model(pixel_values=pv)["logits"]
+
             all_probs.append(torch.softmax(logits, dim=-1).cpu().numpy())
+
+    if n_missing_mask > 0:
+        print(f"[WARN] {n_missing_mask} slices had no mask — ran without mask (CLS token fallback).")
 
     probs_np = np.concatenate(all_probs, axis=0)
     preds_np = probs_np.argmax(axis=1)
