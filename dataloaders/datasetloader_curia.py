@@ -7,9 +7,6 @@ from torch.utils.data import DataLoader, Dataset
 from torchvision.datasets import ImageFolder 
 from PIL import Image, ImageFile, PngImagePlugin
 import torch.distributed as dist 
-from torchvision.transforms import InterpolationMode
-
-import numpy as np
 import random
 from data.data_augmentation_custom import DataAugmentationDINO 
 from data.samplers import InfiniteSampler 
@@ -18,65 +15,10 @@ ImageFile.LOAD_TRUNCATED_IMAGES = True
 Image.MAX_IMAGE_PIXELS = None
 PngImagePlugin.MAX_TEXT_CHUNK = 16 * (1024**2)  # 16MB
 
-def pad_black_to_min_size_pil(img: Image.Image, min_h: int, min_w: int) -> Image.Image:
-    """Pad image with black (0) so that H>=min_h and W>=min_w."""
-    w,h = img.size
-    pad_h = max(0, min_h - h)
-    pad_w = max(0, min_w - w)
 
-    if pad_h == 0 and pad_w == 0:
-        return img
-
-    top = pad_h // 2
-    bottom = pad_h - top
-    left = pad_w // 2
-    right = pad_w - left
-
-    arr = np.array(img)
-    if arr.ndim == 2:
-        arr = arr[:, :, None]
-
-    arr = np.pad(
-        arr,
-        ((top, bottom), (left, right), (0, 0)),
-        mode="constant",
-        constant_values=0,
-    )
-
-    if arr.shape[2] == 1:
-        arr = arr[:, :, 0]
-
-    return Image.fromarray(arr, mode=img.mode)
-
-from torchvision.transforms import functional as F
-
-class PadToMinSize:
-    def __init__(self, min_size=384, fill=0):
-        self.min_size = min_size
-        self.fill = fill
-
-    def __call__(self, img):
-        # img: PIL Image
-        w, h = img.size
-        pad_w = max(0, self.min_size - w)
-        pad_h = max(0, self.min_size - h)
-
-        if pad_w == 0 and pad_h == 0:
-            return img  # rien à faire
-
-        # padding symétrique
-        padding = [
-            pad_w // 2,                 # left
-            pad_h // 2,                 # top
-            pad_w - pad_w // 2,         # right
-            pad_h - pad_h // 2          # bottom
-        ]
-        return F.pad(img, padding, fill=self.fill)
-
-def random_tile_pil(img: Image.Image, tile_size: int, rng: random.Random) -> Image.Image:
-    """Sample one random tile of size tile_size x tile_size (black padding if needed)."""
-    img = pad_black_to_min_size_pil(img, tile_size, tile_size)
-    w,h = img.size
+def random_crop_pil(img: Image.Image, tile_size: int, rng: random.Random) -> Image.Image:
+    """Sample one random crop of size tile_size x tile_size. Image must be >= tile_size in both dims."""
+    w, h = img.size
     x0 = rng.randint(0, w - tile_size)
     y0 = rng.randint(0, h - tile_size)
     return img.crop((x0, y0, x0 + tile_size, y0 + tile_size))
@@ -115,15 +57,9 @@ class RGBDatasetWithAugmentation(Dataset):
             transforms.Grayscale(num_output_channels=1),
         ])
 
-        self.resize_before_aug = transforms.Resize(
-            self.resize_hw,
-            interpolation=InterpolationMode.BILINEAR,
-            antialias=True,
-        )
-
         self.normalize = transforms.Compose([
             transforms.ToTensor(),
-            ZScoreNormalize()
+            ZScoreNormalize(),
         ])
 
         self.augmentation = augmentation
@@ -136,24 +72,18 @@ class RGBDatasetWithAugmentation(Dataset):
 
         tile_size = self.size if isinstance(self.size, int) else min(self.size)
         w, h = img.size
-        if w > tile_size and h > tile_size:
-            img = random_tile_pil(img, tile_size, self.rng)
+        if w >= tile_size and h >= tile_size:
+            img = random_crop_pil(img, tile_size, self.rng)
+        # sinon : laisser l'image telle quelle, RandomResizedCrop s'en occupe
 
         img = self.to_gray(img)
-        img = self.resize_before_aug(img)
         
         if self.split == 'train' and self.augmentation is not None:
-            # tile = random_tile_pil(img, self.size, self.rng)
-            crops = self.augmentation(img) #Les crops sont normalisés via l'augmentation+
-
-            
-            # img = random_tile_pil(img, self.size, self.rng)
+            crops = self.augmentation(img)
             img = self.normalize(img)
             return img, crops
         else:
-            #tile = random_tile_pil(img, self.size, self.rng)
-            
-            img = self.normalize(img)  
+            img = self.normalize(img)
             return img, label
     
     def __len__(self):
