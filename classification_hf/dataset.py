@@ -1,111 +1,119 @@
+"""
+Local-directory dataset builder that mirrors curia's pipeline.
+
+Loads images from a folder tree (one sub-dir per class), converts them to a
+HuggingFace Dataset, then applies the same AutoImageProcessor used by curia.
+
+Expected layout:
+    data_dir/
+        0/   <- label 0
+            img1.png
+        1/   <- label 1
+            img2.png
+Classes are sorted alphabetically; their index becomes the integer label.
+"""
+
 from pathlib import Path
-from typing import List, Optional, Tuple
+from typing import Dict, List
 
 import numpy as np
 import torch
+from datasets import Dataset, DatasetDict
 from PIL import Image, ImageFile
-from torch.utils.data import Dataset
+from sklearn.model_selection import train_test_split
 
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 Image.MAX_IMAGE_PIXELS = None
 
-
-def normalize_image_array(arr: np.ndarray, eps: float = 1e-6) -> np.ndarray:
-    """Per-image z-score normalization — same as in segmentation_hf."""
-    mean = arr.mean()
-    std = arr.std()
-    return (arr - mean) / (std + eps)
+_IMG_EXTS = {".png", ".jpg", ".jpeg", ".bmp", ".tif", ".tiff", ".webp"}
 
 
-class ImageClassificationDataset(Dataset):
-    """Loads raw images from class subdirectories for feature extraction.
+# ── Build a HuggingFace DatasetDict from a local directory ────────────────────
 
-    Expected layout:
-        data_dir/
-            class_a/  ← label 0
-                img1.png
-            class_b/  ← label 1
-                img2.png
-    Classes are sorted alphabetically; their indices become integer labels.
+def load_local_dataset(data_dir: str, val_split: float = 0.15, seed: int = 42) -> DatasetDict:
     """
-
-    def __init__(self, data_dir: str, image_size: int = 512):
-        self.image_size = image_size
-        self.items: List[Tuple[Path, int]] = []
-
-        data_path = Path(data_dir)
-        class_dirs = sorted([d for d in data_path.iterdir() if d.is_dir()])
-        if not class_dirs:
-            raise ValueError(f"No subdirectories found in {data_dir}")
-
-        self.class_names: List[str] = [d.name for d in class_dirs]
-        self.num_classes = len(self.class_names)
-
-        exts = {".png", ".jpg", ".jpeg", ".bmp", ".tif", ".tiff", ".webp"}
-        for label, class_dir in enumerate(class_dirs):
-            files = sorted([f for f in class_dir.iterdir() if f.suffix.lower() in exts])
-            for f in files:
-                self.items.append((f, label))
-
-        if not self.items:
-            raise ValueError(f"No images found in {data_dir}")
-
-    def __len__(self) -> int:
-        return len(self.items)
-
-    def __getitem__(self, idx: int) -> Tuple[torch.Tensor, int]:
-        path, label = self.items[idx]
-        img = Image.open(path).convert("L")
-        arr = np.array(img, dtype=np.float32)
-        arr_norm = normalize_image_array(arr / 255.0)
-        t = torch.from_numpy(np.ascontiguousarray(arr_norm)).unsqueeze(0)  # (1, H, W)
-        return t, label
-
-    @property
-    def class_counts(self) -> np.ndarray:
-        labels = np.array([label for _, label in self.items])
-        return np.bincount(labels, minlength=self.num_classes)
-
-    @property
-    def paths(self) -> List[str]:
-        return [str(p) for p, _ in self.items]
-
-    @property
-    def labels(self) -> np.ndarray:
-        return np.array([label for _, label in self.items])
-
-
-class FeatureDataset(Dataset):
-    """Loads pre-extracted features from a .npz file for fast classifier training.
-
-    Expected .npz keys:
-        features  : (N, D) float32
-        labels    : (N,)   int64
-        paths     : (N,)   str    [optional]
-        class_names: (C,)  str    [optional]
+    Returns a DatasetDict with "train" and "val" splits built from a local
+    directory tree (one sub-dir per class).  Attaches .class_names attribute.
     """
+    data_path = Path(data_dir)
+    class_dirs = sorted([d for d in data_path.iterdir() if d.is_dir()])
+    if not class_dirs:
+        raise ValueError(f"No sub-directories found in {data_dir}")
 
-    def __init__(self, npz_path: str):
-        data = np.load(npz_path, allow_pickle=True)
-        self.features: np.ndarray = data["features"].astype(np.float32)
-        self.labels: np.ndarray = data["labels"].astype(np.int64)
-        self.file_paths: Optional[np.ndarray] = data.get("paths", None)
+    class_names: List[str] = [d.name for d in class_dirs]
+    paths: List[str] = []
+    labels: List[int] = []
 
-        if "class_names" in data:
-            self.class_names: List[str] = list(data["class_names"])
-        else:
-            n = int(self.labels.max()) + 1
-            self.class_names = [str(i) for i in range(n)]
+    for label, class_dir in enumerate(class_dirs):
+        files = sorted([f for f in class_dir.iterdir() if f.suffix.lower() in _IMG_EXTS])
+        for f in files:
+            paths.append(str(f))
+            labels.append(label)
 
-        self.num_classes = len(self.class_names)
-        self.feature_dim = self.features.shape[1]
+    if not paths:
+        raise ValueError(f"No images found in {data_dir}")
 
-    def __len__(self) -> int:
-        return len(self.labels)
+    labels_np = np.array(labels)
+    indices   = np.arange(len(paths))
+    train_idx, val_idx = train_test_split(
+        indices, test_size=val_split, random_state=seed, stratify=labels_np
+    )
 
-    def __getitem__(self, idx: int) -> Tuple[torch.Tensor, int]:
-        return torch.from_numpy(self.features[idx]), int(self.labels[idx])
+    def _make_split(idx):
+        return Dataset.from_dict(
+            {"path": [paths[i] for i in idx], "target": [labels[i] for i in idx]}
+        )
 
-    @property
-    def class_counts(self) -> np.ndarray:
-        return np.bincount(self.labels, minlength=self.num_classes)
+    ds = DatasetDict({"train": _make_split(train_idx), "val": _make_split(val_idx)})
+    ds.class_names = class_names  # type: ignore[attr-defined]
+    return ds
+
+
+# ── Preprocessing: mirror curia's preprocess_function ─────────────────────────
+
+def preprocess_function(examples: Dict, processor) -> Dict:
+    """
+    Load images from disk, run through AutoImageProcessor (bicubic resize +
+    per-image z-score), return pixel_values + labels — identical to curia.
+    """
+    images_as_np = []
+    for path in examples["path"]:
+        img = Image.open(path)
+        if img.mode not in ("L", "F"):
+            img = img.convert("L")
+        images_as_np.append(np.array(img, dtype=np.float32))
+
+    processed = processor(images_as_np, return_tensors="pt")
+    return {
+        "pixel_values": processed["pixel_values"],
+        "labels": torch.tensor(examples["target"], dtype=torch.long),
+    }
+
+
+# ── Feature extraction: mirror curia's extract_features (2-D, no mask) ────────
+
+def extract_features_fn(examples: Dict, processor, backbone) -> Dict:
+    """
+    Run frozen backbone on a batch, store CLS token as pixel_values.
+    The key name 'pixel_values' is intentional: Classifier.forward expects it.
+    Mirrors curia's extract_features() for 2-D images without masks.
+    """
+    images_as_np = []
+    for path in examples["path"]:
+        img = Image.open(path)
+        if img.mode not in ("L", "F"):
+            img = img.convert("L")
+        images_as_np.append(np.array(img, dtype=np.float32))
+
+    processed = processor(images_as_np, return_tensors="pt")
+    pixel_values = processed["pixel_values"].cuda()
+
+    with torch.no_grad():
+        outputs = backbone(pixel_values=pixel_values, output_hidden_states=False)
+
+    cls_tokens = outputs.last_hidden_state[:, 0].cpu()  # (B, hidden_size)
+
+    return {
+        "pixel_values": cls_tokens,
+        "labels": torch.tensor(examples["target"], dtype=torch.long),
+    }
