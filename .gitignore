@@ -85,5 +85,5 @@ outputs*
 /curia_model/
 *.pt
 *.csv
-
+/logs/
 downstream_model
