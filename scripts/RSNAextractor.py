@@ -70,7 +70,7 @@ def find_matching_labels(root: Path, t2_path: Path):
     prefix = base.replace("_T2w.nii.gz", "_T2w")
 
     labels = sorted(
-        labels_dir.glob(prefix + "_desc-*_label-SpinalCanalStenosis_label.nii.gz")
+        labels_dir.glob(prefix + "_desc-*_label-*SubarticularStenosis_label.nii.gz")
     )
     return labels
 
@@ -134,7 +134,7 @@ def main():
 
     from tqdm import tqdm
 
-    pattern = "sub-*/anat/*_acq-sag_rec-*_T2w.nii.gz"
+    pattern = "sub-*/anat/*_acq-ax_rec-*_T2w.nii.gz"
     t2_paths = sorted(root.glob(pattern))
 
     for t2_path in tqdm(t2_paths, desc="T2 volumes", unit="vol"):
