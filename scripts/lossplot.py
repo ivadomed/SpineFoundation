@@ -16,8 +16,9 @@ from __future__ import annotations
 
 import argparse
 import re
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from typing import Dict, List, Tuple
+from typing import Dict, List, Optional, Tuple
 
 import matplotlib.pyplot as plt
 
@@ -25,6 +26,8 @@ import matplotlib.pyplot as plt
 ITER_RE = re.compile(r"Iteration:\s*(\d+)\s*/\s*(\d+)", re.IGNORECASE)
 # key: value (float) pattern, e.g. "Total Loss: 21.6221"
 KV_RE = re.compile(r"(?P<key>[A-Za-z][A-Za-z0-9 _/\-]*?):\s*(?P<val>[-+]?\d+(?:\.\d+)?(?:[eE][-+]?\d+)?)")
+# Matches common training log timestamps: 2024-01-15 14:23:45 or 2024-01-15T14:23:45
+TS_RE = re.compile(r"(\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2})")
 
 
 def moving_average(y: List[float], w: int) -> List[float]:
@@ -43,9 +46,10 @@ def moving_average(y: List[float], w: int) -> List[float]:
     return out
 
 
-def parse_log(path: Path) -> Tuple[List[int], Dict[str, List[float]]]:
+def parse_log(path: Path) -> Tuple[List[int], Dict[str, List[float]], List[Optional[datetime]]]:
     iters: List[int] = []
     series: Dict[str, List[float]] = {}
+    timestamps: List[Optional[datetime]] = []
 
     with path.open("r", errors="ignore") as f:
         for line in f:
@@ -56,6 +60,15 @@ def parse_log(path: Path) -> Tuple[List[int], Dict[str, List[float]]]:
             if not m_it:
                 continue
             it = int(m_it.group(1))
+
+            # Try to parse a timestamp from the line
+            m_ts = TS_RE.search(line)
+            ts: Optional[datetime] = None
+            if m_ts:
+                try:
+                    ts = datetime.fromisoformat(m_ts.group(1))
+                except ValueError:
+                    pass
 
             # Extract key-value floats
             kvs = {m.group("key").strip(): float(m.group("val")) for m in KV_RE.finditer(line)}
@@ -69,6 +82,7 @@ def parse_log(path: Path) -> Tuple[List[int], Dict[str, List[float]]]:
                 continue
 
             iters.append(it)
+            timestamps.append(ts)
             for k, v in kvs.items():
                 series.setdefault(k, []).append(v)
 
@@ -78,7 +92,30 @@ def parse_log(path: Path) -> Tuple[List[int], Dict[str, List[float]]]:
                 if len(series[k]) < cur_len:
                     series[k].append(float("nan"))
 
-    return iters, series
+    return iters, series, timestamps
+
+
+def filter_by_hours(
+    iters: List[int],
+    series: Dict[str, List[float]],
+    timestamps: List[Optional[datetime]],
+    last_hours: float,
+) -> Tuple[List[int], Dict[str, List[float]]]:
+    """Keep only entries from the last `last_hours` hours based on log timestamps.
+    Falls back to tail_percent=100 (no filtering) if timestamps are unavailable."""
+    valid_ts = [ts for ts in timestamps if ts is not None]
+    if not valid_ts:
+        return iters, series
+
+    cutoff = max(valid_ts) - timedelta(hours=last_hours)
+    keep = [i for i, ts in enumerate(timestamps) if ts is not None and ts >= cutoff]
+    if not keep:
+        print(f"[WARN] No data found in the last {last_hours}h — showing all data instead.")
+        return iters, series
+
+    filtered_iters = [iters[i] for i in keep]
+    filtered_series = {k: [v[i] for i in keep] for k, v in series.items()}
+    return filtered_iters, filtered_series
 
 
 def plot_series(
@@ -172,7 +209,10 @@ def main() -> None:
     ap.add_argument("-o", "--out", default="plots", help="output directory")
     ap.add_argument("--every", type=int, default=1, help="keep 1 point every N (downsample)")
     ap.add_argument("--smooth", type=int, default=1, help="moving average window (in plotted points)")
-    ap.add_argument("--tail-percent", type=float, default=50.0, help="plot only the latest X%% of timeline (default: 50)")
+    ap.add_argument("--last-hours", type=float, default=6.0,
+                    help="plot only entries from the last N hours (default: 6). "
+                         "Set to 0 to disable time filtering and use --tail-percent instead.")
+    ap.add_argument("--tail-percent", type=float, default=100.0, help="fallback: plot only the latest X%% of timeline (used only when --last-hours 0)")
     ap.add_argument("--include", nargs="*", default=[], help="keep metrics whose name contains any of these substrings")
     ap.add_argument("--exclude", nargs="*", default=["Teacher momentum", "Teacher temp"], help="drop metrics containing these substrings")
     args = ap.parse_args()
@@ -184,10 +224,16 @@ def main() -> None:
         if not path.exists():
             raise SystemExit(f"Not found: {path}")
 
-        iters, series = parse_log(path)
+        iters, series, timestamps = parse_log(path)
         if not iters:
             print(f"[WARN] No loss lines parsed in {path}")
             continue
+
+        if args.last_hours > 0:
+            iters, series = filter_by_hours(iters, series, timestamps, args.last_hours)
+            tail_percent = 100.0  # time filter already applied
+        else:
+            tail_percent = args.tail_percent
 
         prefix = path.stem
         plot_series(
@@ -197,7 +243,7 @@ def main() -> None:
             prefix=prefix,
             every=max(1, args.every),
             smooth=max(1, args.smooth),
-            tail_percent=args.tail_percent,
+            tail_percent=tail_percent,
             include=args.include,
             exclude=args.exclude,
         )
