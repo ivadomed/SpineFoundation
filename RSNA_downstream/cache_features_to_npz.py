@@ -27,26 +27,27 @@ TASK_CONFIG = {
     "scs": {"data_dir": _DATA_ROOT / "patches_RSNA_raw_with_mask_scs"},
 }
 import torch
-import torch.nn.functional as F
+import torchvision.transforms.functional as TF
 from tqdm import tqdm
 from transformers import AutoImageProcessor, Dinov2Model
 
-# ── Constants (must match classification_hf/dataset.py) ──────────────────────
-_DINO_PATCH = 14
-_DILATE_R   = _DINO_PATCH // 2 + 1  # = 8
 
-
-def resize_mask(mask_np: np.ndarray, target_size: int) -> torch.Tensor:
-    """Explicit coordinate mapping + dilation (see classification_hf/dataset.py)."""
-    H, W = mask_np.shape
-    t = torch.zeros(1, 1, target_size, target_size)
-    ys, xs = np.where(mask_np > 0)
-    for y, x in zip(ys, xs):
-        y_out = min(int(y * target_size / H), target_size - 1)
-        x_out = min(int(x * target_size / W), target_size - 1)
-        t[0, 0, y_out, x_out] = 1.0
-    t = F.max_pool2d(t, kernel_size=2 * _DILATE_R + 1, stride=1, padding=_DILATE_R)
-    return t  # (1, 1, target_size, target_size)
+def make_mask_transform(mask_np: np.ndarray, target_size: int) -> torch.Tensor:
+    """Reproduit make_mask_transform() de raidium/curia/trainer.py :
+    NumpyToTensor → AdaptativeResizeMask (bilinear antialias, seuil adaptatif).
+    Retourne (1, 1, target_size, target_size) float32.
+    """
+    t = torch.tensor(mask_np).unsqueeze(0).float()  # (1, H, W)
+    t = t.unsqueeze(0)  # (1, 1, H, W)
+    t = TF.resize(t, [target_size, target_size],
+                  interpolation=TF.InterpolationMode.BILINEAR,
+                  antialias=True)
+    t = t.squeeze(0)  # (1, target_size, target_size)
+    mask = t > 0.5
+    if mask.sum() == 0:
+        new_threshold = t.max() * 0.5
+        mask = t > new_threshold
+    return mask.float().unsqueeze(0)  # (1, 1, target_size, target_size)
 
 
 def masked_avg_pool(last_hidden_state: torch.Tensor, mask: torch.Tensor) -> torch.Tensor:
@@ -89,7 +90,7 @@ def process_batch(
         d = np.load(p)
         images.append(d["slice"].astype(np.float32))
         if "mask" in d:
-            masks.append(resize_mask(d["mask"], crop_size))  # (1, 1, S, S)
+            masks.append(make_mask_transform(d["mask"], crop_size))  # (1, 1, S, S)
         else:
             masks.append(None)
         valid_paths.append(p)

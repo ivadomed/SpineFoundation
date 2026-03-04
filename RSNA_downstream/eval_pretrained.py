@@ -27,6 +27,8 @@ from pathlib import Path
 import numpy as np
 import torch
 import torch.nn.functional as F
+import torchvision.transforms.functional as TF
+from scipy.ndimage import binary_dilation
 from sklearn.metrics import classification_report, confusion_matrix, roc_auc_score
 from tqdm import tqdm
 from transformers import AutoImageProcessor, AutoModelForImageClassification
@@ -50,9 +52,6 @@ TASK_CONFIG = {
     },
 }
 
-_DINO_PATCH = 14
-_DILATE_R = _DINO_PATCH // 2 + 1
-
 
 class Logger:
     """Écrit simultanément dans stdout et dans un fichier."""
@@ -72,18 +71,27 @@ class Logger:
         self.log_file.close()
 
 
-def resize_mask(mask_np: np.ndarray, target_size: int) -> torch.Tensor:
-    H, W = mask_np.shape
-    t = torch.zeros(1, 1, target_size, target_size)
+def make_mask_transform(mask_np: np.ndarray, target_size: int) -> torch.Tensor:
+    """Reproduit make_mask_transform() de raidium/curia/trainer.py :
+    NumpyToTensor → AdaptativeResizeMask (bilinear antialias, seuil adaptatif).
+    Retourne (1, 1, target_size, target_size) float32.
+    """
+    # NumpyToTensor : (H, W) → (1, H, W)
+    t = torch.tensor(mask_np).unsqueeze(0).float()  # (1, H, W)
 
-    ys, xs = np.where(mask_np > 0)
-    for y, x in zip(ys, xs):
-        y_out = min(int(y * target_size / H), target_size - 1)
-        x_out = min(int(x * target_size / W), target_size - 1)
-        t[0, 0, y_out, x_out] = 1.0
+    # AdaptativeResizeMask : resize bilinear + seuil adaptatif
+    t = t.unsqueeze(0)  # (1, 1, H, W) pour TF.resize
+    t = TF.resize(t, [target_size, target_size],
+                  interpolation=TF.InterpolationMode.BILINEAR,
+                  antialias=True)
+    t = t.squeeze(0)  # (1, target_size, target_size)
 
-    t = F.max_pool2d(t, kernel_size=2 * _DILATE_R + 1, stride=1, padding=_DILATE_R)
-    return t
+    mask = t > 0.5
+    if mask.sum() == 0:
+        new_threshold = t.max() * 0.5
+        mask = t > new_threshold
+
+    return mask.float().unsqueeze(0)  # (1, 1, target_size, target_size)
 
 
 def run_metrics(labels_np: np.ndarray, probs_np: np.ndarray, preds_np: np.ndarray) -> None:
@@ -145,6 +153,8 @@ def main() -> None:
     ap.add_argument("--model-name", type=str, default="raidium/curia",
                     help="Path or HF repo of the curia model (default: raidium/curia)")
     ap.add_argument("--batch-size", type=int, default=64)
+    ap.add_argument("--dilation-radius", type=int, default=0,
+                    help="Dilate the mask by this many pixels (in original image space) before resize. 0 = no dilation.")
     ap.add_argument("--log-dir", type=Path, default=Path("logs"),
                     help="Répertoire parent pour les logs")
     args = ap.parse_args()
@@ -155,9 +165,10 @@ def main() -> None:
     if args.subfolder is None:
         args.subfolder = cfg["subfolder"]
 
-    # --- Dossier de log : dataset_name + subfolder ---
+    # --- Dossier de log : dataset_name + subfolder (+ dilation) ---
     dataset_name = args.data_dir.name
-    log_folder = args.log_dir / f"{dataset_name}__{args.subfolder}"
+    dil_suffix = f"__dil{args.dilation_radius}" if args.dilation_radius > 0 else ""
+    log_folder = args.log_dir / f"{dataset_name}__{args.subfolder}{dil_suffix}"
     log_folder.mkdir(parents=True, exist_ok=True)
 
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -172,6 +183,7 @@ def main() -> None:
     print(f"Data dir : {args.data_dir}")
     print(f"Model    : {args.model_name}")
     print(f"Subfolder: {args.subfolder}")
+    print(f"Dilation : {args.dilation_radius}px" if args.dilation_radius > 0 else "Dilation : none")
     print("Loading model...")
 
     processor = AutoImageProcessor.from_pretrained(args.model_name, trust_remote_code=True)
@@ -206,6 +218,13 @@ def main() -> None:
     crop_size = processor.crop_size
     n_missing_mask = 0
 
+    if args.dilation_radius > 0:
+        r = args.dilation_radius
+        y, x = np.ogrid[-r:r+1, -r:r+1]
+        _dil_struct = (x**2 + y**2) <= r**2
+    else:
+        _dil_struct = None
+
     all_probs: list[np.ndarray] = []
     for i in tqdm(range(0, len(paths), args.batch_size), desc="Inference"):
         batch_paths = paths[i:i + args.batch_size]
@@ -215,7 +234,10 @@ def main() -> None:
         mask_tensors = []
         for d in batch_data:
             if "mask" in d:
-                mask_tensors.append(resize_mask(d["mask"], crop_size))
+                mask_np = d["mask"]
+                if _dil_struct is not None:
+                    mask_np = binary_dilation(mask_np, structure=_dil_struct).astype(mask_np.dtype)
+                mask_tensors.append(make_mask_transform(mask_np, crop_size))
             else:
                 n_missing_mask += 1
                 mask_tensors.append(None)
