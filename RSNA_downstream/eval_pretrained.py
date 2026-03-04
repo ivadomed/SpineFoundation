@@ -147,7 +147,7 @@ def main() -> None:
                     help="Model subfolder in raidium/curia (default: task-specific)")
     ap.add_argument("--model-name", type=str, default="raidium/curia",
                     help="Path or HF repo of the curia model (default: raidium/curia)")
-    ap.add_argument("--batch-size", type=int, default=64)
+    ap.add_argument("--batch-size", type=int, default=128)
     ap.add_argument("--dilation-radius", type=int, default=0,
                     help="Dilate the mask by this many pixels in 512×512 space (via max_pool2d). "
                          "Each DINOv2 patch = 16px, so radius=16 adds ~1 patch of context. 0 = no dilation.")
@@ -214,39 +214,72 @@ def main() -> None:
     crop_size = processor.crop_size
     n_missing_mask = 0
 
+    # Détecte le mode : patch_tokens cachés → pooling à l'eval, sinon backbone complet
+    _probe = np.load(paths[0])
+    use_cached = "patch_tokens" in _probe.files
+    if use_cached:
+        print("patch_tokens cachés détectés — backbone ignoré, pooling+dilation à l'eval.")
+        classifier = model.classifier.to(DEVICE)
+    print()
+
+    def _apply_dilation(mask_batch: torch.Tensor) -> torch.Tensor:
+        if args.dilation_radius > 0:
+            k = 2 * args.dilation_radius + 1
+            return F.max_pool2d(mask_batch, kernel_size=k, stride=1, padding=args.dilation_radius)
+        return mask_batch
+
+    def _masked_avg_pool(patch_tokens: torch.Tensor, mask: torch.Tensor) -> torch.Tensor:
+        """patch_tokens: (B, N, D)  mask: (B, 1, S, S) → (B, D)"""
+        B, N, D = patch_tokens.shape
+        grid = int(N ** 0.5)
+        patch_size = mask.shape[-1] // grid
+        mask_pooled = F.max_pool2d(mask.float(), kernel_size=patch_size, stride=patch_size)
+        mask_flat = mask_pooled.view(B, N).unsqueeze(-1)           # (B, N, 1)
+        total = mask_flat.sum(dim=1, keepdim=True).clamp(min=1e-6)
+        return (patch_tokens * mask_flat).sum(dim=1) / total.squeeze(1)
+
     all_probs: list[np.ndarray] = []
     for i in tqdm(range(0, len(paths), args.batch_size), desc="Inference"):
         batch_paths = paths[i:i + args.batch_size]
         batch_data = [np.load(p) for p in batch_paths]
-        images_np = [d["slice"].astype(np.float32) for d in batch_data]
-
-        mask_tensors = []
-        for d in batch_data:
-            if "mask" in d:
-                mask_tensors.append(make_mask_transform(d["mask"], crop_size))
-            else:
-                n_missing_mask += 1
-                mask_tensors.append(None)
-                print(f"[WARN] File {d} has no mask — will run without mask (CLS token fallback).")
 
         with torch.no_grad():
-            inputs = processor(images_np, return_tensors="pt")
-            pv = inputs["pixel_values"].to(DEVICE)
+            if use_cached:
+                tokens = torch.tensor(
+                    np.stack([d["patch_tokens"] for d in batch_data]), dtype=torch.float32
+                ).to(DEVICE)                                        # (B, N, D)
 
-            if all(m is not None for m in mask_tensors):
-                mask_batch = torch.cat(mask_tensors, dim=0).to(DEVICE)
-                if args.dilation_radius > 0:
-                    k = 2 * args.dilation_radius + 1
-                    mask_batch = F.max_pool2d(mask_batch, kernel_size=k, stride=1, padding=args.dilation_radius)
-                try:
-                    logits = model(pixel_values=pv, mask=mask_batch)["logits"]
-                except NotImplementedError:
-                    n_missing_mask += len(batch_paths)
-                    logits = model(pixel_values=pv)["logits"]
-                    print(f"[WARN] Model does not support masks — ran without mask for this batch (CLS token fallback).")
+                mask_tensors = [make_mask_transform(d["mask"], crop_size) for d in batch_data]
+                mask_batch = _apply_dilation(
+                    torch.cat(mask_tensors, dim=0).to(DEVICE)
+                )                                                   # (B, 1, S, S)
+                pooled = _masked_avg_pool(tokens, mask_batch)       # (B, D)
+                logits = classifier(pooled)
             else:
-                logits = model(pixel_values=pv)["logits"]
-                print(f"[WARN] Some slices in this batch had no mask — ran without mask (CLS token fallback).")
+                images_np = [d["slice"].astype(np.float32) for d in batch_data]
+
+                mask_tensors = []
+                for d in batch_data:
+                    if "mask" in d:
+                        mask_tensors.append(make_mask_transform(d["mask"], crop_size))
+                    else:
+                        n_missing_mask += 1
+                        mask_tensors.append(None)
+                        print(f"[WARN] File {d} has no mask — will run without mask.")
+
+                pv = processor(images_np, return_tensors="pt")["pixel_values"].to(DEVICE)
+
+                if all(m is not None for m in mask_tensors):
+                    mask_batch = _apply_dilation(torch.cat(mask_tensors, dim=0).to(DEVICE))
+                    try:
+                        logits = model(pixel_values=pv, mask=mask_batch)["logits"]
+                    except NotImplementedError:
+                        n_missing_mask += len(batch_paths)
+                        logits = model(pixel_values=pv)["logits"]
+                        print(f"[WARN] Model does not support masks — ran sans mask.")
+                else:
+                    logits = model(pixel_values=pv)["logits"]
+                    print(f"[WARN] Some slices had no mask — ran sans mask.")
 
             all_probs.append(torch.softmax(logits, dim=-1).cpu().numpy())
 

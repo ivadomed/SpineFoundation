@@ -1,24 +1,28 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Cache DINOv2 backbone features (masked average pooling) inside NPZ patches.
+Cache DINOv2 backbone raw patch tokens inside NPZ patches.
 
-Run once before training with use_feature_caching=true to avoid re-running
-the backbone at every training restart:
+Saves patch tokens (N, D) per slice — masking and pooling are deferred to
+eval time so any dilation radius can be tested without re-running the backbone.
 
     python cache_features_to_npz.py \
         --task scs \
-        --model-name /path/to/curia/snapshot \
+        --model-name raidium/curia \
         --batch-size 32
 
-Each NPZ file gains a "features" key of shape (hidden_size,) float32.
-Files that already have the "features" key are skipped (idempotent).
+Each NPZ file gains a "patch_tokens" key of shape (N, hidden_size) float32.
+Files that already have the "patch_tokens" key are skipped (idempotent).
+Storage: ~3 MB per file (1024 patches × 768 dims × float32).
 """
 
 import argparse
 from pathlib import Path
 
 import numpy as np
+import torch
+from tqdm import tqdm
+from transformers import AutoImageProcessor, Dinov2Model
 
 _DATA_ROOT = Path("/home/ge.polymtl.ca/p123239/data")
 TASK_CONFIG = {
@@ -26,49 +30,9 @@ TASK_CONFIG = {
     "ss":  {"data_dir": _DATA_ROOT / "patches_RSNA_raw_with_mask_ss"},
     "scs": {"data_dir": _DATA_ROOT / "patches_RSNA_raw_with_mask_scs"},
 }
-import torch
-import torchvision.transforms.functional as TF
-from tqdm import tqdm
-from transformers import AutoImageProcessor, Dinov2Model
-
-
-def make_mask_transform(mask_np: np.ndarray, target_size: int) -> torch.Tensor:
-    """Reproduit make_mask_transform() de raidium/curia/trainer.py :
-    NumpyToTensor → AdaptativeResizeMask (bilinear antialias, seuil adaptatif).
-    Retourne (1, 1, target_size, target_size) float32.
-    """
-    t = torch.tensor(mask_np).unsqueeze(0).float()  # (1, H, W)
-    t = t.unsqueeze(0)  # (1, 1, H, W)
-    t = TF.resize(t, [target_size, target_size],
-                  interpolation=TF.InterpolationMode.BILINEAR,
-                  antialias=True)
-    t = t.squeeze(0)  # (1, target_size, target_size)
-    mask = t > 0.5
-    if mask.sum() == 0:
-        new_threshold = t.max() * 0.5
-        mask = t > new_threshold
-    return mask.float().unsqueeze(0)  # (1, 1, target_size, target_size)
-
-
-def masked_avg_pool(last_hidden_state: torch.Tensor, mask: torch.Tensor) -> torch.Tensor:
-    """
-    Masked average pooling over DINOv2 patch tokens.
-    last_hidden_state : (B, 1+N, D)   — CLS at index 0
-    mask              : (B, 1, S, S)  — binary, already resized + dilated
-    Returns           : (B, D)
-    """
-    patch_tokens = last_hidden_state[:, 1:, :]          # (B, N, D)
-    B, N, D = patch_tokens.shape
-    grid = int(N ** 0.5)                                # e.g. 36 for 512/14
-
-    mask_pooled = F.max_pool2d(mask.float(), kernel_size=_DINO_PATCH, stride=_DINO_PATCH)
-    mask_flat   = mask_pooled.view(B, grid * grid).unsqueeze(-1)  # (B, N, 1)
-    total       = mask_flat.sum(dim=1, keepdim=True).clamp(min=1e-6)
-    return (patch_tokens * mask_flat).sum(dim=1) / total.squeeze(1)  # (B, D)
 
 
 def collect_npz_paths(data_dir: Path) -> list[Path]:
-    """Collect all *.npz files under data_dir (one class sub-dir per class)."""
     paths = sorted(data_dir.rglob("*.npz"))
     if not paths:
         raise FileNotFoundError(f"No NPZ files found under {data_dir}")
@@ -81,97 +45,66 @@ def process_batch(
     backbone: Dinov2Model,
     processor,
     device: torch.device,
-    crop_size: int,
 ) -> dict[Path, np.ndarray]:
-    """Run backbone + masked avg pool on a batch; return {path: features_np}."""
-    images, masks, valid_paths = [], [], []
+    """Run backbone on a batch; return {path: patch_tokens (N, D)}."""
+    images = [np.load(p)["slice"].astype(np.float32) for p in paths]
 
-    for p in paths:
-        d = np.load(p)
-        images.append(d["slice"].astype(np.float32))
-        if "mask" in d:
-            masks.append(make_mask_transform(d["mask"], crop_size))  # (1, 1, S, S)
-        else:
-            masks.append(None)
-        valid_paths.append(p)
-
-    processed = processor(images, return_tensors="pt")
-    pv = processed["pixel_values"].to(device)
-
+    pv = processor(images, return_tensors="pt")["pixel_values"].to(device)
     outputs = backbone(pixel_values=pv, output_hidden_states=False)
 
-    if all(m is not None for m in masks):
-        mask_batch = torch.cat(masks, dim=0).to(device)  # (B, 1, S, S)
-        features = masked_avg_pool(outputs.last_hidden_state, mask_batch)
-    else:
-        # Fallback to CLS token when mask is absent
-        features = outputs.last_hidden_state[:, 0]
-
-    features_np = features.cpu().float().numpy()  # (B, D)
-    return {p: features_np[i] for i, p in enumerate(valid_paths)}
+    # Exclude CLS token (index 0) → patch tokens only
+    patch_tokens = outputs.last_hidden_state[:, 1:].cpu().float().numpy()  # (B, N, D)
+    return {p: patch_tokens[i] for i, p in enumerate(paths)}
 
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument(
-        "--task",
-        type=str,
-        required=True,
-        choices=["nfn", "ss", "scs"],
-        help="nfn: NeuralForaminalNarrowing | ss: SubarticularStenosis | scs: SpinalCanalStenosis",
-    )
-    ap.add_argument("--data-dir", type=Path, default=None,
-                    help="Root directory containing class sub-dirs with NPZ files (default: task-specific).")
-    ap.add_argument("--model-name", required=True,
-                    help="Path or HF repo of the curia snapshot "
-                         "(same as model.model_name in config).")
+    ap.add_argument("--task", required=True, choices=["nfn", "ss", "scs"])
+    ap.add_argument("--data-dir", type=Path, default=None)
+    ap.add_argument("--model-name", default="raidium/curia",
+                    help="Path or HF repo of the curia backbone.")
     ap.add_argument("--batch-size", type=int, default=32)
-    ap.add_argument("--skip-existing", action="store_true", default=True,
-                    help="Skip NPZ files that already contain 'features' (default: on).")
     ap.add_argument("--force", action="store_true",
-                    help="Recompute and overwrite existing 'features' entries.")
+                    help="Recompute and overwrite existing 'patch_tokens' entries.")
     args = ap.parse_args()
 
-    data_dir = args.data_dir if args.data_dir is not None else TASK_CONFIG[args.task]["data_dir"]
-    model_name = args.model_name
+    data_dir   = args.data_dir or TASK_CONFIG[args.task]["data_dir"]
     device     = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    skip       = args.skip_existing and not args.force
 
-    print(f"Loading backbone from {model_name} ...")
-    backbone  = Dinov2Model.from_pretrained(model_name, trust_remote_code=True)
-    backbone  = backbone.to(device).eval()
-    processor = AutoImageProcessor.from_pretrained(model_name, trust_remote_code=True)
-    crop_size = processor.crop_size
-    print(f"  hidden_size={backbone.config.hidden_size}  crop_size={crop_size}  device={device}")
+    print(f"Loading backbone from {args.model_name} ...")
+    backbone  = Dinov2Model.from_pretrained(args.model_name, trust_remote_code=True).to(device).eval()
+    processor = AutoImageProcessor.from_pretrained(args.model_name, trust_remote_code=True)
+    N = (processor.crop_size // backbone.config.patch_size) ** 2
+    D = backbone.config.hidden_size
+    print(f"  patch_tokens shape per slice: ({N}, {D})  ~{N*D*4/1e6:.1f} MB/file  device={device}")
 
     all_paths = collect_npz_paths(data_dir)
     print(f"Found {len(all_paths)} NPZ files under {data_dir}")
 
-    if skip:
-        todo = [p for p in all_paths if "features" not in np.load(p).files]
-        print(f"  {len(all_paths) - len(todo)} already cached, {len(todo)} to process.")
-    else:
+    if args.force:
         todo = all_paths
         print(f"  --force: recomputing all {len(todo)} files.")
+    else:
+        todo = [p for p in all_paths if "patch_tokens" not in np.load(p).files]
+        print(f"  {len(all_paths) - len(todo)} already cached, {len(todo)} to process.")
 
     if not todo:
         print("Nothing to do.")
         return
 
     n_saved = 0
-    for i in tqdm(range(0, len(todo), args.batch_size), desc="Caching features"):
-        batch_paths = todo[i : i + args.batch_size]
-        feat_map = process_batch(batch_paths, backbone, processor, device, crop_size)
+    for i in tqdm(range(0, len(todo), args.batch_size), desc="Caching patch tokens"):
+        batch_paths = todo[i: i + args.batch_size]
+        token_map = process_batch(batch_paths, backbone, processor, device)
 
-        for p, feat in feat_map.items():
+        for p, tokens in token_map.items():
             d = np.load(p)
             data = {k: d[k] for k in d.files}  # preserve slice, mask, …
-            data["features"] = feat.astype(np.float32)
+            data["patch_tokens"] = tokens        # (N, D) float32
             np.savez_compressed(p, **data)
             n_saved += 1
 
-    print(f"\nDone. Features cached in {n_saved}/{len(all_paths)} files.")
-    print(f"Feature shape: ({backbone.config.hidden_size},) float32")
+    print(f"\nDone. patch_tokens cached in {n_saved}/{len(all_paths)} files.")
 
 
 if __name__ == "__main__":
