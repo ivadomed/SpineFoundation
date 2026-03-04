@@ -70,10 +70,9 @@ class Logger:
         self.log_file.close()
 
 
-def make_mask_transform(mask_np: np.ndarray, target_size: int, dilation_radius: int = 0) -> torch.Tensor:
+def make_mask_transform(mask_np: np.ndarray, target_size: int) -> torch.Tensor:
     """Reproduit make_mask_transform() de raidium/curia/trainer.py :
     NumpyToTensor → AdaptativeResizeMask (bilinear antialias, seuil adaptatif).
-    dilation_radius : dilation en pixels dans l'espace target_size (via max_pool2d).
     Retourne (1, 1, target_size, target_size) float32.
     """
     t = torch.tensor(mask_np).unsqueeze(0).float()  # (1, H, W)
@@ -81,11 +80,6 @@ def make_mask_transform(mask_np: np.ndarray, target_size: int, dilation_radius: 
     t = TF.resize(t, [target_size, target_size],
                   interpolation=TF.InterpolationMode.BILINEAR,
                   antialias=True)
-
-    if dilation_radius > 0:
-        k = 2 * dilation_radius + 1
-        t = F.max_pool2d(t, kernel_size=k, stride=1, padding=dilation_radius)
-
     t = t.squeeze(0)  # (1, target_size, target_size)
     mask = t > 0.5
     if mask.sum() == 0:
@@ -229,7 +223,7 @@ def main() -> None:
         mask_tensors = []
         for d in batch_data:
             if "mask" in d:
-                mask_tensors.append(make_mask_transform(d["mask"], crop_size, args.dilation_radius))
+                mask_tensors.append(make_mask_transform(d["mask"], crop_size))
             else:
                 n_missing_mask += 1
                 mask_tensors.append(None)
@@ -241,6 +235,9 @@ def main() -> None:
 
             if all(m is not None for m in mask_tensors):
                 mask_batch = torch.cat(mask_tensors, dim=0).to(DEVICE)
+                if args.dilation_radius > 0:
+                    k = 2 * args.dilation_radius + 1
+                    mask_batch = F.max_pool2d(mask_batch, kernel_size=k, stride=1, padding=args.dilation_radius)
                 try:
                     logits = model(pixel_values=pv, mask=mask_batch)["logits"]
                 except NotImplementedError:
