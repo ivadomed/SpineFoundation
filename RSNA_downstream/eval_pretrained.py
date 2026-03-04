@@ -28,7 +28,6 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 import torchvision.transforms.functional as TF
-from scipy.ndimage import binary_dilation
 from sklearn.metrics import classification_report, confusion_matrix, roc_auc_score
 from tqdm import tqdm
 from transformers import AutoImageProcessor, AutoModelForImageClassification
@@ -71,21 +70,23 @@ class Logger:
         self.log_file.close()
 
 
-def make_mask_transform(mask_np: np.ndarray, target_size: int) -> torch.Tensor:
+def make_mask_transform(mask_np: np.ndarray, target_size: int, dilation_radius: int = 0) -> torch.Tensor:
     """Reproduit make_mask_transform() de raidium/curia/trainer.py :
     NumpyToTensor → AdaptativeResizeMask (bilinear antialias, seuil adaptatif).
+    dilation_radius : dilation en pixels dans l'espace target_size (via max_pool2d).
     Retourne (1, 1, target_size, target_size) float32.
     """
-    # NumpyToTensor : (H, W) → (1, H, W)
     t = torch.tensor(mask_np).unsqueeze(0).float()  # (1, H, W)
-
-    # AdaptativeResizeMask : resize bilinear + seuil adaptatif
-    t = t.unsqueeze(0)  # (1, 1, H, W) pour TF.resize
+    t = t.unsqueeze(0)  # (1, 1, H, W)
     t = TF.resize(t, [target_size, target_size],
                   interpolation=TF.InterpolationMode.BILINEAR,
                   antialias=True)
-    t = t.squeeze(0)  # (1, target_size, target_size)
 
+    if dilation_radius > 0:
+        k = 2 * dilation_radius + 1
+        t = F.max_pool2d(t, kernel_size=k, stride=1, padding=dilation_radius)
+
+    t = t.squeeze(0)  # (1, target_size, target_size)
     mask = t > 0.5
     if mask.sum() == 0:
         new_threshold = t.max() * 0.5
@@ -154,7 +155,8 @@ def main() -> None:
                     help="Path or HF repo of the curia model (default: raidium/curia)")
     ap.add_argument("--batch-size", type=int, default=64)
     ap.add_argument("--dilation-radius", type=int, default=0,
-                    help="Dilate the mask by this many pixels (in original image space) before resize. 0 = no dilation.")
+                    help="Dilate the mask by this many pixels in 512×512 space (via max_pool2d). "
+                         "Each DINOv2 patch = 16px, so radius=16 adds ~1 patch of context. 0 = no dilation.")
     ap.add_argument("--log-dir", type=Path, default=Path("logs"),
                     help="Répertoire parent pour les logs")
     args = ap.parse_args()
@@ -218,13 +220,6 @@ def main() -> None:
     crop_size = processor.crop_size
     n_missing_mask = 0
 
-    if args.dilation_radius > 0:
-        r = args.dilation_radius
-        y, x = np.ogrid[-r:r+1, -r:r+1]
-        _dil_struct = (x**2 + y**2) <= r**2
-    else:
-        _dil_struct = None
-
     all_probs: list[np.ndarray] = []
     for i in tqdm(range(0, len(paths), args.batch_size), desc="Inference"):
         batch_paths = paths[i:i + args.batch_size]
@@ -234,10 +229,7 @@ def main() -> None:
         mask_tensors = []
         for d in batch_data:
             if "mask" in d:
-                mask_np = d["mask"]
-                if _dil_struct is not None:
-                    mask_np = binary_dilation(mask_np, structure=_dil_struct).astype(mask_np.dtype)
-                mask_tensors.append(make_mask_transform(mask_np, crop_size))
+                mask_tensors.append(make_mask_transform(d["mask"], crop_size, args.dilation_radius))
             else:
                 n_missing_mask += 1
                 mask_tensors.append(None)
