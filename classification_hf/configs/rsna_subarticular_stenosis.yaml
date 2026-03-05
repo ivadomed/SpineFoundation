@@ -1,10 +1,10 @@
 model:
   model_name: "/home/ge.polymtl.ca/p123239/.cache/huggingface/hub/models--raidium--curia/snapshots/9657dc56276bc6c9503ef6f8d060879c8bee482f"
-  subfolder: "neural_foraminal_narrowing"
+  subfolder: "subarticular_stenosis"
   num_classes: 3
-  attention_cfg: null          # set to {num_heads: 1, num_queries: 1} to enable attention
+  attention_cfg: null
 
-data_dir: "/home/ge.polymtl.ca/p123239/data/patches_RSNA_raw_with_mask_nfn"
+data_dir: "/home/ge.polymtl.ca/p123239/data/patches_RSNA_raw_with_mask_ss"
 val_split: 0.15
 seed: 42
 
@@ -15,10 +15,10 @@ weight_decay: 0.0001          # L2 regularisation on the linear head
 num_workers: 8
 eval_steps: 30
 
-dilation_radius: 0            # mask dilation radius (pixels, at crop_size resolution)
+dilation_radius: 0           # mask dilation radius (pixels, at crop_size resolution)
 use_feature_caching: true     # use pre-cached patch_tokens from NPZ — no backbone reload
 
-task: "nfn"
+task: "ss"
 log_dir: "/home/ge.polymtl.ca/p123239/SpineFoundation/classification_hf/logs"
-output_dir: "/home/ge.polymtl.ca/p123239/SpineFoundation/outputs_cls/rsna_nfn"
+output_dir: "/home/ge.polymtl.ca/p123239/SpineFoundation/outputs_cls/rsna_ss"
 use_pretrained_head: false

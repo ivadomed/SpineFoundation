@@ -14,6 +14,8 @@ from .trainer import main
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Train classifier with OmegaConf config")
     parser.add_argument("--config", type=str, required=True, help="Path to config.yaml")
+    parser.add_argument("--set", nargs="*", default=[],
+                        help="Key=value overrides, e.g. --set dilation_radius=4 task=nfn_dil4")
     args = parser.parse_args()
 
     config_path = Path(args.config)
@@ -21,4 +23,6 @@ if __name__ == "__main__":
         raise FileNotFoundError(f"Config file not found: {config_path}")
 
     config = OmegaConf.load(config_path)
+    if args.set:
+        config = OmegaConf.merge(config, OmegaConf.from_dotlist(args.set))
     main(config)

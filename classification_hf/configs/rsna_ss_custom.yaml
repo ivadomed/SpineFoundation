@@ -1,0 +1,26 @@
+model:
+  model_name: "/home/ge.polymtl.ca/p123239/.cache/huggingface/hub/models--raidium--curia/snapshots/9657dc56276bc6c9503ef6f8d060879c8bee482f"
+  subfolder: "subarticular_stenosis"
+  num_classes: 3
+  attention_cfg: null
+
+data_dir: "/home/ge.polymtl.ca/p123239/data/RSNA_patches_ss"
+val_split: 0.15
+seed: 42
+
+epochs: 25
+batch_size: 64
+learning_rate: 0.005          # scaled internally: lr * batch_size / 256
+weight_decay: 0.0001          # L2 regularisation on the linear head
+num_workers: 8
+eval_steps: 30
+
+dilation_radius: 0            # must match the radius used when running cache_patch_tokens --suffix custom
+use_feature_caching: true     # loads pooled_features_custom_dil0.pt
+
+cache_suffix: "custom"        # → pooled_features_custom_dil0.pt
+
+task: "ss"
+log_dir: "/home/ge.polymtl.ca/p123239/SpineFoundation/classification_hf/logs"
+output_dir: "/home/ge.polymtl.ca/p123239/SpineFoundation/outputs_cls/rsna_ss_custom"
+use_pretrained_head: false

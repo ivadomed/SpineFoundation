@@ -1,10 +1,25 @@
 #!/usr/bin/env bash
-set -euo pipefail
+# Usage:
+#   bash classification_hf/train.sh [config] [n_gpus]
+#
+# Examples (run from SpineFoundation/):
+#   bash classification_hf/train.sh classification_hf/configs/rsna_neural_foraminal_narrowing.yaml
+#   bash classification_hf/train.sh classification_hf/configs/rsna_spinal_canal_stenosis.yaml 2
+set -eu
 
-PYTHON=/home/ge.polymtl.ca/p123239/.conda/envs/dino/bin/python
 ROOT=/home/ge.polymtl.ca/p123239/SpineFoundation
-CONFIG=$ROOT/classification_hf/configs/rsna_neural_foraminal_narrowing.yaml
+CONFIG="${1:-$ROOT/classification_hf/configs/rsna_neural_foraminal_narrowing.yaml}"
+N_GPUS="${2:-1}"
 
 cd "$ROOT"
 
-$PYTHON -m classification_hf.train --config "$CONFIG"
+echo "[$(date +%H:%M:%S)]  Config  : $CONFIG"
+echo "[$(date +%H:%M:%S)]  N GPUs  : $N_GPUS"
+
+PYTHON=/home/ge.polymtl.ca/p123239/.conda/envs/dino/bin/python
+
+"$PYTHON" -m torch.distributed.run \
+    --nproc_per_node="$N_GPUS" \
+    --standalone \
+    -m classification_hf.train \
+    --config "$CONFIG"
