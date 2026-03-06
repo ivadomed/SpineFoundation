@@ -1,5 +1,6 @@
 """
-Parse results.csv and plot the effect of dilation radius on classification metrics.
+Parse bootstrap_pretrained_results.csv and plot the effect of dilation radius
+on classification metrics (with 95% CI error bars).
 
 Usage:
     python -m classification_hf.plot_dilation_study \
@@ -26,10 +27,11 @@ TASK_LABELS = {
     "ss":  "Subarticular Stenosis",
 }
 COLORS = ["steelblue", "crimson", "darkorange", "forestgreen"]
+# (csv_prefix, axis label, best=max)
 METRICS = [
-    ("auc_ovr_macro",    "AUC OvR macro",    "max"),
-    ("auc_ovr_weighted", "AUC OvR weighted", "max"),
-    ("accuracy",         "Accuracy",         "max"),
+    ("auc_macro",    "AUC OvR macro",    "max"),
+    ("auc_weighted", "AUC OvR weighted", "max"),
+    ("accuracy",     "Accuracy",         "max"),
 ]
 
 
@@ -40,22 +42,23 @@ def load_results(csv_path: Path) -> list[dict]:
 
 
 def extract_dilation_rows(rows: list[dict], base_task: str, radii: list[int]) -> dict[int, dict]:
-    """
-    For each dilation radius, keep the most recent row whose task matches
-    '{base_task}_dil{radius}'.
-    """
+    """Keep the most recent row per (task, dilation_radius) pair."""
     result = {}
     for r in rows:
-        for dil in radii:
-            if r["task"] == f"{base_task}_dil{dil}":
-                result[dil] = r   # last write wins (most recent run)
+        if r["task"] != base_task:
+            continue
+        try:
+            dil = int(r["dilation_radius"])
+        except (KeyError, ValueError):
+            continue
+        if dil in radii:
+            result[dil] = r   # last write wins (most recent run)
     return result
 
 
 def _annotate_best(ax, x_vals, y_vals, mode, color):
     arr = np.array(y_vals, dtype=float)
-    valid = ~np.isnan(arr)
-    if not valid.any():
+    if np.all(np.isnan(arr)):
         return
     idx = int(np.nanargmax(arr)) if mode == "max" else int(np.nanargmin(arr))
     bx, by = x_vals[idx], arr[idx]
@@ -72,13 +75,13 @@ def _annotate_best(ax, x_vals, y_vals, mode, color):
 
 
 def plot_dilation_study(log_dir: Path, tasks: list[str], radii: list[int]) -> None:
-    rows = load_results(log_dir / "results.csv")
+    rows = load_results(log_dir / "bootstrap_pretrained_results.csv")
 
     n_metrics = len(METRICS)
     fig, axes = plt.subplots(1, n_metrics, figsize=(5 * n_metrics, 5))
-    fig.suptitle("Dilation radius ablation — Curia backbone", fontsize=13)
+    fig.suptitle("Dilation radius ablation — Curia backbone (bootstrap 95% CI)", fontsize=13)
 
-    for ax, (col, label, mode) in zip(axes, METRICS):
+    for ax, (col_prefix, label, mode) in zip(axes, METRICS):
         for task, color in zip(tasks, COLORS):
             dil_rows = extract_dilation_rows(rows, task, radii)
             if not dil_rows:
@@ -86,11 +89,20 @@ def plot_dilation_study(log_dir: Path, tasks: list[str], radii: list[int]) -> No
                 continue
 
             x = sorted(dil_rows.keys())
-            y = [float(dil_rows[d][col]) if dil_rows[d].get(col) else float("nan") for d in x]
+            y     = [float(dil_rows[d].get(f"{col_prefix}_mean",    "nan")) for d in x]
+            y_lo  = [float(dil_rows[d].get(f"{col_prefix}_ci_low",  "nan")) for d in x]
+            y_hi  = [float(dil_rows[d].get(f"{col_prefix}_ci_high", "nan")) for d in x]
+
+            y_arr    = np.array(y,    dtype=float)
+            y_lo_arr = np.array(y_lo, dtype=float)
+            y_hi_arr = np.array(y_hi, dtype=float)
+            err_lo   = y_arr - y_lo_arr
+            err_hi   = y_hi_arr - y_arr
 
             task_label = TASK_LABELS.get(task, task)
-            ax.plot(x, y, marker="s", color=color, linewidth=2, markersize=6,
-                    label=task_label, alpha=0.85)
+            ax.errorbar(x, y_arr, yerr=[err_lo, err_hi],
+                        marker="s", color=color, linewidth=2, markersize=6,
+                        capsize=4, label=task_label, alpha=0.85)
             _annotate_best(ax, x, y, mode, color)
 
         ax.set_title(label)
@@ -99,7 +111,6 @@ def plot_dilation_study(log_dir: Path, tasks: list[str], radii: list[int]) -> No
         ax.grid(True, alpha=0.3)
         ax.legend(fontsize=8)
 
-    # Tighten y-axis range to relevant portion
     for ax in axes:
         ax.set_ylim(bottom=max(0.0, ax.get_ylim()[0] - 0.02))
 
@@ -118,9 +129,9 @@ def plot_dilation_study(log_dir: Path, tasks: list[str], radii: list[int]) -> No
         for dil in sorted(dil_rows.keys()):
             r = dil_rows[dil]
             print(f"{task:<10}  {dil:>4}  "
-                  f"{float(r.get('auc_ovr_macro', 0)):>10.4f}  "
-                  f"{float(r.get('auc_ovr_weighted', 0)):>12.4f}  "
-                  f"{float(r.get('accuracy', 0)):>10.4f}")
+                  f"{float(r.get('auc_macro_mean', 0)):>10.4f}  "
+                  f"{float(r.get('auc_weighted_mean', 0)):>12.4f}  "
+                  f"{float(r.get('accuracy_mean', 0)):>10.4f}")
         print()
     print("="*80)
 
@@ -130,7 +141,7 @@ def main():
     parser.add_argument("--log_dir", required=True)
     parser.add_argument("--tasks",  nargs="+", default=["nfn", "scs", "ss"])
     parser.add_argument("--radii",  nargs="+", type=int,
-                        default=[0, 2, 4, 6, 8, 12, 16, 24])
+                        default=[0, 2, 4, 6, 8, 12, 16 , 24])
     args = parser.parse_args()
 
     plot_dilation_study(Path(args.log_dir), args.tasks, args.radii)

@@ -96,8 +96,10 @@ def _masked_avg_pool_tokens(
     Returns (B, hidden_size).
     """
     B, N, D = tokens.shape
+    grid = int(N ** 0.5)
+    patch_size = mask.shape[-1] // grid  # infer from mask size and token grid
     mask_pooled = F.max_pool2d(
-        mask.float(), kernel_size=_DINO_PATCH, stride=_DINO_PATCH
+        mask.float(), kernel_size=patch_size, stride=patch_size
     )                                                   # (B, 1, grid, grid)
     mask_flat = mask_pooled.view(B, N)                  # (B, N)
 
@@ -271,17 +273,19 @@ def extract_features_fn(examples: Dict, processor, backbone, dilation_radius: in
             masks_np.append(None)
 
     processed = processor(images_as_np, return_tensors="pt")
-    # Derive actual spatial size from pixel_values — processor.crop_size can differ
-    actual_size = processed["pixel_values"].shape[-1]
-    mask_tensors = [
-        resize_mask(m, actual_size, dilation_radius) if m is not None else None
-        for m in masks_np
-    ]
     device = next(backbone.parameters()).device
     pixel_values = processed["pixel_values"].to(device)
 
     with torch.no_grad():
         outputs = backbone(pixel_values=pixel_values, output_hidden_states=False)
+
+    # Use the actual pixel_values size for mask resizing;
+    # _masked_avg_pool_tokens now infers patch_size from mask.shape / token count
+    actual_size = processed["pixel_values"].shape[-1]
+    mask_tensors = [
+        resize_mask(m, actual_size, dilation_radius) if m is not None else None
+        for m in masks_np
+    ]
 
     if all(m is not None for m in mask_tensors):
         mask_batch = torch.cat(mask_tensors, dim=0).to(device)  # (B, 1, S, S)
@@ -307,10 +311,12 @@ class PatchTokenDataset(torch.utils.data.Dataset):
     the vectorised resize_mask).
     """
 
-    def __init__(self, paths: List[str], labels: List[int], dilation_radius: int = 8):
+    def __init__(self, paths: List[str], labels: List[int], dilation_radius: int = 8,
+                 token_key: str = "patch_tokens"):
         self.paths           = paths
         self.labels          = labels
         self.dilation_radius = dilation_radius
+        self.token_key       = token_key
 
     def __len__(self) -> int:
         return len(self.paths)
@@ -320,7 +326,7 @@ class PatchTokenDataset(torch.utils.data.Dataset):
         label = self.labels[idx]
         d = np.load(path)
 
-        tokens = torch.from_numpy(d["patch_tokens"].copy())  # (N, D)
+        tokens = torch.from_numpy(d[self.token_key].copy())  # (N, D)
         N_tok  = tokens.shape[0]
         grid   = int(N_tok ** 0.5)
         token_crop_size = grid * _DINO_PATCH
@@ -339,7 +345,8 @@ class PatchTokenDataset(torch.utils.data.Dataset):
         }
 
 
-def _pool_npz_list(paths: List[str], labels: List[int], dilation_radius: int) -> torch.utils.data.TensorDataset:
+def _pool_npz_list(paths: List[str], labels: List[int], dilation_radius: int,
+                   token_key: str = "patch_tokens") -> torch.utils.data.TensorDataset:
     """
     Load all NPZ files, apply masked-avg-pooling, and return a TensorDataset
     with all features pre-loaded in RAM.  Fast startup, fast per-epoch.
@@ -347,7 +354,7 @@ def _pool_npz_list(paths: List[str], labels: List[int], dilation_radius: int) ->
     features_list = []
     for path in tqdm(paths, desc="Pooling features", unit="ex", leave=False):
         d = np.load(path)
-        tokens = torch.from_numpy(d["patch_tokens"].copy())  # (N, D)
+        tokens = torch.from_numpy(d[token_key].copy())  # (N, D)
         N_tok = tokens.shape[0]
         grid  = int(N_tok ** 0.5)
         token_crop_size = grid * _DINO_PATCH
@@ -370,6 +377,7 @@ def build_patch_token_datasets(
     dilation_radius: int = 8,
     data_dir: str = "",
     cache_suffix: str = "",
+    token_key: str = "patch_tokens",
 ) -> Tuple["_DictDataset", "_DictDataset"]:
     """
     Pool all patch_tokens into RAM tensors.  No disk I/O during training.
@@ -411,8 +419,8 @@ def build_patch_token_datasets(
     suffix_flag = f" --cache_suffix {cache_suffix}" if cache_suffix else ""
     print("[cache] Tip: run  python -m classification_hf.cache_pooled_features "
           f"--data_dir {data_dir} --dilation_radius {dilation_radius}{suffix_flag}  to speed this up.", flush=True)
-    train_tensor = _pool_npz_list(hf_train["path"], hf_train["target"], dilation_radius)
-    val_tensor   = _pool_npz_list(hf_val["path"],   hf_val["target"],   dilation_radius)
+    train_tensor = _pool_npz_list(hf_train["path"], hf_train["target"], dilation_radius, token_key)
+    val_tensor   = _pool_npz_list(hf_val["path"],   hf_val["target"],   dilation_radius, token_key)
     n_train, D = train_tensor.tensors[0].shape
     n_val       = val_tensor.tensors[0].shape[0]
     print(f"[cache] {n_train} train + {n_val} val features loaded ({D}d, "

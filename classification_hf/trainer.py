@@ -199,7 +199,7 @@ def _plot_training_history(log_history: list, output_dir: str, task: str) -> Non
     print(f"Training curves saved to {out_path}")
 
 
-def _run_final_eval(trainer, val_dataset, config, timestamp: str, run_dir: str) -> None:
+def _run_final_eval(model, val_dataset, eval_batch_size: int, config, timestamp: str, run_dir: str) -> None:
     """Run final evaluation, print detailed report, write to separate logs.
     Also saves val_predictions.npz to run_dir for downstream bootstrap analysis."""
     log_dir = Path(OmegaConf.select(config, "log_dir", default="classification_hf/logs"))
@@ -208,14 +208,12 @@ def _run_final_eval(trainer, val_dataset, config, timestamp: str, run_dir: str) 
     task           = OmegaConf.select(config, "task", default="unknown")
     dilation_radius = int(OmegaConf.select(config, "dilation_radius", default=8))
 
-    # Use a plain inference loop — trainer.predict() calls all_gather (DDP)
-    # which crashes after destroy_process_group().
-    device = next(trainer.model.parameters()).device
-    trainer.model.eval()
+    device = next(model.parameters()).device
+    model.eval()
     all_logits, all_labels = [], []
     loader = torch.utils.data.DataLoader(
         val_dataset,
-        batch_size=trainer.args.per_device_eval_batch_size * 2,
+        batch_size=eval_batch_size * 2,
         shuffle=False,
         num_workers=0,
         pin_memory=False,
@@ -224,7 +222,7 @@ def _run_final_eval(trainer, val_dataset, config, timestamp: str, run_dir: str) 
         for batch in loader:
             pixel_values = batch["pixel_values"].to(device)
             lbls         = batch["labels"]
-            logits_b     = trainer.model(pixel_values)["logits"]
+            logits_b     = model(pixel_values)["logits"]
             all_logits.append(logits_b.cpu())
             all_labels.append(lbls)
     logits = torch.cat(all_logits).float().numpy()
@@ -304,13 +302,13 @@ def save_head(model, output_dir: str):
 # ── instantiate_cache_model_and_dataset (adapted from curia) ─────────────────
 
 
-def _npz_has_cached(path: str) -> bool:
+def _npz_has_cached(path: str, token_key: str = "patch_tokens") -> bool:
     """Return True if the NPZ file already contains pre-cached tokens or features."""
     try:
         if Path(path).suffix.lower() != ".npz":
             return False
         files = np.load(path).files
-        return "patch_tokens" in files or "features" in files
+        return token_key in files or "features" in files
     except Exception:
         return False
 
@@ -340,23 +338,26 @@ def instantiate_cache_model_and_dataset(config, train_dataset, val_dataset):
     # (useful when switching to a new encoder whose features aren't cached yet)
     force_recompute = bool(OmegaConf.select(config, "force_recompute", default=False))
 
+    # Derive token_key from cache_suffix (e.g. "custom" → "patch_tokens_custom")
+    cache_suffix = OmegaConf.select(config, "cache_suffix", default="") or ""
+    token_key    = f"patch_tokens_{cache_suffix}" if cache_suffix else "patch_tokens"
+
     # Peek at the first sample to decide whether to load the backbone
     first_path    = train_dataset[0]["path"]
-    use_npz_cache = _npz_has_cached(first_path) and not force_recompute
+    use_npz_cache = _npz_has_cached(first_path, token_key) and not force_recompute
 
     local_rank = int(os.environ.get("LOCAL_RANK", 0))
     device     = torch.device(f"cuda:{local_rank}")
 
     d_first = np.load(first_path)
-    use_patch_tokens = use_npz_cache and "patch_tokens" in d_first
+    use_patch_tokens = use_npz_cache and token_key in d_first.files
 
     if use_patch_tokens:
-        print("[cache] patch_tokens detected — using on-the-fly PatchTokenDataset (no Map, no backbone).")
-        hidden_size = int(d_first["patch_tokens"].shape[-1])
-        cache_suffix = OmegaConf.select(config, "cache_suffix", default="") or ""
+        print(f"[cache] {token_key} detected — using on-the-fly PatchTokenDataset (no Map, no backbone).")
+        hidden_size = int(d_first[token_key].shape[-1])
         train_pt, val_pt = build_patch_token_datasets(
             train_dataset, val_dataset, dilation_radius,
-            data_dir=config.data_dir, cache_suffix=cache_suffix,
+            data_dir=config.data_dir, cache_suffix=cache_suffix, token_key=token_key,
         )
         attention_cfg = OmegaConf.select(config, "model.attention_cfg")
         model = Classifier(hidden_size, config.model.num_classes, regression=False, attention_cfg=attention_cfg)
@@ -473,6 +474,66 @@ def instantiate_model_and_dataset(config, train_dataset, val_dataset):
     return model, train_dataset, val_dataset
 
 
+# ── Fast training loop for pre-cached features ───────────────────────────────
+
+
+def _fast_train_linear(model, train_dataset, val_dataset, config, run_dir: str,
+                       task: str, timestamp: str) -> None:
+    """
+    Bypass HF Trainer entirely for the _DictDataset fast path.
+
+    All features and labels are loaded onto the GPU once; training is a plain
+    PyTorch loop with no DataLoader overhead.  ~10-50x faster than HF Trainer
+    for a linear head on cached features.
+    """
+    from classification_hf.dataset import _DictDataset as _DD
+    assert isinstance(train_dataset, _DD)
+
+    # ── Load all data to GPU in one shot ──────────────────────────────────────
+    local_rank = int(os.environ.get("LOCAL_RANK", 0))
+    device = torch.device(f"cuda:{local_rank}")
+    model.to(device)
+
+    # _DictDataset wraps TensorDataset — access tensors directly (no Python loop)
+    train_x, train_y = train_dataset._ds.tensors   # (N, D), (N,)
+    val_x,   val_y   = val_dataset._ds.tensors
+    train_x, train_y = train_x.to(device), train_y.to(device)
+    # val stays on CPU; moved in chunks during eval
+
+    # ── Optimizer + cosine schedule ───────────────────────────────────────────
+    batch_size   = int(config.batch_size)
+    epochs       = int(config.epochs)
+    scaled_lr    = scale_lr(config.learning_rate, batch_size)
+    weight_decay = float(OmegaConf.select(config, "weight_decay", default=1e-4))
+    n_train      = train_x.shape[0]
+    steps_per_epoch = max(1, n_train // batch_size)
+    max_steps       = steps_per_epoch * epochs
+
+    optimizer = SGD(model.parameters(), lr=scaled_lr, momentum=0.9, weight_decay=weight_decay)
+    scheduler = CosineAnnealingLR(optimizer, T_max=max_steps, eta_min=0)
+
+    print(f"LR: {config.learning_rate} → scaled: {scaled_lr:.6f}  (batch_size={batch_size})")
+    print(f"Fast train: {n_train} samples, {epochs} epochs, {steps_per_epoch} steps/epoch")
+
+    # ── Training loop ─────────────────────────────────────────────────────────
+    model.train()
+    for epoch in range(epochs):
+        perm = torch.randperm(n_train, device=device)
+        for start in range(0, n_train, batch_size):
+            idx = perm[start : start + batch_size]
+            out = model(train_x[idx], train_y[idx])
+            optimizer.zero_grad(set_to_none=True)
+            out["loss"].backward()
+            optimizer.step()
+            scheduler.step()
+        if (epoch + 1) % 5 == 0 or epoch == epochs - 1:
+            print(f"  epoch {epoch+1}/{epochs}  loss={out['loss'].item():.4f}", flush=True)
+
+    # ── Save model + final eval ───────────────────────────────────────────────
+    save_head(model, run_dir)
+    _run_final_eval(model, val_dataset, batch_size, config, timestamp, run_dir)
+
+
 # ── Main entry point (mirrors curia/trainer.py main()) ───────────────────────
 
 
@@ -485,7 +546,7 @@ def main(config) -> None:
 
     # Each run gets its own subdirectory so previous runs are never overwritten
     task = OmegaConf.select(config, "task", default="run")
-    run_tag = datetime.now().strftime("%Y%m%d_%H%M%S")
+    run_tag = datetime.now().strftime("%Y%m%d_%H%M%S") + f"_{os.getpid()}"
     run_dir = str(Path(config.output_dir) / f"{task}__{run_tag}")
     Path(run_dir).mkdir(parents=True, exist_ok=True)
     print(f"Run directory: {run_dir}")
@@ -525,26 +586,40 @@ def main(config) -> None:
     scheduler = CosineAnnealingLR(optimizer, T_max=max_steps, eta_min=0)
     print(f"Weight decay: {weight_decay}")
 
-    # ── HF TrainingArguments ───────────────────────────────────────────────────
+    # ── Fast path: bypass HF Trainer entirely for pre-cached features ────────
+    from classification_hf.dataset import _DictDataset as _DD
+    if isinstance(train_dataset, _DD):
+        # Pure PyTorch loop — all data on GPU, no DataLoader, no NFS writes.
+        _fast_train_linear(model, train_dataset, val_dataset, config, run_dir, task, timestamp)
+        if dist.is_available() and dist.is_initialized():
+            dist.destroy_process_group()
+        if sys.stdout != sys.__stdout__:
+            sys.stdout.close()
+            sys.stdout = sys.__stdout__
+        sys.stdout.flush()
+        sys.stderr.flush()
+        return
+
+    # ── HF Trainer path (full backbone / not pre-cached) ─────────────────────
     training_args = TrainingArguments(
         output_dir=run_dir,
         num_train_epochs=config.epochs,
         per_device_train_batch_size=config.batch_size,
         per_device_eval_batch_size=config.batch_size,
         logging_strategy="steps",
-        logging_steps=max(10, steps_per_epoch // 10),
+        logging_steps=max(1, steps_per_epoch),
         eval_strategy="steps",
         eval_steps=config.eval_steps,
         save_strategy="steps",
         save_steps=config.eval_steps,
         save_total_limit=2,
-        load_best_model_at_end=True,          # restore best val AUC checkpoint
+        load_best_model_at_end=True,
         metric_for_best_model="auc_ovr_macro",
         greater_is_better=True,
         dataloader_num_workers=config.num_workers,
         dataloader_pin_memory=True,
         dataloader_persistent_workers=False,
-        eval_accumulation_steps=1,   # flush predictions immediately, avoids GPU↔CPU hangs
+        eval_accumulation_steps=1,
         ddp_find_unused_parameters=False,
         report_to="none",
     )
@@ -557,24 +632,20 @@ def main(config) -> None:
         compute_metrics=compute_classification_metrics,
         optimizers=(optimizer, scheduler),
     )
-    trainer.remove_callback(PrinterCallback)   # silence per-step eval metric dicts
-    trainer.remove_callback(ProgressCallback)  # replace with quiet version
+    trainer.remove_callback(PrinterCallback)
+    trainer.remove_callback(ProgressCallback)
     trainer.add_callback(_QuietProgressCallback())
 
     trainer.train()
     trainer.save_model(run_dir)
     save_head(trainer.model, run_dir)
 
-    # Destroy DDP process group HERE so all processes are released together
-    # before rank 0 calls predict() — avoids collective-op deadlock.
-    # Non-rank-0 processes exit naturally after this point.
     if dist.is_available() and dist.is_initialized():
         dist.destroy_process_group()
 
-    # Only rank 0 does final eval + logging (no DDP context anymore)
     if int(os.environ.get("RANK", 0)) == 0:
         _plot_training_history(trainer.state.log_history, run_dir, task)
-        _run_final_eval(trainer, val_dataset, config, timestamp, run_dir)
+        _run_final_eval(trainer.model, val_dataset, trainer.args.per_device_eval_batch_size, config, timestamp, run_dir)
 
     if sys.stdout != sys.__stdout__:
         sys.stdout.close()

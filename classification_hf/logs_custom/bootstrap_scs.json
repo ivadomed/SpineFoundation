@@ -1,0 +1,31 @@
+{
+  "timestamp": "2026-03-05 17:46:09",
+  "mode": "trained",
+  "task": "scs",
+  "n_samples": 43020,
+  "n_bootstrap": 1000,
+  "seed": 42,
+  "point_estimates": {
+    "accuracy": 0.898001,
+    "auc_ovr_macro": 0.940889,
+    "auc_ovr_weighted": 0.950773
+  },
+  "bootstrap": {
+    "accuracy": {
+      "mean": 0.898015,
+      "ci_low": 0.895118,
+      "ci_high": 0.900793
+    },
+    "auc_ovr_macro": {
+      "mean": 0.940958,
+      "ci_low": 0.938909,
+      "ci_high": 0.942971
+    },
+    "auc_ovr_weighted": {
+      "mean": 0.95083,
+      "ci_low": 0.948542,
+      "ci_high": 0.95296
+    }
+  },
+  "n_runs": 30
+}

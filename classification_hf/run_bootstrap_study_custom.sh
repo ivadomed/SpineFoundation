@@ -2,16 +2,18 @@
 # Bootstrap study with custom backbone configs.
 #
 # Usage (from SpineFoundation/):
-#   bash classification_hf/run_bootstrap_study_custom.sh [n_gpus] [n_runs] [n_bootstrap]
+#   bash classification_hf/run_bootstrap_study_custom.sh [n_runs] [n_bootstrap] [n_parallel]
 #
-# Defaults: 2 GPUs, 5 runs, 1000 bootstrap resamples
+# Defaults: 5 runs/task, 1000 bootstrap resamples, 6 parallel jobs
+# Each parallel job runs on a single GPU (round-robin across available GPUs).
+# Bootstrap analysis for all 3 tasks runs in parallel.
 
 set -eu
 
 ROOT=/home/ge.polymtl.ca/p123239/SpineFoundation
-N_GPUS="${1:-2}"
-N_RUNS="${2:-5}"
-N_BOOTSTRAP="${3:-1000}"
+N_RUNS="${1:-5}"
+N_BOOTSTRAP="${2:-1000}"
+N_PARALLEL="${3:-6}"   # jobs in parallel — safe to go up to N_RUNS*3 (48 cores, 125GB RAM)
 
 PYTHON=/home/ge.polymtl.ca/p123239/.conda/envs/dino/bin/python
 CONFIGS=(
@@ -31,35 +33,63 @@ cd "$ROOT"
 
 echo "================================================================"
 echo "Bootstrap study (custom backbone) — $(date)"
-echo "  GPUs       : $N_GPUS"
 echo "  Runs/task  : $N_RUNS"
 echo "  Bootstraps : $N_BOOTSTRAP"
+echo "  Parallel   : $N_PARALLEL jobs at a time (round-robin GPU 0/1)"
 echo "================================================================"
 
-# ── Phase 1 : training runs ───────────────────────────────────────────────────
+# ── Phase 1 : training runs — N_PARALLEL workers (round-robin GPUs) ──────────
+# Each run uses a single GPU (features are pre-cached → no backbone needed).
+
 TOTAL_RUNS=$(( ${#CONFIGS[@]} * N_RUNS ))
-RUN_IDX=0
+echo "Total runs: $TOTAL_RUNS"
 
+# Build the full list of (config, task, seed, gpu) jobs
+CONFIGS_LIST=()
+TASKS_LIST=()
+SEEDS_LIST=()
+GPUS_LIST=()
+
+job_idx=0
 for i in "${!CONFIGS[@]}"; do
-    CONFIG="${CONFIGS[$i]}"
-    TASK="${TASKS[$i]}"
-
-    echo ""
-    echo "── Task: $TASK  (config: $(basename $CONFIG)) ──"
-
     for run in $(seq 1 $N_RUNS); do
-        RUN_IDX=$(( RUN_IDX + 1 ))
         SEED=$(( run * 13 + 37 ))
-        echo ""
-        echo "[$(date +%H:%M:%S)]  Run $run/$N_RUNS for task=$TASK  seed=$SEED  (overall $RUN_IDX/$TOTAL_RUNS)"
+        GPU=$(( job_idx % 2 ))
+        CONFIGS_LIST+=("${CONFIGS[$i]}")
+        TASKS_LIST+=("${TASKS[$i]}")
+        SEEDS_LIST+=("$SEED")
+        GPUS_LIST+=("$GPU")
+        job_idx=$(( job_idx + 1 ))
+    done
+done
 
-        "$PYTHON" -m torch.distributed.run \
-            --nproc_per_node="$N_GPUS" \
-            --standalone \
+# Run N_PARALLEL at a time
+overall=0
+while [ $overall -lt $TOTAL_RUNS ]; do
+    pids=()
+    for slot in $(seq 0 $(( N_PARALLEL - 1 ))); do
+        idx=$(( overall + slot ))
+        [ $idx -ge $TOTAL_RUNS ] && break
+
+        CONFIG="${CONFIGS_LIST[$idx]}"
+        TASK="${TASKS_LIST[$idx]}"
+        SEED="${SEEDS_LIST[$idx]}"
+        GPU="${GPUS_LIST[$idx]}"
+
+        echo ""
+        echo "[$(date +%H:%M:%S)]  Run $((idx+1))/$TOTAL_RUNS  task=$TASK  seed=$SEED  gpu=$GPU"
+
+        CUDA_VISIBLE_DEVICES=$GPU "$PYTHON" \
             -m classification_hf.train \
             --config "$CONFIG" \
-            --set seed=$SEED
+            --set seed=$SEED &
+        pids+=($!)
     done
+
+    for pid in "${pids[@]}"; do
+        wait "$pid"
+    done
+    overall=$(( overall + N_PARALLEL ))
 done
 
 echo ""
@@ -67,7 +97,11 @@ echo "================================================================"
 echo "All training runs complete.  Starting bootstrap analysis …"
 echo "================================================================"
 
-# ── Phase 2 : bootstrap analysis ─────────────────────────────────────────────
+# Clear previous results so each run of the script produces a fresh CSV
+rm -f "$LOG_DIR/bootstrap_results.csv" "$LOG_DIR/bootstrap_pretrained_results.csv"
+
+# ── Phase 2 : bootstrap analysis — all 3 tasks in parallel ───────────────────
+bootstrap_pids=()
 for i in "${!TASKS[@]}"; do
     TASK="${TASKS[$i]}"
     RUNS_DIR="${OUTPUT_DIRS[$i]}"
@@ -76,10 +110,15 @@ for i in "${!TASKS[@]}"; do
     echo "[$(date +%H:%M:%S)]  Bootstrap: task=$TASK  runs_dir=$RUNS_DIR"
 
     "$PYTHON" -m classification_hf.bootstrap_eval \
-        --task        "$TASK" \
-        --runs_dir    "$RUNS_DIR" \
-        --n_bootstrap "$N_BOOTSTRAP" \
-        --log_dir     "$LOG_DIR"
+        --task         "$TASK" \
+        --runs-dir     "$RUNS_DIR" \
+        --n-bootstrap  "$N_BOOTSTRAP" \
+        --log-dir      "$LOG_DIR" &
+    bootstrap_pids+=($!)
+done
+
+for pid in "${bootstrap_pids[@]}"; do
+    wait "$pid"
 done
 
 echo ""

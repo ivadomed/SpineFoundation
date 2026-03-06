@@ -26,6 +26,7 @@ Usage — pretrained mode:
 
 import argparse
 import csv
+import fcntl
 import json
 import queue
 import threading
@@ -225,7 +226,7 @@ def _run_pretrained_inference(args, paths: list[Path], crop_size: int,
 
 def _print_table_row(task: str, result: dict, extra: str = "") -> str:
     cols = []
-    for metric in ["accuracy", "auc_ovr_macro", "auc_ovr_weighted"]:
+    for metric in ["auc_ovr_macro", "auc_ovr_weighted", "accuracy"]:
         r = result[metric]
         cols.append(f"{r['mean']:.4f} [{r['ci_low']:.4f}, {r['ci_high']:.4f}]")
     label = f"{task}{extra}"
@@ -332,8 +333,8 @@ def main():
     # ── Point estimates ───────────────────────────────────────────────────────
     point = _compute_metrics(logits, labels)
     print(f"\nPoint estimates (full dataset, no bootstrap):")
-    for k, v in point.items():
-        print(f"  {k:<22}: {v:.4f}")
+    for k in ["auc_ovr_macro", "auc_ovr_weighted", "accuracy"]:
+        print(f"  {k:<22}: {point[k]:.4f}")
 
     # ── Bootstrap ─────────────────────────────────────────────────────────────
     print(f"\nRunning {args.n_bootstrap} bootstrap resamples ...")
@@ -343,8 +344,8 @@ def main():
     dil_str = f" dil={args.dilation_radius}px" if args.mode == "pretrained" and args.dilation_radius > 0 else ""
     header = (
         f"\n{'─'*90}\n"
-        f"  {'Task':<12}  {'Accuracy  mean [95% CI]':<28}  "
-        f"{'AUC macro  mean [95% CI]':<28}  AUC weighted  mean [95% CI]\n"
+        f"  {'Task':<12}  {'AUC macro  mean [95% CI]':<28}  "
+        f"{'AUC weighted  mean [95% CI]':<28}  Accuracy  mean [95% CI]\n"
         f"{'─'*90}"
     )
     print(header)
@@ -421,12 +422,15 @@ def main():
         row[f"{col_prefix}_ci_low"]  = round(result[metric]["ci_low"],  6)
         row[f"{col_prefix}_ci_high"] = round(result[metric]["ci_high"], 6)
 
-    write_header = not csv_path.exists()
     with csv_path.open("a", newline="", encoding="utf-8") as fh:
-        w = csv.DictWriter(fh, fieldnames=fieldnames)
-        if write_header:
-            w.writeheader()
-        w.writerow(row)
+        fcntl.flock(fh, fcntl.LOCK_EX)   # NFS-safe exclusive lock
+        try:
+            w = csv.DictWriter(fh, fieldnames=fieldnames)
+            if fh.tell() == 0:            # file was empty when we locked it
+                w.writeheader()
+            w.writerow(row)
+        finally:
+            fcntl.flock(fh, fcntl.LOCK_UN)
     print(f"Row appended to {csv_path}")
 
     # ── Final 3-task summary table ────────────────────────────────────────────
@@ -452,16 +456,16 @@ def main():
             label = "pretrained head" if args.mode == "pretrained" else "trained runs"
             print(f"FINAL SUMMARY ({label} — all 3 tasks)")
             print(f"{'─'*90}")
-            print(f"  {'Task':<12}  {'Accuracy  mean [95% CI]':<28}  "
-                  f"{'AUC macro  mean [95% CI]':<28}  AUC weighted  mean [95% CI]")
+            print(f"  {'Task':<12}  {'AUC macro  mean [95% CI]':<28}  "
+                  f"{'AUC weighted  mean [95% CI]':<28}  Accuracy  mean [95% CI]")
             print(f"{'─'*90}")
             for t in all_tasks:
                 key = (t, dil_key) if args.mode == "pretrained" else t
                 r = latest[key]
-                acc_s = f"{r['accuracy_mean']}  [{r['accuracy_ci_low']}, {r['accuracy_ci_high']}]"
                 mac_s = f"{r['auc_macro_mean']}  [{r['auc_macro_ci_low']}, {r['auc_macro_ci_high']}]"
                 wgt_s = f"{r['auc_weighted_mean']}  [{r['auc_weighted_ci_low']}, {r['auc_weighted_ci_high']}]"
-                print(f"  {t:<12}  {acc_s:<28}  {mac_s:<28}  {wgt_s}")
+                acc_s = f"{r['accuracy_mean']}  [{r['accuracy_ci_low']}, {r['accuracy_ci_high']}]"
+                print(f"  {t:<12}  {mac_s:<28}  {wgt_s:<28}  {acc_s}")
             print(f"{'='*90}\n")
 
 
