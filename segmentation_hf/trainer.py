@@ -9,11 +9,16 @@ from typing import Tuple
 import numpy as np
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 from tqdm import tqdm
 
 from .config import TrainConfig
 from .dataset import (
+    NpzSegmentationDataset,
     build_datasets,
+    build_npz_datasets,
+    build_npz_train_dataloader,
+    build_npz_val_dataloader,
     build_train_dataloader,
     make_sliding_positions,
     normalize_image_array,
@@ -138,6 +143,123 @@ def make_overlay_panel(image_2d: np.ndarray, gt_mask: np.ndarray, pred_mask: np.
     overlay[both, 2] = (1 - alpha) * overlay[both, 2]
 
     return np.clip(overlay, 0, 255).astype(np.uint8)
+
+
+def run_train_epoch_from_tokens(
+    model: FrozenBackboneWithSegHead,
+    loader,
+    optimizer: torch.optim.Optimizer,
+    device: torch.device,
+    scaler: torch.amp.GradScaler,
+    bce_weight: float,
+    dice_weight: float,
+    amp: bool,
+    target_hw: tuple[int, int],
+) -> tuple[float, float]:
+    """Training epoch using pre-cached patch tokens — backbone is never called."""
+    model.train()
+    bce_loss_fn  = nn.BCEWithLogitsLoss()
+    running_loss = 0.0
+    running_dice = 0.0
+    num_batches  = 0
+
+    pbar = tqdm(loader, desc="train (tokens)", leave=False)
+    for patch_tokens, masks in pbar:
+        patch_tokens = patch_tokens.to(device, non_blocking=True)
+        masks        = masks.to(device, non_blocking=True)
+
+        optimizer.zero_grad(set_to_none=True)
+
+        with autocast_context(device=device, enabled=amp):
+            logits = model.forward_from_tokens(patch_tokens, target_hw)
+            bce    = bce_loss_fn(logits, masks)
+            dloss  = dice_loss_with_logits(logits, masks)
+            loss   = bce_weight * bce + dice_weight * dloss
+
+        scaler.scale(loss).backward()
+        scaler.step(optimizer)
+        scaler.update()
+
+        batch_dice    = compute_dice_score(logits.detach(), masks)
+        running_loss += loss.detach().item()
+        running_dice += batch_dice
+        num_batches  += 1
+
+        pbar.set_postfix(loss=f"{running_loss / num_batches:.4f}",
+                         dice=f"{running_dice / num_batches:.4f}")
+
+    if num_batches == 0:
+        return 0.0, 0.0
+    return running_loss / num_batches, running_dice / num_batches
+
+
+@torch.no_grad()
+def run_full_image_eval_npz(
+    model: FrozenBackboneWithSegHead,
+    ds: NpzSegmentationDataset,
+    device: torch.device,
+    bce_weight: float,
+    dice_weight: float,
+    amp: bool,
+    target_hw: tuple[int, int],
+    desc: str = "eval",
+) -> tuple[float, float]:
+    """Full-image eval for NpzSegmentationDataset.
+
+    Fast path (tokens cached): loads patch_tokens from NPZ, calls
+    forward_from_tokens() — backbone is never used.
+
+    Slow path (no tokens): falls back to predict_full_image_detiled()
+    which runs the full backbone on the raw slice.
+    """
+    model.eval()
+    bce_loss_fn  = nn.BCEWithLogitsLoss()
+    running_loss = 0.0
+    running_dice = 0.0
+    num_samples  = 0
+
+    pbar = tqdm(range(len(ds)), desc=desc, leave=False)
+    for idx in pbar:
+        if ds.has_tokens:
+            d            = np.load(ds.npz_paths[idx])
+            patch_tokens = torch.from_numpy(d[ds.token_key].astype(np.float32))
+            mask_np      = (d["mask"].astype(np.float32) > 0)
+
+            pt = patch_tokens.unsqueeze(0).to(device)
+            with autocast_context(device=device, enabled=amp):
+                logits = model.forward_from_tokens(pt, target_hw)  # (1,1,H,W)
+            logits = logits.cpu()
+
+            mask_t = torch.from_numpy(mask_np).unsqueeze(0).unsqueeze(0).float()
+            mask_t = F.interpolate(mask_t, size=target_hw, mode="nearest")
+        else:
+            image, mask_np = ds.load_raw_pair(idx)
+            logits = predict_full_image_detiled(
+                model=model,
+                image_2d=image,
+                tile_size=ds.image_size,
+                tile_overlap_pct=ds.tile_overlap_pct,
+                tile_threshold=ds.tile_threshold,
+                device=device,
+                amp=amp,
+                tile_batch_size=4,
+            ).unsqueeze(0)
+            mask_t = torch.from_numpy(mask_np).unsqueeze(0).unsqueeze(0).float()
+
+        bce   = bce_loss_fn(logits, mask_t)
+        dloss = dice_loss_with_logits(logits, mask_t)
+        loss  = bce_weight * bce + dice_weight * dloss
+        dice  = compute_dice_score(logits, mask_t)
+
+        running_loss += loss.item()
+        running_dice += dice
+        num_samples  += 1
+        pbar.set_postfix(loss=f"{running_loss / num_samples:.4f}",
+                         dice=f"{running_dice / num_samples:.4f}")
+
+    if num_samples == 0:
+        return 0.0, 0.0
+    return running_loss / num_samples, running_dice / num_samples
 
 
 def run_train_epoch(
@@ -376,8 +498,19 @@ def train(cfg: TrainConfig) -> None:
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    train_ds, val_ds = build_datasets(cfg)
-    train_loader = build_train_dataloader(cfg, train_ds)
+    # ── Dataset / dataloader ──────────────────────────────────────────────────
+    use_npz   = bool(cfg.npz_train_dir and cfg.npz_val_dir)
+    target_hw = (cfg.image_size, cfg.image_size)
+
+    if use_npz:
+        train_ds, val_ds = build_npz_datasets(cfg)
+        train_loader     = build_npz_train_dataloader(cfg, train_ds)
+        fast_path        = train_ds.has_tokens
+        print(f"NPZ dataset: {'fast path (cached tokens)' if fast_path else 'slow path (backbone)'}")
+    else:
+        train_ds, val_ds = build_datasets(cfg)
+        train_loader     = build_train_dataloader(cfg, train_ds)
+        fast_path        = False
 
     model = FrozenBackboneWithSegHead(cfg.model_dir).to(device)
     optimizer = torch.optim.AdamW(model.seg_head.parameters(), lr=cfg.lr, weight_decay=cfg.weight_decay)
@@ -411,38 +544,73 @@ def train(cfg: TrainConfig) -> None:
 
     try:
         for epoch in range(1, cfg.epochs + 1):
-            run_train_epoch(
-                model=model,
-                loader=train_loader,
-                optimizer=optimizer,
-                device=device,
-                scaler=scaler,
-                bce_weight=cfg.bce_weight,
-                dice_weight=cfg.dice_weight,
-                amp=cfg.amp,
-            )
+            if fast_path:
+                run_train_epoch_from_tokens(
+                    model=model,
+                    loader=train_loader,
+                    optimizer=optimizer,
+                    device=device,
+                    scaler=scaler,
+                    bce_weight=cfg.bce_weight,
+                    dice_weight=cfg.dice_weight,
+                    amp=cfg.amp,
+                    target_hw=target_hw,
+                )
+            else:
+                run_train_epoch(
+                    model=model,
+                    loader=train_loader,
+                    optimizer=optimizer,
+                    device=device,
+                    scaler=scaler,
+                    bce_weight=cfg.bce_weight,
+                    dice_weight=cfg.dice_weight,
+                    amp=cfg.amp,
+                )
 
-            train_loss, train_dice = run_full_image_eval(
-                model=model,
-                ds=train_ds,
-                device=device,
-                bce_weight=cfg.bce_weight,
-                dice_weight=cfg.dice_weight,
-                amp=cfg.amp,
-                tile_batch_size=cfg.batch_size,
-                desc="train-eval",
-            )
+            if use_npz:
+                train_loss, train_dice = run_full_image_eval_npz(
+                    model=model,
+                    ds=train_ds,
+                    device=device,
+                    bce_weight=cfg.bce_weight,
+                    dice_weight=cfg.dice_weight,
+                    amp=cfg.amp,
+                    target_hw=target_hw,
+                    desc="train-eval",
+                )
+                val_loss, val_dice = run_full_image_eval_npz(
+                    model=model,
+                    ds=val_ds,
+                    device=device,
+                    bce_weight=cfg.bce_weight,
+                    dice_weight=cfg.dice_weight,
+                    amp=cfg.amp,
+                    target_hw=target_hw,
+                    desc="val",
+                )
+            else:
+                train_loss, train_dice = run_full_image_eval(
+                    model=model,
+                    ds=train_ds,
+                    device=device,
+                    bce_weight=cfg.bce_weight,
+                    dice_weight=cfg.dice_weight,
+                    amp=cfg.amp,
+                    tile_batch_size=cfg.batch_size,
+                    desc="train-eval",
+                )
 
-            val_loss, val_dice = run_full_image_eval(
-                model=model,
-                ds=val_ds,
-                device=device,
-                bce_weight=cfg.bce_weight,
-                dice_weight=cfg.dice_weight,
-                amp=cfg.amp,
-                tile_batch_size=cfg.batch_size,
-                desc="val",
-            )
+                val_loss, val_dice = run_full_image_eval(
+                    model=model,
+                    ds=val_ds,
+                    device=device,
+                    bce_weight=cfg.bce_weight,
+                    dice_weight=cfg.dice_weight,
+                    amp=cfg.amp,
+                    tile_batch_size=cfg.batch_size,
+                    desc="val",
+                )
 
             want_overlays = (
                 wandb_run is not None

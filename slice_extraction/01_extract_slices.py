@@ -180,6 +180,71 @@ def find_label_match(img_path: Path, img_root: Path, label_root: Path, label_suf
     return None
 
 
+def _predict_outputs(
+    img_path: Path,
+    image_root: Path,
+    out_dirs: "OutDirs",
+    shape: tuple,
+    spacing: Tuple[float, float, float],
+    iso_tol: float,
+    iso_eps_mm: float | None,
+    train_ratio: float,
+    seed: int,
+    with_labels: bool,
+) -> List[Tuple[Path, "Path | None"]]:
+    """Predict all output PNG paths for a volume using only its header.
+
+    This function mirrors the filename logic of the main extraction loop so
+    that we can check whether a volume has already been fully extracted without
+    loading any pixel data.
+
+    Returns a list of (img_out, lbl_out) pairs.  lbl_out is None when
+    with_labels is False.  An empty list means the volume produces no output
+    (unexpected shape / mode mismatch) and should be processed normally.
+    """
+    parts = img_path.relative_to(image_root).parts
+    src0  = sanitize_token(parts[0]) if len(parts) > 1 else "."
+    base  = sanitize_token(img_path.name.replace(".nii.gz", ""))
+
+    dx, dy, dz = spacing
+    x, y, z    = shape[:3]
+    mode        = classify_from_spacing((dx, dy, dz), iso_tol, iso_eps_mm)
+
+    records: List[Tuple[Path, "Path | None"]] = []
+
+    if mode in ("axial", "isotropic"):
+        spacing_hw = (dy, dx)
+        sp_tok = fmt_spacing(spacing_hw)
+        for k in range(z):
+            fname = f"{src0}__{base}__axial__s{k:04d}__t000__{sp_tok}.png"
+            split_train = deterministic_split(f"{base}__axial__s{k:04d}", seed) < train_ratio
+            img_out = out_dirs.img_train / fname if split_train else out_dirs.img_val / fname
+            lbl_out = (out_dirs.lbl_train / fname if split_train else out_dirs.lbl_val / fname) if with_labels else None
+            records.append((img_out, lbl_out))
+
+    if mode in ("sagittal", "isotropic"):
+        spacing_hw = (dz, dy)
+        sp_tok = fmt_spacing(spacing_hw)
+        for k in range(x):
+            fname = f"{src0}__{base}__sagittal__s{k:04d}__t000__{sp_tok}.png"
+            split_train = deterministic_split(f"{base}__sagittal__s{k:04d}", seed) < train_ratio
+            img_out = out_dirs.img_train / fname if split_train else out_dirs.img_val / fname
+            lbl_out = (out_dirs.lbl_train / fname if split_train else out_dirs.lbl_val / fname) if with_labels else None
+            records.append((img_out, lbl_out))
+
+    return records
+
+
+def _all_outputs_exist(records: List[Tuple[Path, "Path | None"]]) -> bool:
+    """Return True iff every expected output file already exists on disk."""
+    if not records:
+        return False
+    return all(
+        img_out.exists() and (lbl_out is None or lbl_out.exists())
+        for img_out, lbl_out in records
+    )
+
+
 @dataclass
 class OutDirs:
     img_train: Path
@@ -268,6 +333,32 @@ def main() -> None:
     pbar = tqdm(images, desc="Extract", unit="vol", total=len(images))
     for img_path in pbar:
         try:
+            # ── Volume-level skip (header only, no pixel data loaded) ─────────
+            # Read the NIfTI header lazily (no get_fdata call) to predict the
+            # full set of expected output filenames.  If every file already
+            # exists on disk we skip the entire volume — no I/O for pixels.
+            if args.skip_existing:
+                try:
+                    hdr_img     = nib.as_closest_canonical(nib.load(str(img_path)))
+                    hdr_shape   = hdr_img.shape
+                    hdr_spacing = get_spacing_ras(hdr_img)
+                    expected    = _predict_outputs(
+                        img_path, image_root, out_dirs,
+                        hdr_shape, hdr_spacing,
+                        args.iso_tol, args.iso_eps_mm,
+                        args.train_ratio, args.seed,
+                        with_labels,
+                    )
+                    if _all_outputs_exist(expected):
+                        skipped_existing += len(expected)
+                        total_outputs    += len(expected)
+                        pbar.set_postfix(extracted=extracted, skipped=skipped,
+                                         errors=errors, outputs=total_outputs,
+                                         skip_exist=skipped_existing)
+                        continue
+                except Exception:
+                    pass  # header read failed — fall through to full extraction
+
             lbl_path = None
             if with_labels:
                 if label_root is None:

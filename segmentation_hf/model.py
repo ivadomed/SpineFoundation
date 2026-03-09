@@ -87,3 +87,29 @@ class FrozenBackboneWithSegHead(nn.Module):
         logits_patch = self.seg_head(feature_map)
         logits = F.interpolate(logits_patch, size=x.shape[-2:], mode="bilinear", align_corners=False)
         return logits
+
+    def forward_from_tokens(
+        self,
+        patch_tokens: torch.Tensor,
+        target_hw: tuple[int, int],
+    ) -> torch.Tensor:
+        """Forward pass using pre-cached patch tokens — backbone is never called.
+
+        Args:
+            patch_tokens: (B, N, D) pre-extracted patch tokens (CLS already removed).
+                          N must be a perfect square (square backbone input assumed).
+            target_hw: (H, W) output resolution for bilinear upsampling.
+
+        Returns:
+            logits: (B, 1, H, W)
+        """
+        b, n, c = patch_tokens.shape
+        gh = gw = int(n ** 0.5)
+        if gh * gw != n:
+            raise ValueError(
+                f"Expected square patch grid but got {n} tokens (sqrt={n**0.5:.2f}). "
+                "Only square inputs are supported for the cached-token fast path."
+            )
+        feature_map  = patch_tokens.transpose(1, 2).reshape(b, c, gh, gw)
+        logits_patch = self.seg_head(feature_map)
+        return F.interpolate(logits_patch, size=target_hw, mode="bilinear", align_corners=False)

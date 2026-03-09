@@ -301,3 +301,145 @@ def build_val_dataloader(cfg: TrainConfig, val_ds: PairedSegmentationDataset) ->
         drop_last=False,
         collate_fn=collate_pad_batch,
     )
+
+
+# ── NPZ-backed dataset (pre-cached patch tokens, fast path) ──────────────────
+
+def list_npz_files(folder: Path) -> List[Path]:
+    return sorted([p for p in folder.iterdir() if p.is_file() and p.suffix.lower() == ".npz"])
+
+
+class NpzSegmentationDataset(Dataset):
+    """Segmentation dataset backed by NPZ files.
+
+    Each NPZ is expected to contain:
+      - "slice": float32 (H, W)  — grayscale intensity slice
+      - "mask":  uint8 or float32 (H, W) — binary annotation mask
+
+    After running cache_patch_tokens.py, each NPZ will also contain:
+      - token_key: float32 (N, D) — pre-cached backbone patch tokens (fast path)
+
+    Fast path (tokens present):
+        __getitem__ returns (patch_tokens: Tensor[N, D], mask: Tensor[1, S, S])
+        where S = image_size (backbone input resolution).
+
+    Slow path (no tokens):
+        __getitem__ returns (image: Tensor[1, S, S], mask: Tensor[1, S, S])
+        normalized and cropped/padded to image_size.
+    """
+
+    def __init__(
+        self,
+        data_dir: str,
+        image_size: int,
+        token_key: str = "patch_tokens",
+        augment: bool = False,
+    ):
+        self.data_dir   = Path(data_dir)
+        self.image_size = image_size
+        self.token_key  = token_key
+        self.augment    = augment
+
+        if not self.data_dir.exists():
+            raise FileNotFoundError(f"NPZ directory not found: {self.data_dir}")
+
+        self.npz_paths = list_npz_files(self.data_dir)
+        if not self.npz_paths:
+            raise ValueError(f"No NPZ files found in {self.data_dir}")
+
+        # Inspect the first file to detect fast-path availability.
+        d = np.load(self.npz_paths[0])
+        self.has_tokens = token_key in d.files
+
+        # Expose the same attributes as PairedSegmentationDataset for eval
+        # compatibility (predict_full_image_detiled uses tile_overlap_pct /
+        # tile_threshold when the slow backbone path is needed for overlays).
+        self.tile_overlap_pct = 0.0
+        self.tile_threshold   = self.image_size + 1  # never tile NPZ images
+
+        # pairs attribute: list of (img_path, mask_path) expected by
+        # capture_val_overlays — we expose npz_paths under both attributes.
+        self.pairs = [(p, p) for p in self.npz_paths]
+
+    def __len__(self) -> int:
+        return len(self.npz_paths)
+
+    def load_raw_pair(self, pair_idx: int) -> Tuple[np.ndarray, np.ndarray]:
+        """Return (image_float32, mask_float32_binary) for full-image eval.
+
+        Compatible with PairedSegmentationDataset.load_raw_pair() so that
+        predict_full_image_detiled() works unchanged for backbone-based eval
+        (e.g. W&B overlays).
+        """
+        d = np.load(self.npz_paths[pair_idx])
+        image = d["slice"].astype(np.float32)
+        mask  = (d["mask"].astype(np.float32) > 0).astype(np.float32)
+        return image, mask
+
+    def __getitem__(self, idx: int):
+        d = np.load(self.npz_paths[idx])
+
+        if self.has_tokens:
+            # Fast path: return pre-cached tokens + mask at backbone resolution.
+            patch_tokens = torch.from_numpy(d[self.token_key].astype(np.float32))  # (N, D)
+            mask = (d["mask"].astype(np.float32) > 0).astype(np.float32)           # (H, W)
+            mask_t = torch.from_numpy(mask).unsqueeze(0).unsqueeze(0)              # (1, 1, H, W)
+            mask_t = F.interpolate(
+                mask_t, size=(self.image_size, self.image_size), mode="nearest"
+            ).squeeze(0)                                                            # (1, S, S)
+            return patch_tokens, mask_t
+
+        # Slow path: normalize image and return for backbone inference.
+        image = d["slice"].astype(np.float32)
+        mask  = (d["mask"].astype(np.float32) > 0).astype(np.float32)
+        image_norm = normalize_image_array(image / 255.0 if image.max() > 1.0 else image)
+        image_pad  = pad_to_min_hw(image_norm, self.image_size, self.image_size, fill=0.0)
+        mask_pad   = pad_to_min_hw(mask, self.image_size, self.image_size, fill=0.0)
+        image_crop = image_pad[:self.image_size, :self.image_size]
+        mask_crop  = mask_pad[:self.image_size, :self.image_size]
+
+        if self.augment:
+            image_crop, mask_crop = PairedSegmentationDataset._augment(image_crop, mask_crop)
+
+        image_t = torch.from_numpy(np.ascontiguousarray(image_crop)).unsqueeze(0)
+        mask_t  = torch.from_numpy(np.ascontiguousarray(mask_crop)).unsqueeze(0)
+        return image_t, mask_t
+
+
+def build_npz_datasets(cfg: "TrainConfig") -> Tuple[NpzSegmentationDataset, NpzSegmentationDataset]:
+    """Build train/val NPZ-backed datasets from cfg.npz_train_dir / cfg.npz_val_dir."""
+    train_ds = NpzSegmentationDataset(
+        data_dir=cfg.npz_train_dir,
+        image_size=cfg.image_size,
+        token_key=cfg.patch_token_key,
+        augment=cfg.augment,
+    )
+    val_ds = NpzSegmentationDataset(
+        data_dir=cfg.npz_val_dir,
+        image_size=cfg.image_size,
+        token_key=cfg.patch_token_key,
+        augment=False,
+    )
+    return train_ds, val_ds
+
+
+def build_npz_train_dataloader(cfg: "TrainConfig", train_ds: NpzSegmentationDataset) -> DataLoader:
+    return DataLoader(
+        train_ds,
+        batch_size=cfg.batch_size,
+        shuffle=True,
+        num_workers=cfg.num_workers,
+        pin_memory=True,
+        drop_last=False,
+    )
+
+
+def build_npz_val_dataloader(cfg: "TrainConfig", val_ds: NpzSegmentationDataset) -> DataLoader:
+    return DataLoader(
+        val_ds,
+        batch_size=cfg.batch_size,
+        shuffle=False,
+        num_workers=cfg.num_workers,
+        pin_memory=True,
+        drop_last=False,
+    )

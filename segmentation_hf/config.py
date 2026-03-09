@@ -27,6 +27,11 @@ class TrainConfig:
     bce_weight: float = 0.5
     dice_weight: float = 0.5
     augment: bool = True
+    # NPZ fast path (pre-cached patch tokens)
+    npz_train_dir: str | None = None
+    npz_val_dir: str | None = None
+    patch_token_key: str = "patch_tokens"
+
     use_wandb: bool = False
     wandb_project: str = "spine-seg"
     wandb_entity: str | None = None
@@ -41,10 +46,10 @@ def parse_args() -> TrainConfig:
     parser = argparse.ArgumentParser(description="Train segmentation head from HF-like checkpoint directory")
 
     parser.add_argument("--model_dir", type=str, required=True, help="Path to HF-like directory (config.json + model.safetensors)")
-    parser.add_argument("--train_images", type=str, required=True, help="Path to train/images")
-    parser.add_argument("--train_masks", type=str, required=True, help="Path to train/masks")
-    parser.add_argument("--val_images", type=str, required=True, help="Path to val/images")
-    parser.add_argument("--val_masks", type=str, required=True, help="Path to val/masks")
+    parser.add_argument("--train_images", type=str, default=None, help="Path to train/images")
+    parser.add_argument("--train_masks", type=str, default=None, help="Path to train/masks")
+    parser.add_argument("--val_images", type=str, default=None, help="Path to val/images")
+    parser.add_argument("--val_masks", type=str, default=None, help="Path to val/masks")
 
     parser.add_argument("--output_dir", type=str, default="outputs_seg")
     parser.add_argument("--image_size", type=int, default=224)
@@ -72,6 +77,14 @@ def parse_args() -> TrainConfig:
     parser.add_argument("--augment", dest="augment", action="store_true", help="Enable training augmentations (default: on)")
     parser.add_argument("--no_augment", dest="augment", action="store_false", help="Disable training augmentations")
 
+    parser.add_argument("--npz_train_dir", type=str, default=None,
+                        help="Flat directory of NPZ files for training (fast path). "
+                             "Replaces --train_images / --train_masks when provided.")
+    parser.add_argument("--npz_val_dir", type=str, default=None,
+                        help="Flat directory of NPZ files for validation (fast path).")
+    parser.add_argument("--patch_token_key", type=str, default="patch_tokens",
+                        help="NPZ key for pre-cached patch tokens (default: 'patch_tokens').")
+
     parser.set_defaults(use_wandb=False)
     parser.add_argument("--wandb", dest="use_wandb", action="store_true", help="Enable Weights & Biases logging")
     parser.add_argument("--no-wandb", dest="use_wandb", action="store_false", help="Disable Weights & Biases logging")
@@ -92,6 +105,18 @@ def parse_args() -> TrainConfig:
         args.only_sagittal = False
         args.only_axial = False
 
+    # When using the NPZ fast path, image/mask dirs are optional.
+    use_npz = bool(args.npz_train_dir and args.npz_val_dir)
+    if not use_npz:
+        missing = [f for f in ("train_images", "train_masks", "val_images", "val_masks")
+                   if getattr(args, f, None) is None]
+        if missing:
+            parser.error(
+                f"Missing required arguments: {missing}. "
+                "Provide --train_images/--train_masks/--val_images/--val_masks "
+                "or use --npz_train_dir/--npz_val_dir for the NPZ fast path."
+            )
+
     amp = True
     if args.amp:
         amp = True
@@ -104,10 +129,13 @@ def parse_args() -> TrainConfig:
 
     return TrainConfig(
         model_dir=args.model_dir,
-        train_images=args.train_images,
-        train_masks=args.train_masks,
-        val_images=args.val_images,
-        val_masks=args.val_masks,
+        train_images=args.train_images or "",
+        train_masks=args.train_masks or "",
+        val_images=args.val_images or "",
+        val_masks=args.val_masks or "",
+        npz_train_dir=args.npz_train_dir,
+        npz_val_dir=args.npz_val_dir,
+        patch_token_key=args.patch_token_key,
         output_dir=args.output_dir,
         image_size=args.image_size,
         only_sagittal=args.only_sagittal,
