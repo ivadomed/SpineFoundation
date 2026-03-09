@@ -37,7 +37,7 @@ _IMG_EXTS = {".png", ".jpg", ".jpeg", ".bmp", ".tif", ".tiff", ".webp"}
 _NPZ_EXT  = ".npz"
 
 # DINOv2 patch size (fixed architecture property)
-_DINO_PATCH = 14
+_DINO_PATCH = 16
 
 
 def _get_crop_size(processor) -> int:

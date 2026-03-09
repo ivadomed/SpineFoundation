@@ -74,7 +74,8 @@ class RGBDatasetWithAugmentation(Dataset):
         w, h = img.size
         if w >= tile_size and h >= tile_size:
             img = random_crop_pil(img, tile_size, self.rng)
-        # sinon : laisser l'image telle quelle, RandomResizedCrop s'en occupe
+        else:
+            img = img.resize((tile_size, tile_size), Image.BICUBIC)
 
         img = self.to_gray(img)
         

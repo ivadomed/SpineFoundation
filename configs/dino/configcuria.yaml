@@ -1,12 +1,12 @@
 dino_head:
   out_dim: 65536
-  norm_last_layer: false
+  norm_last_layer: true
   loss_weight: 0.6
 ibot:
   loss_weight: 1.0
   out_dim: 8192
-  norm_last_layer: false
-  mask_sample_probability: 1
+  norm_last_layer: true
+  mask_sample_probability: 0.5
   mask_ratio_min_max:
     - 0.1
     - 0.5
@@ -17,16 +17,16 @@ distribution:
 train:
   model_name: 'custom_curia_512'
   model_type: 'curia'
-  global_batch_size: 128
-  max_iterations: 475000
+  global_batch_size: 164
+  max_iterations: 100000
   gradient_checkpointing_enable: false
   clip_grad: 3.0
   freeze_last_layer: 100
   warmup_teacher_temp_iterations: 500
-  warmup_iterations: 10000
+  warmup_iterations: 5000
   teacher_temp: 0.07
   warmup_teacher_temp: 0.04
-  freeze_backbone_layers: 3
+  freeze_backbone_layers: 6
   momentum_teacher: 0.9992
   centering: 'centering'
   ibot_separate_head: true
@@ -37,14 +37,15 @@ train:
   PCA_component: 3
   student_temp: 0.1
   center_momentum: 0.9
-  lr: 1e-4
+  lr: 7.5e-5
   min_lr: 1e-5
   weight_decay: 0.04
-  weight_decay_end: 0.4
-  saveckp_freq: 1000
+  weight_decay_end: 0.2
+  saveckp_freq: 5000
+  torch_compile: true
 crops:
   global_crops_scale:
-    - 0.7
+    - 0.4
     - 1.0
   local_crops_number: 4
   global_crops_number: 2

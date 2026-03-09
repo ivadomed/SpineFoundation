@@ -303,8 +303,9 @@ def init_dino_training_models(config, accelerator,   use_ibot=True ):
     gradient_checkpointing_enable = getattr(config.train, "gradient_checkpointing_enable", False)
     if gradient_checkpointing_enable:
         if hasattr(student_backbone , 'gradient_checkpointing_enable'):
-            student_backbone.gradient_checkpointing_enable() 
+            student_backbone.gradient_checkpointing_enable()
             write_to_main_log( accelerator=accelerator,result = "Gradient checkpointing enabled.")
+
     student_model_dict["backbone"] = student_backbone
     teacher_model_dict["backbone"] = teacher_backbone
     

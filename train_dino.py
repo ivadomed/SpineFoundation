@@ -1,8 +1,14 @@
-import argparse 
+import argparse
+import accelerate.utils.other as _acc_utils_patch
+
+# Patch accelerate bug: has_compiled_regions does a deep scan and incorrectly assumes
+# the top-level model has _orig_mod when only a submodule was compiled with torch.compile.
+# Returning False disables the broken path; DDP unwrapping still works via .module.
+_acc_utils_patch.has_compiled_regions = lambda model: False
 
 from accelerate.utils import (
-    set_seed, 
-    DistributedType, 
+    set_seed,
+    DistributedType,
 )
  
 from dataloaders.datasetloader_curia import RGBDatasetLoader

@@ -39,17 +39,18 @@ runs the frozen Dinov2Model, then applies masked-avg-pooling.
 """
 
 import argparse
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, as_completed
 from pathlib import Path
 import time
 
 from tqdm import tqdm
 
 import numpy as np
+from scipy.ndimage import maximum_filter, zoom
 import torch
 import torch.nn.functional as F
 
-_DINO_PATCH = 14
+_DINO_PATCH = 16
 _NPZ_EXT = ".npz"
 _IMG_EXTS = {".png", ".jpg", ".jpeg", ".bmp", ".tif", ".tiff", ".webp"}
 
@@ -77,43 +78,64 @@ def pool_tokens(tokens: torch.Tensor, mask_t: torch.Tensor) -> torch.Tensor:
     return ((tokens.unsqueeze(0) * weights).sum(dim=1) / total.squeeze(1)).squeeze(0)
 
 
-# ── Mode 1: read patch_tokens from NPZ (CPU) ──────────────────────────────────
+# ── Mode 1: read patch_tokens from NPZ (CPU, multiprocess) ───────────────────
 
-def _process_one_npz(path: str, dilation_radius: int, token_key: str = "patch_tokens") -> torch.Tensor:
-    """Load one NPZ and return the pooled feature vector (D,)."""
+def _process_one_npz(args: tuple) -> np.ndarray:
+    """Worker (runs in subprocess): load one NPZ, return pooled feature (D,)."""
+    path, dilation_radius, token_key = args
     d = np.load(path)
     if token_key not in d:
         raise ValueError(f"No '{token_key}' key in {path}")
-    tokens = torch.from_numpy(d[token_key].copy())
-    grid = int(tokens.shape[0] ** 0.5)
+    tokens = d[token_key]          # (N, D) float32
+    N, D = tokens.shape
+    grid = int(N ** 0.5)
     token_crop_size = grid * _DINO_PATCH
-    if "mask" in d:
-        mask_t = resize_mask(d["mask"], token_crop_size, dilation_radius)
-        return pool_tokens(tokens, mask_t)
-    return tokens.mean(dim=0)
+
+    if "mask" not in d:
+        return tokens.mean(axis=0)
+
+    mask = d["mask"].astype(np.float32)
+    # Resize to token_crop_size if needed
+    if mask.shape[0] != token_crop_size or mask.shape[1] != token_crop_size:
+        scale = (token_crop_size / mask.shape[0], token_crop_size / mask.shape[1])
+        mask = zoom(mask, scale, order=1)
+
+    mask_bin = mask > 0.5
+    if not mask_bin.any():
+        mask_bin = mask > (mask.max() * 0.5)
+
+    if dilation_radius > 0:
+        mask_bin = maximum_filter(mask_bin, size=2 * dilation_radius + 1)
+
+    # Downsample mask to patch grid: each patch is included if any pixel is set
+    mask_grid = mask_bin.reshape(grid, _DINO_PATCH, grid, _DINO_PATCH)
+    weights = mask_grid.any(axis=(1, 3)).astype(np.float32).ravel()  # (N,)
+
+    total = weights.sum()
+    if total < 1e-6:
+        return tokens.mean(axis=0)
+    return (tokens * weights[:, None]).sum(axis=0) / total
 
 
 def _run_npz_mode(all_paths, all_labels, dilation_radius, num_workers, out_path,
                   token_key: str = "patch_tokens"):
     n = len(all_paths)
-    print(f"Mode            : NPZ {token_key} (CPU, {num_workers} threads)")
-    results = {}
+    print(f"Mode            : NPZ {token_key} (CPU, {num_workers} processes)")
+    args = [(p, dilation_radius, token_key) for p in all_paths]
     t0 = time.time()
-    with ThreadPoolExecutor(max_workers=num_workers) as executor:
-        futures = {
-            executor.submit(_process_one_npz, path, dilation_radius, token_key): i
-            for i, path in enumerate(all_paths)
-        }
-        with tqdm(total=n, desc="Pooling features", unit="ex") as pbar:
-            for future in as_completed(futures):
-                idx = futures[future]
-                results[idx] = future.result()
-                pbar.update(1)
-    features = torch.stack([results[i] for i in range(n)])
+    with ProcessPoolExecutor(max_workers=num_workers) as executor:
+        ordered = list(tqdm(
+            executor.map(_process_one_npz, args, chunksize=32),
+            total=n, desc="Pooling features", unit="ex",
+        ))
+    features = torch.from_numpy(np.stack(ordered))
     return features, time.time() - t0
 
 
 # ── Mode 2: run backbone on GPU ───────────────────────────────────────────────
+
+import queue
+import threading
 
 def _get_crop_size(processor) -> int:
     cs = processor.crop_size
@@ -139,7 +161,8 @@ def _run_backbone_mode(all_paths, all_labels, dilation_radius, model_name,
     print(f"Processor       : {processor_name}")
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    print(f"Device          : {device}")
+    use_amp = device.type == "cuda"
+    print(f"Device          : {device}  (amp={use_amp})")
 
     processor = AutoImageProcessor.from_pretrained(processor_name, trust_remote_code=True)
     crop_size = _get_crop_size(processor)
@@ -152,42 +175,65 @@ def _run_backbone_mode(all_paths, all_labels, dilation_radius, model_name,
     features_list = []
     t0 = time.time()
 
-    with ThreadPoolExecutor(max_workers=num_readers) as reader_pool:
-        with tqdm(total=n, desc="Extracting features", unit="ex") as pbar:
+    # ── Prefetch pipeline: CPU load+preprocess runs ahead of GPU ──────────────
+    _SENTINEL = object()
+    prefetch_q: queue.Queue = queue.Queue(maxsize=2)
+
+    def _feeder():
+        with ThreadPoolExecutor(max_workers=num_readers) as reader_pool:
             for start in range(0, n, batch_size):
                 batch_paths = all_paths[start:start + batch_size]
-
-                # Parallel reads — overlaps with GPU from previous batch
                 loaded = list(reader_pool.map(
                     _load_slice_and_mask,
                     [(p, crop_size, dilation_radius) for p in batch_paths]
                 ))
                 images_np    = [x[0] for x in loaded]
                 mask_tensors = [x[1] for x in loaded]
+                processed    = processor(images_np, return_tensors="pt")
+                pixel_values = processed["pixel_values"]
+                if use_amp:
+                    pixel_values = pixel_values.pin_memory()
+                prefetch_q.put((pixel_values, mask_tensors, len(batch_paths)))
+        prefetch_q.put(_SENTINEL)
 
-                processed = processor(images_np, return_tensors="pt")
-                pixel_values = processed["pixel_values"].to(device)
+    threading.Thread(target=_feeder, daemon=True).start()
 
-                with torch.no_grad():
-                    outputs = backbone(pixel_values=pixel_values, output_hidden_states=False)
+    with tqdm(total=n, desc="Extracting features", unit="ex") as pbar:
+        while True:
+            item = prefetch_q.get()
+            if item is _SENTINEL:
+                break
+            pixel_values, mask_tensors, batch_n = item
 
-                patch_tokens = outputs.last_hidden_state[:, 1:, :]  # skip CLS → (B, N, D)
+            with torch.no_grad(), torch.amp.autocast(device_type=device.type, enabled=use_amp):
+                outputs = backbone(
+                    pixel_values=pixel_values.to(device, non_blocking=True),
+                    output_hidden_states=False,
+                )
 
-                if all(m is not None for m in mask_tensors):
-                    mask_batch = torch.cat(mask_tensors, dim=0).to(device)  # (B, 1, S, S)
-                    mask_pooled = F.max_pool2d(
-                        mask_batch.float(), kernel_size=_DINO_PATCH, stride=_DINO_PATCH
-                    )  # (B, 1, grid, grid)
-                    B, N, D = patch_tokens.shape
-                    mask_flat = mask_pooled.view(B, N)
-                    weights = mask_flat.unsqueeze(-1)
-                    total = weights.sum(dim=1, keepdim=True).clamp(min=1e-6)
-                    pooled = (patch_tokens * weights).sum(dim=1) / total.squeeze(1)  # (B, D)
-                else:
-                    pooled = patch_tokens.mean(dim=1)
+            patch_tokens = outputs.last_hidden_state[:, 1:, :].float()  # skip CLS → (B, N, D)
 
-                features_list.append(pooled.cpu())
-                pbar.update(len(batch_paths))
+            if all(m is not None for m in mask_tensors):
+                mask_batch = torch.cat(mask_tensors, dim=0).to(device, non_blocking=True)
+                B, N, D = patch_tokens.shape
+                grid = int(N ** 0.5)
+                actual_crop = grid * _DINO_PATCH
+                if mask_batch.shape[-1] != actual_crop:
+                    mask_batch = F.interpolate(
+                        mask_batch.float(), size=(actual_crop, actual_crop), mode="nearest"
+                    )
+                mask_pooled = F.max_pool2d(
+                    mask_batch.float(), kernel_size=_DINO_PATCH, stride=_DINO_PATCH
+                )  # (B, 1, grid, grid)
+                mask_flat = mask_pooled.view(B, N)
+                weights = mask_flat.unsqueeze(-1)
+                total = weights.sum(dim=1, keepdim=True).clamp(min=1e-6)
+                pooled = (patch_tokens * weights).sum(dim=1) / total.squeeze(1)  # (B, D)
+            else:
+                pooled = patch_tokens.mean(dim=1)
+
+            features_list.append(pooled.cpu())
+            pbar.update(batch_n)
 
     features = torch.cat(features_list, dim=0)
     return features, time.time() - t0

@@ -4,7 +4,7 @@ model:
   num_classes: 3
   attention_cfg: null
 
-data_dir: "/home/ge.polymtl.ca/p123239/data/patches_RSNA_raw_with_mask_ss"
+data_dir: "/home/ge.polymtl.ca/p123239/data/RSNA_patches_ss"
 val_split: 0.15
 seed: 42
 

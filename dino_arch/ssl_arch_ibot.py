@@ -26,7 +26,7 @@ def debug_check_teacher_sync(teacher_model, accelerator, every=500, iteration=0)
     if iteration % every != 0:
         return
 
-    teacher = accelerator.unwrap_model(teacher_model)
+    teacher = teacher_model.module if hasattr(teacher_model, 'module') else teacher_model
 
     # prend un param (ex: le premier) et calcule une statistique scalaire
     p = next(teacher.parameters())
@@ -87,9 +87,20 @@ class SSLMetaArch(nn.Module):
          
         # Prepare model and optimizer with accelerator
         self.student_model,self.teacher_model, self.optimizer = accelerator.prepare(
-            self.student_model,self.teacher_model, self.optimizer, 
+            self.student_model,self.teacher_model, self.optimizer,
         )
-          
+
+        # Apply torch.compile AFTER DDP wrapping to avoid accelerate unwrap_model conflict
+        if getattr(config.train, 'torch_compile', False) and hasattr(torch, 'compile'):
+            try:
+                student_raw = self.student_model.module if hasattr(self.student_model, 'module') else self.student_model
+                teacher_raw = self.teacher_model.module if hasattr(self.teacher_model, 'module') else self.teacher_model
+                student_raw['backbone'] = torch.compile(student_raw['backbone'])
+                teacher_raw['backbone'] = torch.compile(teacher_raw['backbone'])
+                write_to_main_log(accelerator=accelerator, result="torch.compile enabled on backbones.")
+            except Exception as e:
+                write_to_main_log(accelerator=accelerator, result=f"torch.compile failed, skipping: {e}", type='warning')
+
     def _process_backbone_output(self, output): 
         if hasattr(output, "last_hidden_state"):
             cls_tokens = output.last_hidden_state[:, 0]
@@ -101,7 +112,7 @@ class SSLMetaArch(nn.Module):
  
 
     def forward(self, iteration, imgs, crops): 
-        self.optimizer.zero_grad()
+        self.optimizer.zero_grad(set_to_none=True)
  
         with self.accelerator.autocast():
             if self.mask_generator:
@@ -152,14 +163,15 @@ class SSLMetaArch(nn.Module):
                 param_k.data.mul_(self.m).add_((1 - self.m) * param_q.data)
 
             # for param in self.teacher_model.parameters():
-            #     dist.all_reduce(param.data, op=dist.ReduceOp.AVG) 
-             
-            for v in loss_dict.values():
-                dist.all_reduce(v, op=dist.ReduceOp.AVG)  
+            #     dist.all_reduce(param.data, op=dist.ReduceOp.AVG)
+
+            keys = list(loss_dict.keys())
+            vals = torch.stack([loss_dict[k] for k in keys])
+            dist.all_reduce(vals, op=dist.ReduceOp.AVG)
+            for i, k in enumerate(keys):
+                loss_dict[k] = vals[i]
 
         # debug_check_teacher_sync(self.teacher_model, self.accelerator, every=500, iteration=iteration)
-
-        self.accelerator.wait_for_everyone()
  
 
         now = datetime.now()
@@ -225,9 +237,7 @@ class SSLMetaArch(nn.Module):
         n_global_crops = 2
         n_masked_patches = mask_indices_list.shape[0]
          
-        teacher = self.teacher_model
-        if hasattr(self.teacher_model, 'module'):
-            teacher = self.accelerator.unwrap_model(self.teacher_model)
+        teacher = self.teacher_model.module if hasattr(self.teacher_model, 'module') else self.teacher_model
         if self.apply_interpolate: 
             teacher_output = teacher.backbone(global_crops,interpolate_pos_encoding=True)
         else: 
@@ -289,7 +299,7 @@ class SSLMetaArch(nn.Module):
         local_crops = crops['collated_local_crops'].to(self.device)
         mask_indices_list = crops['mask_indices_list'].to(self.device)
          
-        unwrapped_student = self.accelerator.unwrap_model(self.student_model)
+        unwrapped_student = self.student_model.module if hasattr(self.student_model, 'module') else self.student_model
 
         if self.apply_interpolate:
             global_output = unwrapped_student.backbone(global_crops,interpolate_pos_encoding=True)

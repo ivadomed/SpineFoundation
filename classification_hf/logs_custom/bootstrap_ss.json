@@ -1,31 +1,32 @@
 {
-  "timestamp": "2026-03-05 17:46:09",
+  "timestamp": "2026-03-06 12:20:19",
   "mode": "trained",
   "task": "ss",
-  "n_samples": 84720,
+  "dilation_radius": 0,
+  "n_samples": 11296,
   "n_bootstrap": 1000,
   "seed": 42,
   "point_estimates": {
-    "accuracy": 0.795161,
-    "auc_ovr_macro": 0.887344,
-    "auc_ovr_weighted": 0.89235
+    "accuracy": 0.794972,
+    "auc_ovr_macro": 0.893808,
+    "auc_ovr_weighted": 0.90054
   },
   "bootstrap": {
     "accuracy": {
-      "mean": 0.795243,
-      "ci_low": 0.792444,
-      "ci_high": 0.797982
+      "mean": 0.794943,
+      "ci_low": 0.787622,
+      "ci_high": 0.802415
     },
     "auc_ovr_macro": {
-      "mean": 0.887361,
-      "ci_low": 0.885566,
-      "ci_high": 0.889276
+      "mean": 0.893656,
+      "ci_low": 0.888404,
+      "ci_high": 0.898489
     },
     "auc_ovr_weighted": {
-      "mean": 0.892371,
-      "ci_low": 0.890346,
-      "ci_high": 0.894344
+      "mean": 0.900332,
+      "ci_low": 0.894894,
+      "ci_high": 0.905454
     }
   },
-  "n_runs": 30
+  "n_runs": 4
 }

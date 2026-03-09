@@ -88,3 +88,4 @@ outputs*
 RSNA_downstream/logs/
 downstream_model
 /classification_hf/logs/
+**/logs*/**

@@ -4,13 +4,15 @@ Bootstrap evaluation — two modes:
   trained    Pool val_predictions.npz from N training run subdirectories,
              then bootstrap to estimate 95% CIs.
 
-  pretrained Run inference with a frozen HuggingFace head (e.g. raidium/curia)
-             on cached patch_tokens, then bootstrap.
+  pretrained Load pre-cached pooled features (.pt produced by
+             cache_pooled_features.py), run the frozen HuggingFace classifier
+             head, then bootstrap.
 
 Usage — trained mode:
     python -m classification_hf.bootstrap_eval \
         --task nfn \
-        --runs_dir /home/ge.polymtl.ca/p123239/SpineFoundation/outputs_cls/rsna_nfn
+        --dilation-radius 8 \
+        --runs-dir /home/ge.polymtl.ca/p123239/SpineFoundation/outputs_cls/rsna_nfn_dil8
 
 Usage — pretrained mode:
     python -m classification_hf.bootstrap_eval \
@@ -28,18 +30,14 @@ import argparse
 import csv
 import fcntl
 import json
-import queue
-import threading
-from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 from pathlib import Path
 
 import numpy as np
 import torch
-import torch.nn.functional as F
 from sklearn.metrics import accuracy_score, roc_auc_score
 from tqdm import tqdm
-from transformers import AutoImageProcessor, AutoModelForImageClassification
+from transformers import AutoModelForImageClassification
 
 
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
@@ -48,15 +46,15 @@ _DATA_ROOT = Path("/home/ge.polymtl.ca/p123239/data")
 TASK_CONFIG = {
     "nfn": {
         "subfolder": "neural_foraminal_narrowing",
-        "data_dir":  _DATA_ROOT / "patches_RSNA_raw_with_mask_nfn",
+        "data_dir":  _DATA_ROOT / "RSNA_patches_nfn",
     },
     "ss": {
         "subfolder": "subarticular_stenosis",
-        "data_dir":  _DATA_ROOT / "patches_RSNA_raw_with_mask_ss",
+        "data_dir":  _DATA_ROOT / "RSNA_patches_ss",
     },
     "scs": {
         "subfolder": "spinal_canal_stenosis",
-        "data_dir":  _DATA_ROOT / "patches_RSNA_raw_with_mask_scs",
+        "data_dir":  _DATA_ROOT / "RSNA_patches_scs",
     },
 }
 
@@ -126,99 +124,22 @@ def _load_and_pool(pred_files: list[Path]) -> tuple[np.ndarray, np.ndarray]:
     return np.concatenate(all_logits), np.concatenate(all_labels)
 
 
-# ── Pretrained mode: inference with frozen HuggingFace head ──────────────────
+# ── Pretrained mode: load cached pooled features + frozen classifier ──────────
 
 
-def _make_mask_transform(mask_np: np.ndarray, target_size: int) -> torch.Tensor:
-    t = torch.from_numpy(mask_np.astype(np.float32)).unsqueeze(0).unsqueeze(0)
-    t = F.interpolate(t, size=(target_size, target_size),
-                      mode="bilinear", align_corners=False, antialias=True)
-    t = t.squeeze(0)
-    mask = t > 0.5
-    if mask.sum() == 0:
-        mask = t > (t.max() * 0.5)
-    return mask.float().unsqueeze(0)   # (1, 1, S, S)
-
-
-def _masked_avg_pool(patch_tokens: torch.Tensor, mask: torch.Tensor) -> torch.Tensor:
-    """patch_tokens: (B, N, D)  mask: (B, 1, S, S) → (B, D)"""
-    B, N, D = patch_tokens.shape
-    grid = int(N ** 0.5)
-    patch_size = mask.shape[-1] // grid
-    mask_pooled = F.max_pool2d(mask.float(), kernel_size=patch_size, stride=patch_size)
-    mask_flat = mask_pooled.view(B, N).unsqueeze(-1)
-    total = mask_flat.sum(dim=1, keepdim=True).clamp(min=1e-6)
-    return (patch_tokens * mask_flat).sum(dim=1) / total.squeeze(1)
-
-
-def _collect_paths_and_labels(data_dir: Path) -> tuple[list[Path], np.ndarray]:
-    """Collect (path, label) pairs from class-named subdirectories."""
-    paths: list[Path] = []
-    labels: list[int] = []
-    for class_dir in sorted(data_dir.iterdir()):
-        if not class_dir.is_dir():
-            continue
-        try:
-            cls = int(class_dir.name)
-        except ValueError:
-            continue
-        for f in sorted(class_dir.iterdir()):
-            if f.suffix.lower() == ".npz" and not f.name.startswith("tmp"):
-                paths.append(f)
-                labels.append(cls)
-    return paths, np.array(labels)
-
-
-def _run_pretrained_inference(args, paths: list[Path], crop_size: int,
-                              classifier) -> np.ndarray:
-    """Returns logits (N, C) using cached patch_tokens + masked avg pooling."""
-    _SENTINEL = object()
-    _q: queue.Queue = queue.Queue(maxsize=2)
-    _pool = ThreadPoolExecutor(max_workers=16)
-
-    def _load_npz(p: Path) -> tuple[np.ndarray, np.ndarray]:
-        d = np.load(p)
-        return d["patch_tokens"], d["mask"]
-
-    def _apply_dilation(m: torch.Tensor) -> torch.Tensor:
-        if args.dilation_radius > 0:
-            k = 2 * args.dilation_radius + 1
-            return F.max_pool2d(m, kernel_size=k, stride=1, padding=args.dilation_radius)
-        return m
-
-    def _feeder(paths_: list, batch_size_: int, q: queue.Queue) -> None:
-        for i in range(0, len(paths_), batch_size_):
-            bp = paths_[i:i + batch_size_]
-            loaded = list(_pool.map(_load_npz, bp))
-            tokens_list, masks_list = zip(*loaded)
-            tokens_t = torch.from_numpy(np.stack(tokens_list))
-            mask_t = torch.cat(
-                [_make_mask_transform(m, crop_size) for m in masks_list], dim=0
-            )
-            q.put((tokens_t, mask_t))
-        q.put(_SENTINEL)
-
-    threading.Thread(
-        target=_feeder, args=(paths, args.batch_size, _q), daemon=True
-    ).start()
-
-    all_logits: list[np.ndarray] = []
-    with tqdm(total=len(paths), desc=f"Inference ({args.task})", unit="ex") as pbar:
-        while True:
-            item = _q.get()
-            if item is _SENTINEL:
-                break
-            tokens_cpu, mask_cpu = item
-            with torch.no_grad():
-                tokens = tokens_cpu.to(DEVICE)
-                mask   = _apply_dilation(mask_cpu.to(DEVICE))
-                pooled = _masked_avg_pool(tokens, mask)
-                logits = classifier(pooled)
-            all_logits.append(logits.cpu().numpy())
-            pbar.update(tokens_cpu.shape[0])
-
-    _pool.shutdown(wait=False)
-    return np.concatenate(all_logits, axis=0)
+def _load_pooled_features(data_dir: Path, dilation_radius: int) -> tuple[torch.Tensor, np.ndarray]:
+    """Load pooled features and labels from cache_pooled_features output."""
+    cache_path = data_dir / f"pooled_features_dil{dilation_radius}.pt"
+    if not cache_path.exists():
+        raise FileNotFoundError(
+            f"Pooled features cache not found: {cache_path}\n"
+            "Run cache_pooled_features.py first (called automatically by run_dilation_study.sh)."
+        )
+    print(f"Loading pooled features from {cache_path}")
+    cached = torch.load(cache_path, map_location="cpu", weights_only=True)
+    features = cached["features"]          # (N, D)
+    labels   = cached["labels"].numpy()    # (N,)
+    return features, labels
 
 
 # ── Shared output helpers ─────────────────────────────────────────────────────
@@ -233,6 +154,51 @@ def _print_table_row(task: str, result: dict, extra: str = "") -> str:
     return f"  {label:<12}  {cols[0]:<28}  {cols[1]:<28}  {cols[2]}"
 
 
+# ── CSV helpers ───────────────────────────────────────────────────────────────
+
+
+def _rebuild_csv(csv_path: Path, fieldnames: list, new_row: dict, log_dir: Path, mode: str) -> None:
+    """Rebuild the CSV from all JSON files + new_row to avoid header/schema drift."""
+    json_glob = "bootstrap_pretrained_*.json" if mode == "pretrained" else "bootstrap_[ns]*.json"
+    rows_by_key: dict = {}
+
+    for jf in sorted(log_dir.glob(json_glob)):
+        try:
+            d = json.loads(jf.read_text())
+        except Exception:
+            continue
+        if d.get("mode") != mode:
+            continue
+        row = {
+            "timestamp":       d["timestamp"],
+            "task":            d["task"],
+            "dilation_radius": d["dilation_radius"],
+            "n_samples":       d["n_samples"],
+            "n_bootstrap":     d["n_bootstrap"],
+        }
+        if mode == "trained":
+            row["n_runs"] = d.get("n_runs", "")
+        for metric, col in [("accuracy", "accuracy"), ("auc_ovr_macro", "auc_macro"),
+                             ("auc_ovr_weighted", "auc_weighted")]:
+            b = d["bootstrap"][metric]
+            row[f"{col}_mean"]    = round(b["mean"],    6)
+            row[f"{col}_ci_low"]  = round(b["ci_low"],  6)
+            row[f"{col}_ci_high"] = round(b["ci_high"], 6)
+        rows_by_key[(d["task"], d["dilation_radius"])] = row
+
+    # New row takes priority
+    rows_by_key[(new_row["task"], new_row["dilation_radius"])] = new_row
+
+    with csv_path.open("w", newline="", encoding="utf-8") as fh:
+        fcntl.flock(fh, fcntl.LOCK_EX)
+        try:
+            w = csv.DictWriter(fh, fieldnames=fieldnames, extrasaction="ignore")
+            w.writeheader()
+            w.writerows(rows_by_key.values())
+        finally:
+            fcntl.flock(fh, fcntl.LOCK_UN)
+
+
 # ── Main ──────────────────────────────────────────────────────────────────────
 
 
@@ -240,6 +206,8 @@ def main():
     parser = argparse.ArgumentParser(description="Bootstrap evaluation")
     parser.add_argument("--mode",    choices=["trained", "pretrained"], default="trained")
     parser.add_argument("--task",    required=True, choices=["nfn", "ss", "scs"])
+    parser.add_argument("--dilation-radius", type=int, default=0,
+                        help="Dilation radius for this run (used in CSV output)")
     parser.add_argument("--n-bootstrap", type=int, default=1000)
     parser.add_argument("--seed",    type=int, default=42)
     parser.add_argument("--log-dir", type=Path, default=None,
@@ -250,16 +218,12 @@ def main():
                         help="[trained] Base output dir containing run subdirs with val_predictions.npz")
 
     # Pretrained mode args
-    parser.add_argument("--model-name",     type=str, default="raidium/curia",
+    parser.add_argument("--model-name",  type=str, default="raidium/curia",
                         help="[pretrained] HuggingFace model id")
-    parser.add_argument("--subfolder",      type=str, default=None,
+    parser.add_argument("--subfolder",   type=str, default=None,
                         help="[pretrained] Task-specific subfolder (default: from TASK_CONFIG)")
-    parser.add_argument("--data-dir",       type=Path, default=None,
-                        help="[pretrained] Directory with class-named subdirs of NPZ patches")
-    parser.add_argument("--dilation-radius", type=int, default=0,
-                        help="[pretrained] Mask dilation radius in pixels")
-    parser.add_argument("--batch-size",     type=int, default=128,
-                        help="[pretrained] Inference batch size")
+    parser.add_argument("--data-dir",    type=Path, default=None,
+                        help="[pretrained] Directory containing pooled_features_dil{N}.pt")
 
     args = parser.parse_args()
 
@@ -283,11 +247,10 @@ def main():
     if args.mode == "pretrained":
         print(f"Model      : {args.model_name}/{args.subfolder}")
         print(f"Data dir   : {args.data_dir}")
-        print(f"Device     : {DEVICE}")
-        if args.dilation_radius > 0:
-            print(f"Dilation   : {args.dilation_radius}px")
     else:
         print(f"Runs dir   : {args.runs_dir}")
+    if args.dilation_radius > 0:
+        print(f"Dilation   : {args.dilation_radius}px")
     print(f"Bootstraps : {args.n_bootstrap}   seed={args.seed}")
     print(f"{'='*65}\n")
 
@@ -300,32 +263,19 @@ def main():
         print(f"Found {n_runs} run(s) with predictions:")
         logits, labels = _load_and_pool(pred_files)
     else:
-        # Pretrained mode
-        paths, labels = _collect_paths_and_labels(args.data_dir)
-        if not paths:
-            raise RuntimeError(f"No NPZ files found in {args.data_dir}")
-        print(f"Total: {len(paths)} samples  (class distribution: {np.bincount(labels).tolist()})")
+        # Pretrained mode — load pre-cached pooled features
+        features, labels = _load_pooled_features(args.data_dir, args.dilation_radius)
+        print(f"Total: {len(labels)} samples  (class distribution: {np.bincount(labels).tolist()})")
 
-        # Verify cache
-        probe = np.load(paths[0])
-        if "patch_tokens" not in probe.files:
-            raise RuntimeError(
-                f"No 'patch_tokens' key in {paths[0]}.\n"
-                "Run cache_patch_tokens.py first to cache patch tokens."
-            )
-
-        print("Loading model...")
-        processor = AutoImageProcessor.from_pretrained(args.model_name, trust_remote_code=True)
+        print("Loading classifier...")
         model = AutoModelForImageClassification.from_pretrained(
             args.model_name, subfolder=args.subfolder, trust_remote_code=True
         )
-        model.eval().to(DEVICE)
+        model.eval()
         classifier = model.classifier.to(DEVICE)
 
-        _cs = processor.crop_size
-        crop_size = _cs["height"] if isinstance(_cs, dict) else int(_cs)
-
-        logits = _run_pretrained_inference(args, paths, crop_size, classifier)
+        with torch.no_grad():
+            logits = classifier(features.to(DEVICE)).cpu().numpy()
 
     print(f"\nPooled dataset: {len(labels)} samples  "
           f"(class distribution: {np.bincount(labels).tolist()})")
@@ -341,7 +291,7 @@ def main():
     result = bootstrap(logits, labels, args.n_bootstrap, args.seed)
 
     # ── Pretty print ──────────────────────────────────────────────────────────
-    dil_str = f" dil={args.dilation_radius}px" if args.mode == "pretrained" and args.dilation_radius > 0 else ""
+    dil_str = f" dil={args.dilation_radius}px" if args.dilation_radius > 0 else ""
     header = (
         f"\n{'─'*90}\n"
         f"  {'Task':<12}  {'AUC macro  mean [95% CI]':<28}  "
@@ -353,11 +303,12 @@ def main():
     print(f"{'─'*90}\n")
 
     # ── Save JSON ─────────────────────────────────────────────────────────────
-    dil_tag = f"_dil{args.dilation_radius}" if args.mode == "pretrained" and args.dilation_radius > 0 else ""
+    dil_tag = f"_dil{args.dilation_radius}" if args.dilation_radius > 0 else ""
     summary: dict = {
         "timestamp":       timestamp,
         "mode":            args.mode,
         "task":            args.task,
+        "dilation_radius": args.dilation_radius,
         "n_samples":       int(len(labels)),
         "n_bootstrap":     args.n_bootstrap,
         "seed":            args.seed,
@@ -370,51 +321,40 @@ def main():
     if args.mode == "trained":
         summary["n_runs"] = n_runs
     else:
-        summary["model"]           = args.model_name
-        summary["subfolder"]       = args.subfolder
-        summary["dilation_radius"] = args.dilation_radius
+        summary["model"]     = args.model_name
+        summary["subfolder"] = args.subfolder
 
     json_name = (
         f"bootstrap_pretrained_{args.task}{dil_tag}.json"
         if args.mode == "pretrained"
-        else f"bootstrap_{args.task}.json"
+        else f"bootstrap_{args.task}{dil_tag}.json"
     )
     json_path = log_dir / json_name
     json_path.write_text(json.dumps(summary, indent=2))
     print(f"Full summary saved to {json_path}")
 
     # ── Append to CSV ─────────────────────────────────────────────────────────
+    csv_path = log_dir / (
+        "bootstrap_pretrained_results.csv"
+        if args.mode == "pretrained"
+        else "bootstrap_results.csv"
+    )
+    fieldnames = [
+        "timestamp", "task", "dilation_radius", "n_samples", "n_bootstrap",
+        "accuracy_mean", "accuracy_ci_low", "accuracy_ci_high",
+        "auc_macro_mean", "auc_macro_ci_low", "auc_macro_ci_high",
+        "auc_weighted_mean", "auc_weighted_ci_low", "auc_weighted_ci_high",
+    ]
+    row = {
+        "timestamp":       timestamp,
+        "task":            args.task,
+        "dilation_radius": args.dilation_radius,
+        "n_samples":       len(labels),
+        "n_bootstrap":     args.n_bootstrap,
+    }
     if args.mode == "trained":
-        csv_path = log_dir / "bootstrap_results.csv"
-        fieldnames = [
-            "timestamp", "task", "n_runs", "n_samples", "n_bootstrap",
-            "accuracy_mean", "accuracy_ci_low", "accuracy_ci_high",
-            "auc_macro_mean", "auc_macro_ci_low", "auc_macro_ci_high",
-            "auc_weighted_mean", "auc_weighted_ci_low", "auc_weighted_ci_high",
-        ]
-        row = {
-            "timestamp":   timestamp,
-            "task":        args.task,
-            "n_runs":      n_runs,
-            "n_samples":   len(labels),
-            "n_bootstrap": args.n_bootstrap,
-        }
-    else:
-        csv_path = log_dir / "bootstrap_pretrained_results.csv"
-        fieldnames = [
-            "timestamp", "task", "dilation_radius", "model", "n_samples", "n_bootstrap",
-            "accuracy_mean", "accuracy_ci_low", "accuracy_ci_high",
-            "auc_macro_mean", "auc_macro_ci_low", "auc_macro_ci_high",
-            "auc_weighted_mean", "auc_weighted_ci_low", "auc_weighted_ci_high",
-        ]
-        row = {
-            "timestamp":       timestamp,
-            "task":            args.task,
-            "dilation_radius": args.dilation_radius,
-            "model":           f"{args.model_name}/{args.subfolder}",
-            "n_samples":       len(labels),
-            "n_bootstrap":     args.n_bootstrap,
-        }
+        fieldnames.insert(4, "n_runs")
+        row["n_runs"] = n_runs
 
     for metric, col_prefix in [("accuracy", "accuracy"), ("auc_ovr_macro", "auc_macro"),
                                 ("auc_ovr_weighted", "auc_weighted")]:
@@ -422,46 +362,30 @@ def main():
         row[f"{col_prefix}_ci_low"]  = round(result[metric]["ci_low"],  6)
         row[f"{col_prefix}_ci_high"] = round(result[metric]["ci_high"], 6)
 
-    with csv_path.open("a", newline="", encoding="utf-8") as fh:
-        fcntl.flock(fh, fcntl.LOCK_EX)   # NFS-safe exclusive lock
-        try:
-            w = csv.DictWriter(fh, fieldnames=fieldnames)
-            if fh.tell() == 0:            # file was empty when we locked it
-                w.writeheader()
-            w.writerow(row)
-        finally:
-            fcntl.flock(fh, fcntl.LOCK_UN)
+    # Rebuild CSV from all JSON files to avoid header/schema mismatch on append
+    _rebuild_csv(csv_path, fieldnames, row, log_dir, args.mode)
     print(f"Row appended to {csv_path}")
 
     # ── Final 3-task summary table ────────────────────────────────────────────
     if csv_path.exists():
         rows = list(csv.DictReader(csv_path.open(encoding="utf-8")))
+        dil_key = str(args.dilation_radius)
         latest: dict = {}
         for r in rows:
-            if args.mode == "pretrained":
-                key = (r["task"], r["dilation_radius"])
-            else:
-                key = r["task"]
-            latest[key] = r
+            if r.get("dilation_radius") == dil_key:
+                latest[r["task"]] = r
 
         all_tasks = ["nfn", "scs", "ss"]
-        if args.mode == "pretrained":
-            dil_key = str(args.dilation_radius)
-            have_all = all((t, dil_key) in latest for t in all_tasks)
-        else:
-            have_all = all(t in latest for t in all_tasks)
-
-        if have_all:
+        if all(t in latest for t in all_tasks):
             print(f"\n{'='*90}")
             label = "pretrained head" if args.mode == "pretrained" else "trained runs"
-            print(f"FINAL SUMMARY ({label} — all 3 tasks)")
+            print(f"FINAL SUMMARY ({label} — all 3 tasks  dil={args.dilation_radius}px)")
             print(f"{'─'*90}")
             print(f"  {'Task':<12}  {'AUC macro  mean [95% CI]':<28}  "
                   f"{'AUC weighted  mean [95% CI]':<28}  Accuracy  mean [95% CI]")
             print(f"{'─'*90}")
             for t in all_tasks:
-                key = (t, dil_key) if args.mode == "pretrained" else t
-                r = latest[key]
+                r = latest[t]
                 mac_s = f"{r['auc_macro_mean']}  [{r['auc_macro_ci_low']}, {r['auc_macro_ci_high']}]"
                 wgt_s = f"{r['auc_weighted_mean']}  [{r['auc_weighted_ci_low']}, {r['auc_weighted_ci_high']}]"
                 acc_s = f"{r['accuracy_mean']}  [{r['accuracy_ci_low']}, {r['accuracy_ci_high']}]"
