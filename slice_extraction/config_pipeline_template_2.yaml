@@ -1,0 +1,112 @@
+
+# slice_extraction pipeline config
+# Usage:
+#   python slice_extraction/05_run_pipeline.py --config this_file.yaml
+
+# Common (required)
+
+# Root folder for all intermediate and final outputs.
+work_root: /home/ge.polymtl.ca/p123239/data_work
+
+
+# Stage 2 — Per-repo: clone → git annex get → extract slices → rm -rf
+
+# Each repo is processed one at a time to minimise disk usage:
+#   1. git clone <url>
+#   2. git annex get .
+#   3. python 01_extract_slices.py
+#   4. rm -rf <repo>   (chmod -R u+w first to unlock annex read-only files)
+# Then moves on to the next repo.
+
+
+# One or more git repository URLs.
+# Both HTTPS and SSH URLs are supported.
+repos:
+  -
+
+clone_root: /home/ge.polymtl.ca/p123239/data_work/00_cloned
+
+# Run 'git annex get .' after each clone (true/false).
+git_annex: true
+
+# Number of parallel jobs for 'git annex get --jobs'.
+git_annex_jobs: 16
+
+# Glob patterns excluded from 'git annex get' (saves time and disk space).
+# derivatives/** skips all segmentation masks — not needed for image-only extraction.
+git_annex_exclude:
+  - derivatives/**
+
+# Number of parallel worker processes for slice extraction.
+workers: 16
+
+# Optional local NIfTI folders to include alongside repos.
+# These are processed first (no annex logic).
+input_images:
+   - /home/ge.polymtl.ca/p123239/data_ok/whole-spine2
+   - /home/ge.polymtl.ca/p123239/data/lumbar-marseille
+
+
+# Root of derivative labels (BIDS derivatives).
+# Omit for image-only extraction.
+# input_labels: /data/derivatives/labels
+
+# Suffix appended to image stem to locate the label file.
+label_suffix: _seg
+
+# Fraction of volumes assigned to the training split.
+train_ratio: 0.999
+
+# Random seed for train/val split.
+seed: 28
+
+# Percentile clipping for uint8 normalisation [low, high].
+clip_pct: [0.5, 99.5]
+
+# Isotropy tolerance: max(spacing) / min(spacing) - 1 threshold.
+iso_tol: 0.1
+
+# Optional hard isotropy threshold in mm (overrides iso_tol when set).
+# iso_eps_mm: 0.05
+
+# Skip volumes whose output PNGs already exist on disk.
+skip_existing: true
+
+
+# Stage 3 — Renumber + tiling
+
+# Run the renumber stage (true/false).
+# Set to false to skip entirely: 01_extracted is used directly as the final output.
+# Useful for DINO training where filenames don't matter.
+renumber: false
+
+# Enable tiling of large images (slices > tile_threshold px are split into tiles).
+tiling: false
+
+# Tile size in pixels.
+tile_size: 224
+
+# Overlap between adjacent tiles (%).
+tile_overlap_pct: 25.0
+
+# Minimum image dimension (px) that triggers tiling.
+tile_threshold: 512
+
+# Stage 5 — In-plane resample (optional)
+
+# Set to true to activate the resample stage.
+resample: false
+
+# Target isotropic in-plane spacing in mm.
+target_spacing: 0.8
+
+# Interpolation method: nearest | bilinear | bicubic | lanczos
+interp: bilinear
+
+# Pipeline control
+
+# Resume from a specific stage (1=no-op, 2=extract, 3=renumber, 4=sanity, 5=resample).
+start_stage: 1
+
+# Keep the intermediate 01_extracted/ folder after stage 3.
+keep_intermediate: false

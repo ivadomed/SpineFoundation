@@ -20,7 +20,7 @@ NAME_RE = re.compile(
 def list_images(folder: Path) -> list[Path]:
     if not folder.exists():
         return []
-    return sorted(p for p in folder.iterdir() if p.is_file() and p.suffix.lower() in IMG_EXTS)
+    return sorted(p for p in folder.rglob("*") if p.is_file() and p.suffix.lower() in IMG_EXTS)
 
 
 def main() -> int:
@@ -74,7 +74,7 @@ def main() -> int:
             try:
                 with Image.open(img_fp) as i:
                     if args.with_labels:
-                        lbl_fp = lbl_dir / img_fp.name
+                        lbl_fp = lbl_dir / img_fp.relative_to(img_dir)
                         if not lbl_fp.exists():
                             add_issue(f"[pair] missing label for {split}/{img_fp.name}")
                             pbar.set_postfix(checked=total, issues=len(issues))

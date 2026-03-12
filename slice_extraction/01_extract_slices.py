@@ -3,11 +3,13 @@
 from __future__ import annotations
 
 import argparse
+import datetime
 import hashlib
 import traceback
+from concurrent.futures import ProcessPoolExecutor, as_completed
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterable, List, Tuple
+from typing import Iterable, List, Optional, Tuple
 
 import nibabel as nib
 import numpy as np
@@ -17,7 +19,7 @@ from tqdm import tqdm
 
 def is_ignored(path: Path) -> bool:
     name = path.name.lower()
-    if "preproc" in name or "cor" in name or "dwi" in name:
+    if "preproc" in name or "cor" in name or "dwi" in name or "_ct" in name or "epi" in name or "fieldmap" in name:
         return True
     return any(p.name.lower() in {"derivatives", ".git", "sourcedata"} for p in path.parents)
 
@@ -53,6 +55,8 @@ def classify_from_spacing(spacing: Tuple[float, float, float], iso_tol: float, i
         return "axial"
     if dx > dy and dx > dz:
         return "sagittal"
+    if dy > dx and dy > dz:
+        return "coronal"
     return "axial"
 
 
@@ -253,12 +257,13 @@ class OutDirs:
     lbl_val: Path
 
 
-def build_out_dirs(root: Path) -> OutDirs:
+def build_out_dirs(root: Path, dataset_name: str = "") -> OutDirs:
+    sub = dataset_name if dataset_name else ""
     dirs = OutDirs(
-        img_train=root / "image" / "train",
-        img_val=root / "image" / "val",
-        lbl_train=root / "label" / "train",
-        lbl_val=root / "label" / "val",
+        img_train=root / "image" / "train" / sub if sub else root / "image" / "train",
+        img_val=root / "image" / "val" / sub if sub else root / "image" / "val",
+        lbl_train=root / "label" / "train" / sub if sub else root / "label" / "train",
+        lbl_val=root / "label" / "val" / sub if sub else root / "label" / "val",
     )
     dirs.img_train.mkdir(parents=True, exist_ok=True)
     dirs.img_val.mkdir(parents=True, exist_ok=True)
@@ -266,6 +271,185 @@ def build_out_dirs(root: Path) -> OutDirs:
     dirs.lbl_val.mkdir(parents=True, exist_ok=True)
     return dirs
 
+
+# ── Per-volume worker ─────────────────────────────────────────────────────────
+
+@dataclass
+class VolumeTask:
+    img_path: Path
+    image_root: Path
+    label_root: Optional[Path]
+    out_dirs: OutDirs
+    with_labels: bool
+    label_suffix: str
+    clip_pct: Tuple[float, float]
+    iso_tol: float
+    iso_eps_mm: Optional[float]
+    train_ratio: float
+    seed: int
+    skip_existing: bool
+
+
+@dataclass
+class VolumeResult:
+    img_path: Path
+    status: str           # "extracted" | "skipped" | "error" | "skipped_all"
+    n_outputs: int
+    n_slices: int
+    n_skipped_existing: int
+    no_match: bool        # True → write to no_match log
+    lbl_matched: Optional[Path]  # for unmatched-labels tracking
+    error_msg: Optional[str]
+    skip_reason: Optional[str]  # short tag: "coronal" | "shape_mismatch" | "no_label" | None
+
+
+def process_volume(task: VolumeTask) -> VolumeResult:
+    """Process a single NIfTI volume and write PNG slices. Runs in a worker process."""
+    img_path = task.img_path
+
+    # ── skip-existing check (header only) ────────────────────────────────────
+    if task.skip_existing:
+        try:
+            hdr_img     = nib.as_closest_canonical(nib.load(str(img_path)))
+            hdr_shape   = hdr_img.shape
+            hdr_spacing = get_spacing_ras(hdr_img)
+            expected    = _predict_outputs(
+                img_path, task.image_root, task.out_dirs,
+                hdr_shape, hdr_spacing,
+                task.iso_tol, task.iso_eps_mm,
+                task.train_ratio, task.seed,
+                task.with_labels,
+            )
+            if _all_outputs_exist(expected):
+                return VolumeResult(
+                    img_path=img_path,
+                    status="skipped_all",
+                    n_outputs=len(expected),
+                    n_slices=0,
+                    n_skipped_existing=len(expected),
+                    no_match=False,
+                    lbl_matched=None,
+                    error_msg=None,
+                    skip_reason="already_done",
+                )
+        except Exception:
+            pass  # header read failed — fall through to full extraction
+
+    # ── label matching ────────────────────────────────────────────────────────
+    lbl_path: Optional[Path] = None
+    if task.with_labels:
+        if task.label_root is None:
+            return VolumeResult(
+                img_path=img_path, status="error", n_outputs=0, n_slices=0,
+                n_skipped_existing=0, no_match=False, lbl_matched=None,
+                error_msg="with_labels is enabled but label_root is None",
+                skip_reason=None,
+            )
+        lbl_path = find_label_match(img_path, task.image_root, task.label_root, task.label_suffix)
+        if lbl_path is None:
+            return VolumeResult(
+                img_path=img_path, status="skipped", n_outputs=0, n_slices=0,
+                n_skipped_existing=0, no_match=True, lbl_matched=None,
+                error_msg=None,
+                skip_reason="no_label",
+            )
+
+    # ── load & extract ────────────────────────────────────────────────────────
+    try:
+        img_nii  = load_ras(img_path)
+        if img_nii.dataobj.dtype.names is not None:  # RGB NIfTI — skip
+            raise ValueError(f"RGB NIfTI (dtype={img_nii.dataobj.dtype}) — not a grayscale image")
+        spacing  = get_spacing_ras(img_nii)
+        img_data = img_nii.get_fdata(dtype=np.float32)
+
+        if task.with_labels:
+            lbl_nii  = load_ras(lbl_path)
+            lbl_data = lbl_nii.get_fdata(dtype=np.float32)
+        else:
+            lbl_data = np.zeros_like(img_data, dtype=np.float32)
+
+        if task.with_labels and img_data.shape[:3] != lbl_data.shape[:3]:
+            return VolumeResult(
+                img_path=img_path, status="skipped", n_outputs=0, n_slices=0,
+                n_skipped_existing=0, no_match=False,
+                lbl_matched=lbl_path.resolve() if lbl_path else None,
+                error_msg=f"Shape mismatch image/label: {img_path.name}",
+                skip_reason="shape_mismatch",
+            )
+
+        mode = classify_from_spacing(spacing, task.iso_tol, task.iso_eps_mm)
+        if mode == "coronal":
+            dx, dy, dz = spacing
+            return VolumeResult(
+                img_path=img_path, status="skipped", n_outputs=0, n_slices=0,
+                n_skipped_existing=0, no_match=False, lbl_matched=None,
+                error_msg=f"dx={dx:.2f} dy={dy:.2f} dz={dz:.2f}",
+                skip_reason="coronal",
+            )
+
+        slices = extract_plane_slices(img_data, lbl_data, mode, spacing)
+
+        parts = img_path.relative_to(task.image_root).parts
+        src0  = sanitize_token(parts[0]) if len(parts) > 1 else "."
+        base  = sanitize_token(img_path.name.replace(".nii.gz", ""))
+
+        n_outputs = 0
+        n_slices  = 0
+        n_skip_ex = 0
+
+        for plane, sidx, spacing_hw, sl_img, sl_lbl in slices:
+            n_slices += 1
+            img_u8 = normalize_to_uint8(sl_img, task.clip_pct)
+            lbl_u8 = labels_to_uint8(sl_lbl)
+
+            tiles  = tile_pair(img_u8=img_u8, lbl_u8=lbl_u8)
+            sp_tok = fmt_spacing(spacing_hw)
+
+            for tidx, tile_img, tile_lbl in tiles:
+                fname = f"{src0}__{base}__{plane}__s{sidx:04d}__t{tidx:03d}__{sp_tok}.png"
+                split_train = deterministic_split(f"{base}__{plane}__s{sidx:04d}", task.seed) < task.train_ratio
+
+                img_out = task.out_dirs.img_train / fname if split_train else task.out_dirs.img_val / fname
+                lbl_out = task.out_dirs.lbl_train / fname if split_train else task.out_dirs.lbl_val / fname
+
+                if task.with_labels:
+                    if task.skip_existing and img_out.exists() and lbl_out.exists():
+                        n_skip_ex += 1
+                        n_outputs += 1
+                        continue
+                else:
+                    if task.skip_existing and img_out.exists():
+                        n_skip_ex += 1
+                        n_outputs += 1
+                        continue
+
+                Image.fromarray(tile_img, mode="L").save(img_out)
+                if task.with_labels:
+                    Image.fromarray(tile_lbl, mode="L").save(lbl_out)
+                n_outputs += 1
+
+        return VolumeResult(
+            img_path=img_path,
+            status="extracted",
+            n_outputs=n_outputs,
+            n_slices=n_slices,
+            n_skipped_existing=n_skip_ex,
+            no_match=False,
+            lbl_matched=lbl_path.resolve() if lbl_path else None,
+            error_msg=None,
+            skip_reason=None,
+        )
+
+    except Exception as exc:
+        return VolumeResult(
+            img_path=img_path, status="error", n_outputs=0, n_slices=0,
+            n_skipped_existing=0, no_match=False, lbl_matched=None,
+            error_msg=f"{type(exc).__name__}: {exc}\n{traceback.format_exc()}",
+            skip_reason=None,
+        )
+
+
+# ── Main ──────────────────────────────────────────────────────────────────────
 
 def main() -> None:
     ap = argparse.ArgumentParser()
@@ -277,7 +461,12 @@ def main() -> None:
     ap.add_argument("--clip-pct", type=float, nargs=2, default=(0.5, 99.5))
     ap.add_argument("--iso-tol", type=float, default=0.1)
     ap.add_argument("--iso-eps-mm", type=float, default=None)
-    ap.add_argument("--label-suffix", type=str, default="_seg", help="Suffix appended to image basename to find label (e.g. _seg, _spine)")
+    ap.add_argument("--label-suffix", type=str, default="_seg",
+                    help="Suffix appended to image basename to find label (e.g. _seg, _spine)")
+    ap.add_argument("--dataset-name", type=str, default="",
+                    help="Subfolder name under train/ and val/ for this dataset (e.g. canproco)")
+    ap.add_argument("--workers", type=int, default=8,
+                    help="Number of parallel worker processes (default: 8)")
     ap.set_defaults(skip_existing=True)
     ap.add_argument("--skip-existing", dest="skip_existing", action="store_true")
     ap.add_argument("--no-skip-existing", dest="skip_existing", action="store_false")
@@ -290,22 +479,47 @@ def main() -> None:
     print(f"input-labels     : {args.input_labels}")
     print(f"with-labels      : {with_labels}")
     print(f"output-root      : {args.output_root}")
+    print(f"dataset-name     : {args.dataset_name or '(none)'}")
     print(f"train-ratio      : {args.train_ratio}")
     print(f"seed             : {args.seed}")
     print(f"clip-pct         : {tuple(args.clip_pct)}")
     print(f"label-suffix     : {args.label_suffix}")
     print(f"skip-existing    : {args.skip_existing}")
+    print(f"workers          : {args.workers}")
     print("=============================")
 
     image_root: Path = args.input_images
     label_root: Path | None = args.input_labels
-    out_dirs = build_out_dirs(args.output_root)
+    out_dirs = build_out_dirs(args.output_root, dataset_name=args.dataset_name)
     no_match_log_path = args.output_root / "no_matching_labels.txt"
     unmatched_labels_log_path = args.output_root / "labels_not_matched_to_images.txt"
     if with_labels:
         no_match_log_path.parent.mkdir(parents=True, exist_ok=True)
         no_match_log_path.write_text("")
         unmatched_labels_log_path.write_text("")
+
+    # ── Extraction log file ───────────────────────────────────────────────────
+    log_dir = args.output_root / "logs"
+    log_dir.mkdir(parents=True, exist_ok=True)
+    log_name = f"extraction_{args.dataset_name or 'default'}.log"
+    log_path = log_dir / log_name
+    _ts = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    with log_path.open("w") as _lf:
+        _lf.write(f"=== Extraction log — {_ts} ===\n")
+        _lf.write(f"dataset          : {args.dataset_name or '(none)'}\n")
+        _lf.write(f"input-images     : {args.input_images}\n")
+        _lf.write(f"input-labels     : {args.input_labels}\n")
+        _lf.write(f"output-root      : {args.output_root}\n")
+        _lf.write(f"train-ratio      : {args.train_ratio}\n")
+        _lf.write(f"seed             : {args.seed}\n")
+        _lf.write(f"clip-pct         : {tuple(args.clip_pct)}\n")
+        _lf.write(f"iso-tol          : {args.iso_tol}\n")
+        _lf.write(f"iso-eps-mm       : {args.iso_eps_mm}\n")
+        _lf.write(f"label-suffix     : {args.label_suffix}\n")
+        _lf.write(f"skip-existing    : {args.skip_existing}\n")
+        _lf.write(f"workers          : {args.workers}\n")
+        _lf.write("=" * 50 + "\n\n")
+    print(f"[log] {log_path}")
 
     images = sorted(iter_nii_gz(image_root, apply_filters=True))
     label_files: list[Path] = []
@@ -317,145 +531,146 @@ def main() -> None:
                 continue
             label_rel = rel.with_name(rel.name.replace(".nii.gz", f"{args.label_suffix}.nii.gz"))
             expected_label_files.append(label_root / label_rel)
-
         label_files = [p for p in expected_label_files if p.exists()]
-    matched_labels: set[Path] = set()
-
-    extracted = skipped = errors = 0
-    total_slices = 0
-    total_outputs = 0
-    skipped_existing = 0
 
     if with_labels:
         print(f"[info] candidate images: {len(images)} | candidate labels: {len(label_files)}")
     else:
         print(f"[info] candidate images: {len(images)} | mode=image-only")
-    pbar = tqdm(images, desc="Extract", unit="vol", total=len(images))
-    for img_path in pbar:
-        try:
-            # ── Volume-level skip (header only, no pixel data loaded) ─────────
-            # Read the NIfTI header lazily (no get_fdata call) to predict the
-            # full set of expected output filenames.  If every file already
-            # exists on disk we skip the entire volume — no I/O for pixels.
-            if args.skip_existing:
-                try:
-                    hdr_img     = nib.as_closest_canonical(nib.load(str(img_path)))
-                    hdr_shape   = hdr_img.shape
-                    hdr_spacing = get_spacing_ras(hdr_img)
-                    expected    = _predict_outputs(
-                        img_path, image_root, out_dirs,
-                        hdr_shape, hdr_spacing,
-                        args.iso_tol, args.iso_eps_mm,
-                        args.train_ratio, args.seed,
-                        with_labels,
-                    )
-                    if _all_outputs_exist(expected):
-                        skipped_existing += len(expected)
-                        total_outputs    += len(expected)
-                        pbar.set_postfix(extracted=extracted, skipped=skipped,
-                                         errors=errors, outputs=total_outputs,
-                                         skip_exist=skipped_existing)
-                        continue
-                except Exception:
-                    pass  # header read failed — fall through to full extraction
 
-            lbl_path = None
-            if with_labels:
-                if label_root is None:
-                    raise RuntimeError("with_labels is enabled but input-labels is missing")
-                lbl_path = find_label_match(img_path, image_root, label_root, args.label_suffix)
-                if lbl_path is None:
-                    skipped += 1
-                    with no_match_log_path.open("a") as f:
-                        f.write(str(img_path) + "\n")
-                    pbar.set_postfix(extracted=extracted, skipped=skipped, errors=errors, outputs=total_outputs, skip_exist=skipped_existing)
-                    continue
-                matched_labels.add(lbl_path.resolve())
+    # ── Build tasks ───────────────────────────────────────────────────────────
+    tasks = [
+        VolumeTask(
+            img_path=img_path,
+            image_root=image_root,
+            label_root=label_root,
+            out_dirs=out_dirs,
+            with_labels=with_labels,
+            label_suffix=args.label_suffix,
+            clip_pct=tuple(args.clip_pct),
+            iso_tol=args.iso_tol,
+            iso_eps_mm=args.iso_eps_mm,
+            train_ratio=args.train_ratio,
+            seed=args.seed,
+            skip_existing=args.skip_existing,
+        )
+        for img_path in images
+    ]
 
-            img_nii = load_ras(img_path)
-            spacing = get_spacing_ras(img_nii)
+    # ── Run workers ───────────────────────────────────────────────────────────
+    extracted = skipped = errors = 0
+    total_slices = total_outputs = skipped_existing = 0
+    no_match_paths: list[Path] = []
+    matched_labels: set[Path] = set()
+    all_results: list[VolumeResult] = []
 
-            img_data = img_nii.get_fdata(dtype=np.float32)
-            if with_labels:
-                if lbl_path is None:
-                    raise RuntimeError("Label path unexpectedly missing")
-                lbl_nii = load_ras(lbl_path)
-                lbl_data = lbl_nii.get_fdata(dtype=np.float32)
-            else:
-                lbl_data = np.zeros_like(img_data, dtype=np.float32)
+    pbar = tqdm(total=len(tasks), desc="Extract", unit="vol")
 
-            if with_labels and img_data.shape[:3] != lbl_data.shape[:3]:
-                skipped += 1
-                print(f"[SKIP] Shape mismatch image/label: {img_path.name}")
+    with ProcessPoolExecutor(max_workers=args.workers) as executor:
+        futures = {executor.submit(process_volume, task): task for task in tasks}
+        for future in as_completed(futures):
+            try:
+                res: VolumeResult = future.result()
+            except Exception as exc:
+                errors += 1
+                task = futures[future]
+                msg = f"[ERROR] {task.img_path.name} | {exc}"
+                tqdm.write(msg)
+                all_results.append(VolumeResult(
+                    img_path=task.img_path, status="error", n_outputs=0, n_slices=0,
+                    n_skipped_existing=0, no_match=False, lbl_matched=None,
+                    error_msg=str(exc), skip_reason=None,
+                ))
+                pbar.update(1)
+                pbar.set_postfix(extracted=extracted, skipped=skipped, errors=errors,
+                                 outputs=total_outputs, skip_exist=skipped_existing)
                 continue
 
-            mode = classify_from_spacing(spacing, args.iso_tol, args.iso_eps_mm)
-            slices = extract_plane_slices(img_data, lbl_data, mode, spacing)
-            vol_outputs = 0
+            all_results.append(res)
+            total_outputs    += res.n_outputs
+            total_slices     += res.n_slices
+            skipped_existing += res.n_skipped_existing
 
-            src0 = sanitize_token(img_path.relative_to(image_root).parts[0]) if len(img_path.relative_to(image_root).parts) > 1 else "."
-            base = sanitize_token(img_path.name.replace(".nii.gz", ""))
+            if res.status == "extracted":
+                extracted += 1
+            elif res.status == "skipped_all":
+                pass  # counted via skipped_existing above
+            elif res.status == "skipped":
+                skipped += 1
+                if res.no_match:
+                    no_match_paths.append(res.img_path)
+                if res.error_msg:
+                    tqdm.write(f"[SKIP/{res.skip_reason}] {res.img_path.name} | {res.error_msg}")
+            elif res.status == "error":
+                errors += 1
+                if res.error_msg:
+                    tqdm.write(f"[ERROR] {res.img_path.name} | {res.error_msg}")
 
-            for plane, sidx, spacing_hw, sl_img, sl_lbl in slices:
-                total_slices += 1
-                img_u8 = normalize_to_uint8(sl_img, tuple(args.clip_pct))
-                lbl_u8 = labels_to_uint8(sl_lbl)
+            if res.lbl_matched is not None:
+                matched_labels.add(res.lbl_matched)
 
-                tiles = tile_pair(
-                    img_u8=img_u8,
-                    lbl_u8=lbl_u8,
-                )
-                sp_tok = fmt_spacing(spacing_hw)
+            pbar.update(1)
+            pbar.set_postfix(extracted=extracted, skipped=skipped, errors=errors,
+                             outputs=total_outputs, skip_exist=skipped_existing)
 
-                for tidx, tile_img, tile_lbl in tiles:
-                    vol_outputs += 1
-                    total_outputs += 1
-                    fname = f"{src0}__{base}__{plane}__s{sidx:04d}__t{tidx:03d}__{sp_tok}.png"
-                    split_train = deterministic_split(f"{base}__{plane}__s{sidx:04d}", args.seed) < args.train_ratio
+    pbar.close()
 
-                    img_out = out_dirs.img_train / fname if split_train else out_dirs.img_val / fname
-                    lbl_out = out_dirs.lbl_train / fname if split_train else out_dirs.lbl_val / fname
+    # ── Write label logs ──────────────────────────────────────────────────────
+    if with_labels and no_match_paths:
+        with no_match_log_path.open("w") as f:
+            for p in no_match_paths:
+                f.write(str(p) + "\n")
 
-                    if with_labels:
-                        if args.skip_existing and img_out.exists() and lbl_out.exists():
-                            skipped_existing += 1
-                            continue
-                    else:
-                        if args.skip_existing and img_out.exists():
-                            skipped_existing += 1
-                            continue
-
-                    Image.fromarray(tile_img, mode="L").save(img_out)
-                    if with_labels:
-                        Image.fromarray(tile_lbl, mode="L").save(lbl_out)
-
-            extracted += 1
-            pbar.set_postfix(extracted=extracted, skipped=skipped, errors=errors, outputs=total_outputs, skip_exist=skipped_existing)
-
-        except Exception as exc:
-            errors += 1
-            print(f"[ERROR] {img_path.name} | {type(exc).__name__}: {exc}")
-            traceback.print_exc()
-            pbar.set_postfix(extracted=extracted, skipped=skipped, errors=errors, outputs=total_outputs, skip_exist=skipped_existing)
-
-    print(
-        f"[SUMMARY] extracted={extracted} skipped={skipped} errors={errors} "
-        f"total_slices={total_slices} total_outputs={total_outputs} skipped_existing={skipped_existing}"
-    )
+    unmatched_labels: list[Path] = []
     if with_labels:
-        print(f"[SUMMARY] no-matching-labels log: {no_match_log_path}")
-
         unmatched_labels = [p for p in label_files if p.resolve() not in matched_labels]
         if unmatched_labels:
             with unmatched_labels_log_path.open("w") as f:
                 for p in unmatched_labels:
                     f.write(str(p) + "\n")
+
+    # ── Write extraction log ──────────────────────────────────────────────────
+    with log_path.open("a") as lf:
+        # Per-volume details (skip already_done to avoid flooding)
+        for res in sorted(all_results, key=lambda r: str(r.img_path)):
+            if res.status == "extracted":
+                lf.write(f"[OK]    {res.img_path.name}  slices={res.n_slices}  outputs={res.n_outputs}\n")
+            elif res.status == "skipped_all":
+                pass  # too numerous, counted in summary
+            elif res.status == "skipped":
+                tag = res.skip_reason or "skip"
+                detail = f"  | {res.error_msg}" if res.error_msg else ""
+                lf.write(f"[SKIP/{tag}]  {res.img_path}{detail}\n")
+            elif res.status == "error":
+                lf.write(f"[ERROR]  {res.img_path}\n  {res.error_msg}\n")
+
+        # Summary
+        lf.write("\n" + "=" * 50 + "\n")
+        lf.write(f"SUMMARY\n")
+        lf.write(f"  extracted        : {extracted}\n")
+        lf.write(f"  skipped          : {skipped}\n")
+        lf.write(f"  errors           : {errors}\n")
+        lf.write(f"  skipped_existing : {skipped_existing}\n")
+        lf.write(f"  total_slices     : {total_slices}\n")
+        lf.write(f"  total_outputs    : {total_outputs}\n")
+        if with_labels:
+            lf.write(f"  unmatched_labels : {len(unmatched_labels)}\n")
+        lf.write("=" * 50 + "\n")
+
+    summary = (
+        f"[SUMMARY] extracted={extracted} skipped={skipped} errors={errors} "
+        f"total_slices={total_slices} total_outputs={total_outputs} skipped_existing={skipped_existing}"
+    )
+    print(summary)
+    if with_labels:
+        if unmatched_labels:
             print(f"[SUMMARY] labels not matched to images: {len(unmatched_labels)}")
             print(f"[SUMMARY] unmatched-labels log: {unmatched_labels_log_path}")
         else:
             print("[SUMMARY] labels not matched to images: 0")
     else:
         print("[SUMMARY] labels disabled: image-only extraction")
+    print(f"[log] {log_path}")
 
 
 if __name__ == "__main__":

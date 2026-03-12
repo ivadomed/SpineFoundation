@@ -21,6 +21,27 @@ import subprocess
 import sys
 import time
 from pathlib import Path
+from typing import Any
+
+
+def _load_config(config_path: Path) -> dict[str, Any]:
+    """Load a YAML config file and return a flat dict of argparse-compatible keys.
+
+    YAML keys use underscores (``work_root``); hyphens also accepted.
+    Boolean YAML values are kept as-is; lists stay as lists.
+    """
+    try:
+        import yaml  # pyyaml
+    except ImportError:
+        raise SystemExit(
+            "pyyaml is required to read a config file: pip install pyyaml"
+        )
+
+    with open(config_path) as fh:
+        raw = yaml.safe_load(fh) or {}
+
+    # Normalise keys: replace hyphens with underscores so they match dest names.
+    return {k.replace("-", "_"): v for k, v in raw.items()}
 
 
 def run_cmd(cmd: list[str], cwd: Path | None = None) -> None:
@@ -47,33 +68,39 @@ def repo_dir_name(url: str) -> str:
     return name or "repo"
 
 
-def stage_clone(repos: list[str], clone_root: Path, git_annex: bool, git_annex_jobs: int) -> None:
-    """Clone each repo and optionally run git annex get ."""
+def rmtree_force(path: Path) -> None:
+    """chmod -R u+w then rm -rf (needed because git-annex sets files read-only)."""
+    run_cmd(["chmod", "-R", "u+w", str(path)])
+    shutil.rmtree(path)
+    print(f"[cleanup] removed {path}")
+
+
+def stage_clone(repos: list[str], clone_root: Path) -> None:
+    """Clone each repo only (git annex get is deferred to per-repo extraction)."""
     if not repos:
         print("[stage 1/5] clone: no --repos provided, skipping")
         return
 
     clone_root.mkdir(parents=True, exist_ok=True)
     for url in repos:
-        name    = repo_dir_name(url)
-        dest    = clone_root / name
+        name = repo_dir_name(url)
+        dest = clone_root / name
         if dest.exists():
             print(f"[clone] already exists: {dest}, skipping git clone")
         else:
             run_cmd(["git", "clone", url, str(dest)])
-
-        if git_annex:
-            annex_cmd = ["git", "annex", "get"]
-            if git_annex_jobs > 1:
-                annex_cmd += [f"--jobs={git_annex_jobs}"]
-            annex_cmd.append(".")
-            run_cmd(annex_cmd, cwd=dest)
 
 
 def main() -> None:
     ap = argparse.ArgumentParser(
         description="End-to-end slice-extraction pipeline (BIDS-friendly).",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+    )
+
+    # ── Config file (parsed first so CLI flags can override it) ───────────────
+    ap.add_argument(
+        "--config", type=Path, default=None, metavar="PATH",
+        help="Path to a YAML config file. CLI flags override config values.",
     )
 
     # ── Stage 1: clone ────────────────────────────────────────────────────────
@@ -91,11 +118,16 @@ def main() -> None:
                     help="Skip git annex get.")
     ap.add_argument("--git-annex-jobs", type=int, default=4,
                     help="Parallelism passed to 'git annex get --jobs'.")
+    ap.add_argument("--git-annex-exclude", nargs="*", default=["derivatives/**"],
+                    metavar="GLOB",
+                    help="Glob patterns to exclude from 'git annex get' (default: derivatives/**).")
 
     # ── Stage 2: extract ──────────────────────────────────────────────────────
-    ap.add_argument("--input-images", type=Path, default=None,
-                    help="Root directory of NIfTI images. "
-                         "If omitted and --repos is given, defaults to --clone-root.")
+    ap.add_argument("--input-images", type=Path, nargs="*", default=None,
+                    metavar="PATH",
+                    help="One or more root directories of NIfTI images. "
+                         "If omitted and --repos is given, defaults to --clone-root. "
+                         "Can be combined with --repos to mix local folders and GitHub repos.")
     ap.add_argument("--input-labels", type=Path, default=None,
                     help="Root of label/derivative NIfTI files (BIDS derivatives).")
     ap.add_argument("--label-suffix", type=str, default="_seg",
@@ -106,8 +138,15 @@ def main() -> None:
     ap.add_argument("--clip-pct", type=float, nargs=2, default=(0.5, 99.5))
     ap.add_argument("--iso-tol", type=float, default=0.1)
     ap.add_argument("--iso-eps-mm", type=float, default=None)
+    ap.add_argument("--workers", type=int, default=8,
+                    help="Number of parallel worker processes for slice extraction (default: 8).")
 
     # ── Stage 3: renumber/tile ────────────────────────────────────────────────
+    ap.set_defaults(renumber=True)
+    ap.add_argument("--renumber", dest="renumber", action="store_true",
+                    help="Run renumber+tile stage (default: on).")
+    ap.add_argument("--no-renumber", dest="renumber", action="store_false",
+                    help="Skip renumber stage entirely; 01_extracted is used directly as final output.")
     ap.set_defaults(tiling=True)
     ap.add_argument("--tiling", dest="tiling", action="store_true",
                     help="Enable tiling during renumber stage (default: on).")
@@ -129,7 +168,7 @@ def main() -> None:
                     choices=["nearest", "bilinear", "bicubic", "lanczos"])
 
     # ── Common ────────────────────────────────────────────────────────────────
-    ap.add_argument("--work-root", type=Path, required=True,
+    ap.add_argument("--work-root", type=Path, default=None,
                     help="Root folder for intermediate and final outputs.")
     ap.add_argument("--keep-intermediate", action="store_true",
                     help="Keep intermediate folders for debugging.")
@@ -143,21 +182,29 @@ def main() -> None:
     ap.add_argument("--no-skip-existing", dest="skip_existing", action="store_false",
                     help="Recompute and overwrite in stages 2/3.")
 
+    # First pass: extract --config only, then inject config values as defaults
+    # so that any explicit CLI flag still takes precedence over the config file.
+    pre, _ = ap.parse_known_args()
+    if pre.config is not None:
+        cfg_dict = _load_config(pre.config)
+        # Path-type arguments must stay as strings here; argparse will convert.
+        ap.set_defaults(**cfg_dict)
+
     args = ap.parse_args()
 
+    if args.work_root is None:
+        ap.error("--work-root is required (or set work_root in the config file).")
+
     # ── Resolve paths ─────────────────────────────────────────────────────────
-    clone_root  = args.clone_root or (args.work_root / "00_cloned")
-    input_images = args.input_images
-    if input_images is None and args.repos:
-        input_images = clone_root
-        print(f"[info] --input-images not set; will use clone root: {input_images}")
-    if input_images is None and args.start_stage <= 2:
-        ap.error("--input-images is required when --repos is empty.")
+    clone_root   = args.clone_root or (args.work_root / "00_cloned")
+    input_images = list(args.input_images) if args.input_images else []
+    if not input_images and not args.repos and args.start_stage <= 2:
+        ap.error("--input-images or --repos is required.")
 
     with_labels = args.input_labels is not None
 
     out_extract  = args.work_root / "01_extracted"
-    out_final    = args.work_root / "02_final"
+    out_final    = out_extract if not args.renumber else args.work_root / "02_final"
     out_resample = args.work_root / "03_resampled"
 
     this_dir     = Path(__file__).resolve().parent
@@ -179,6 +226,7 @@ def main() -> None:
     print(f"clone-root       : {clone_root}")
     print(f"git-annex        : {args.git_annex}")
     print(f"git-annex-jobs   : {args.git_annex_jobs}")
+    print(f"git-annex-exclude: {args.git_annex_exclude}")
     print(f"input-images     : {input_images}")
     print(f"input-labels     : {args.input_labels}")
     print(f"label-suffix     : {args.label_suffix}")
@@ -195,51 +243,91 @@ def main() -> None:
     print(f"interp           : {args.interp}")
     print(f"keep-intermediate: {args.keep_intermediate}")
     print(f"start-stage      : {args.start_stage}")
+    print(f"workers          : {args.workers}")
     print(f"skip-existing    : {args.skip_existing}")
     print("=======================")
 
     t0 = time.perf_counter()
 
     try:
-        # ── Stage 1: clone repos + git annex get ─────────────────────────────
+        # ── Stage 1: skipped — clone+get+extract+rm is done per-repo in stage 2 ─
         if args.start_stage <= 1:
-            print("[stage 1/5] clone + git annex get")
-            t_stage = time.perf_counter()
-            stage_clone(
-                repos=args.repos,
-                clone_root=clone_root,
-                git_annex=args.git_annex,
-                git_annex_jobs=args.git_annex_jobs,
-            )
-            print(f"[stage 1/5 done] {time.perf_counter() - t_stage:.1f}s")
-        else:
-            print("[stage 1/5] skipped (resume)")
+            print("[stage 1/5] clone skipped (handled per-repo in stage 2)")
 
         # ── Stage 2: extract slices ───────────────────────────────────────────
         if args.start_stage <= 2:
-            print("[stage 2/5] extraction")
+            n_sources = len(input_images) + len(args.repos)
+            print(f"[stage 2/5] extraction ({n_sources} source(s))")
             t_stage = time.perf_counter()
-            run_cmd(
-                [
-                    sys.executable, str(extract_py),
-                    "--input-images", str(input_images),
-                    "--output-root",  str(out_extract),
-                    "--train-ratio",  str(args.train_ratio),
-                    "--seed",         str(args.seed),
-                    "--clip-pct",     str(args.clip_pct[0]), str(args.clip_pct[1]),
-                    "--iso-tol",      str(args.iso_tol),
-                    "--label-suffix", args.label_suffix,
-                ]
-                + (["--input-labels",  str(args.input_labels)] if with_labels else [])
-                + (["--iso-eps-mm",    str(args.iso_eps_mm)]   if args.iso_eps_mm is not None else [])
-                + (["--skip-existing"] if args.skip_existing else ["--no-skip-existing"])
-            )
+            base_cmd = [
+                sys.executable, str(extract_py),
+                "--output-root",  str(out_extract),
+                "--train-ratio",  str(args.train_ratio),
+                "--seed",         str(args.seed),
+                "--clip-pct",     str(args.clip_pct[0]), str(args.clip_pct[1]),
+                "--iso-tol",      str(args.iso_tol),
+                "--label-suffix", args.label_suffix,
+            ]
+            if with_labels:
+                base_cmd += ["--input-labels", str(args.input_labels)]
+            if args.iso_eps_mm is not None:
+                base_cmd += ["--iso-eps-mm", str(args.iso_eps_mm)]
+            base_cmd += ["--skip-existing"] if args.skip_existing else ["--no-skip-existing"]
+            base_cmd += ["--workers", str(args.workers)]
+
+            # Local folders first (no annex logic needed).
+            for src in input_images:
+                dataset_name = Path(src).name
+                print(f"[stage 2/5] source (local): {src}  [dataset={dataset_name}]")
+                run_cmd(base_cmd + ["--input-images", str(src), "--dataset-name", dataset_name])
+
+            # Repos: clone → annex get → extract → rm -rf (one at a time to save disk).
+            clone_root.mkdir(parents=True, exist_ok=True)
+            for url in args.repos:
+                name = repo_dir_name(url)
+                dest = clone_root / name
+
+                # Skip entirely if already extracted (any split directory contains this dataset).
+                already_extracted = any(
+                    (out_extract / "image" / split / name).exists()
+                    for split in ("train", "val", "test")
+                )
+                if already_extracted:
+                    print(f"[stage 2/5] [{name}] already extracted — skipping")
+                    continue
+
+                print(f"[stage 2/5] [{name}] git clone...")
+                run_cmd(["git", "clone", url, str(dest)])
+
+                if args.git_annex:
+                    print(f"[stage 2/5] [{name}] git annex get .")
+                    annex_cmd = ["git", "annex", "get"]
+                    if args.git_annex_jobs > 1:
+                        annex_cmd += [f"--jobs={args.git_annex_jobs}"]
+                    for pat in (args.git_annex_exclude or []):
+                        annex_cmd += [f"--exclude={pat}"]
+                    annex_cmd.append(".")
+                    print("[run]", " ".join(annex_cmd))
+                    result = subprocess.run(annex_cmd, cwd=dest)
+                    if result.returncode not in (0, 1):
+                        raise subprocess.CalledProcessError(result.returncode, annex_cmd)
+                    if result.returncode == 1:
+                        print(f"[warn] git annex get finished with partial failures (exit 1) — continuing")
+
+                print(f"[stage 2/5] [{name}] extracting slices...")
+                run_cmd(base_cmd + ["--input-images", str(dest), "--dataset-name", name])
+
+                print(f"[stage 2/5] [{name}] deleting repo...")
+                rmtree_force(dest)
+
             print(f"[stage 2/5 done] {time.perf_counter() - t_stage:.1f}s")
         else:
             print("[stage 2/5] skipped (resume)")
 
         # ── Stage 3: renumber + tile ──────────────────────────────────────────
-        if args.start_stage <= 3:
+        if not args.renumber:
+            print("[stage 3/5] renumber skipped (--no-renumber): using 01_extracted as final output")
+        elif args.start_stage <= 3:
             print("[stage 3/5] renumber pairs")
             t_stage = time.perf_counter()
             run_cmd(
@@ -299,7 +387,7 @@ def main() -> None:
             print("[stage 5/5] in-plane resample disabled (use --resample to enable)")
 
     finally:
-        if not args.keep_intermediate:
+        if not args.keep_intermediate and args.renumber:
             if args.start_stage <= 2:
                 remove_tree(out_extract)
 

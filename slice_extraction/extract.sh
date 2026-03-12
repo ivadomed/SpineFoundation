@@ -1,1 +1,1 @@
-python 05_run_pipeline.py --input-images /home/ge.polymtl.ca/p123239/data/dcm-brno --input-labels /home/ge.polymtl.ca/p123239/data/dcm-brno/derivatives/labels --work-root /home/ge.polymtl.ca/p123239/data/dcm-brno-slices-test --tile-size 384 --tile-overlap-pct 15 --tile-threshold 384 --target-spacing 0.5 --train-ratio 0.9 --seed 28 --no-tiling --keep-intermediate
+/home/ge.polymtl.ca/p123239/.conda/envs/dino/bin/python 05_run_pipeline.py --config /home/ge.polymtl.ca/p123239/SpineFoundation/slice_extraction/config_pipeline_template.yaml
