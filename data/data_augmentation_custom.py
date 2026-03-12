@@ -69,7 +69,6 @@ class DataAugmentationDINO(object):
 
         # first global crop
         self.global_transfo1 = transforms.Compose([
-            transforms.RandomHorizontalFlip(p=0.5),
             transforms.RandomRotation(degrees=15, fill=0),
             intensity_aug,
             transforms.RandomResizedCrop(global_crops_size, scale=global_crops_scale, ratio=(1.0, 1.0), interpolation=InterpolationMode.BICUBIC),
@@ -81,7 +80,6 @@ class DataAugmentationDINO(object):
 
         # second global crop
         self.global_transfo2 = transforms.Compose([
-            transforms.RandomHorizontalFlip(p=0.5),
             transforms.RandomRotation(degrees=15, fill=0),
             intensity_aug,
             transforms.RandomResizedCrop(global_crops_size, scale=global_crops_scale, ratio=(1.0, 1.0), interpolation=InterpolationMode.BICUBIC),
@@ -93,7 +91,6 @@ class DataAugmentationDINO(object):
 
         # transformation for the local small crops
         self.local_transfo = transforms.Compose([
-            transforms.RandomHorizontalFlip(p=0.5),
             transforms.RandomRotation(degrees=15, fill=0),
             intensity_aug,
             transforms.RandomResizedCrop(local_crops_size, scale=local_crops_scale, ratio=(1.0, 1.0), interpolation=InterpolationMode.BICUBIC),

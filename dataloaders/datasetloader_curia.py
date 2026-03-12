@@ -35,7 +35,7 @@ class ZScoreNormalize:
         return (x - mean) / (std + self.eps)
 
 class RGBDatasetWithAugmentation(Dataset):
-    def __init__(self, root='dataset/remote', split='train', augmentation=None, resize=True, size=384):
+    def __init__(self, root='dataset/remote', split='train', augmentation=None, resize=True, size=384, stretch=False):
         
         self.split = split
         self.resize = resize
@@ -44,6 +44,7 @@ class RGBDatasetWithAugmentation(Dataset):
             self.resize_hw = (self.size, self.size)
         else:
             self.resize_hw = tuple(self.size)
+        self.stretch = stretch
         self.rng=random.Random()
 
         folder_path = os.path.join(root, split) 
@@ -71,11 +72,14 @@ class RGBDatasetWithAugmentation(Dataset):
             img = Image.fromarray(img)
 
         tile_size = self.size if isinstance(self.size, int) else min(self.size)
-        w, h = img.size
-        if w >= tile_size and h >= tile_size:
-            img = random_crop_pil(img, tile_size, self.rng)
-        else:
+        if self.stretch:
             img = img.resize((tile_size, tile_size), Image.BICUBIC)
+        else:
+            w, h = img.size
+            if w >= tile_size and h >= tile_size:
+                img = random_crop_pil(img, tile_size, self.rng)
+            else:
+                img = img.resize((tile_size, tile_size), Image.BICUBIC)
 
         img = self.to_gray(img)
         
@@ -104,6 +108,7 @@ class RGBDatasetLoader:
         self.num_workers = cfg.train.num_workers 
         self.resize = getattr(cfg.dataset, "resize", False)
         self.size = getattr(cfg.dataset, "size", (224,224))
+        self.stretch = getattr(cfg.dataset, "stretch", False)
         batch_size = getattr(cfg.train, "batch_size_per_gpu", None)
         if batch_size:
             self.batch_size=batch_size
@@ -122,9 +127,9 @@ class RGBDatasetLoader:
         train_dataset = RGBDatasetWithAugmentation(
             root=self.data_dir,
             split='train',
-            augmentation=augmentation, 
-            #resize=self.resize,
-            size=self.size
+            augmentation=augmentation,
+            size=self.size,
+            stretch=self.stretch
         )
         print('train_dataset len: ',len(train_dataset) ) 
         valid_split = 'val'
@@ -134,9 +139,9 @@ class RGBDatasetLoader:
         
         valid_dataset = RGBDatasetWithAugmentation(
             root=self.data_dir,
-            split=valid_split, 
-            #resize=self.resize,
-            size=self.size
+            split=valid_split,
+            size=self.size,
+            stretch=self.stretch
         )
         sampler=None
         if is_infsampler: 
