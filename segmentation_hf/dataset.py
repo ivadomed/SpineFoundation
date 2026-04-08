@@ -1,3 +1,5 @@
+import hashlib
+import pickle
 import random
 from dataclasses import dataclass
 from pathlib import Path
@@ -81,13 +83,18 @@ def make_sliding_positions(full_size: int, tile_size: int, overlap_px: int) -> L
 
 def list_image_files(folder: Path, only_sagittal: bool = False, only_axial: bool = False) -> List[Path]:
     exts = {".png", ".jpg", ".jpeg", ".bmp", ".tif", ".tiff", ".webp"}
-    files = [p for p in folder.iterdir() if p.is_file() and p.suffix.lower() in exts]
     if only_sagittal and only_axial:
         raise ValueError("only_sagittal and only_axial cannot both be enabled")
-    if only_sagittal:
-        files = [p for p in files if "sag" in p.name.lower()]
-    if only_axial:
-        files = [p for p in files if "ax" in p.name.lower()]
+    files = []
+    for p in folder.rglob("*"):
+        if not (p.is_file() and p.suffix.lower() in exts):
+            continue
+        name_lower = p.name.lower()
+        if only_sagittal and "sag" not in name_lower:
+            continue
+        if only_axial and "ax" not in name_lower:
+            continue
+        files.append(p)
     return sorted(files)
 
 
@@ -103,6 +110,7 @@ class PairedSegmentationDataset(Dataset):
         tile_threshold: int,
         split: str = "train",
         augment: bool = False,
+        cache_dir: str | None = None,
     ):
         self.image_dir = Path(image_dir)
         self.mask_dir = Path(mask_dir)
@@ -120,45 +128,49 @@ class PairedSegmentationDataset(Dataset):
         if not self.mask_dir.exists():
             raise FileNotFoundError(f"Mask directory not found: {self.mask_dir}")
 
-        image_files = list_image_files(self.image_dir, only_sagittal=self.only_sagittal, only_axial=self.only_axial)
-        if not image_files:
-            mode = "sagittal-only" if self.only_sagittal else ("axial-only" if self.only_axial else "all-planes")
-            raise ValueError(f"No images found in {self.image_dir} (mode={mode})")
+        # ── index cache ──────────────────────────────────────────────────────
+        cache_key = hashlib.md5(
+            f"{self.image_dir}|{self.mask_dir}|{image_size}|{only_sagittal}|{only_axial}|{tile_threshold}|{tile_overlap_pct}".encode()
+        ).hexdigest()
+        cache_path = Path(cache_dir) / f"index_{cache_key}.pkl" if cache_dir else None
 
-        pairs: List[Tuple[Path, Path]] = []
-        missing = []
-        for img_path in image_files:
-            mask_path = self.mask_dir / img_path.name
-            if not mask_path.exists():
-                missing.append(img_path.name)
-            else:
-                pairs.append((img_path, mask_path))
+        if cache_path and cache_path.exists():
+            print(f"[dataset:{split}] loading index from cache ({cache_path.name})")
+            with open(cache_path, "rb") as f:
+                cached = pickle.load(f)
+            self.pairs: List[Tuple[str, str]] = cached["pairs"]
+            self.tiles: List[TileRecord] = cached["tiles"]
+            print(f"[dataset:{split}] {len(self.pairs)} pairs, {len(self.tiles)} tiles (from cache)")
+        else:
+            image_files = list_image_files(self.image_dir, only_sagittal=self.only_sagittal, only_axial=self.only_axial)
+            if not image_files:
+                mode = "sagittal-only" if self.only_sagittal else ("axial-only" if self.only_axial else "all-planes")
+                raise ValueError(f"No images found in {self.image_dir} (mode={mode})")
 
-        if missing:
-            sample = ", ".join(missing[:5])
-            raise ValueError(
-                f"Missing masks for {len(missing)} image(s) in {self.mask_dir}. Examples: {sample}"
-            )
+            pairs_raw: List[Tuple[str, str]] = []
+            n_missing = 0
+            for img_path in image_files:
+                rel = img_path.relative_to(self.image_dir)
+                mask_path = self.mask_dir / rel
+                if not mask_path.exists():
+                    n_missing += 1
+                else:
+                    pairs_raw.append((str(img_path), str(mask_path)))
 
-        self.pairs = pairs
-        self.tiles: List[TileRecord] = []
+            if n_missing > 0:
+                print(f"[dataset:{split}] {n_missing}/{len(image_files)} images have no matching mask — skipped.")
 
-        # Read only image headers (no pixel data) to compute tile grid.
-        for pair_idx, (img_path, _) in enumerate(self.pairs):
-            with Image.open(img_path) as img:
-                w, h = img.size  # PIL returns (width, height) without decoding pixels
+            self.pairs = pairs_raw
+            # One entry per pair — no tiling, images are resized on-the-fly in __getitem__
+            self.tiles = list(range(len(self.pairs)))
 
-            must_tile = max(h, w) > self.tile_threshold
-            if not must_tile:
-                self.tiles.append(TileRecord(pair_idx=pair_idx, x0=0, y0=0, must_tile=False))
-                continue
+            if cache_path:
+                cache_path.parent.mkdir(parents=True, exist_ok=True)
+                with open(cache_path, "wb") as f:
+                    pickle.dump({"pairs": self.pairs, "tiles": self.tiles}, f)
+                print(f"[dataset:{split}] index cached to {cache_path.name}")
 
-            xs = make_sliding_positions(w, self.image_size, self.tile_overlap_px)
-            ys = make_sliding_positions(h, self.image_size, self.tile_overlap_px)
-
-            for y0 in ys:
-                for x0 in xs:
-                    self.tiles.append(TileRecord(pair_idx=pair_idx, x0=x0, y0=y0, must_tile=True))
+            print(f"[dataset:{split}] {len(self.pairs)} pairs")
 
         # Per-worker lazy cache: populated on first access within each worker process.
         # Avoids reloading the same image from disk N times per epoch when it produces N tiles.
@@ -194,34 +206,27 @@ class PairedSegmentationDataset(Dataset):
 
     @staticmethod
     def _augment(image: np.ndarray, mask: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
-        """Random spatial + intensity augmentations applied consistently to image and mask."""
-        if random.random() < 0.5:
-            image = np.fliplr(image).copy()
-            mask = np.fliplr(mask).copy()
-        if random.random() < 0.5:
-            image = np.flipud(image).copy()
-            mask = np.flipud(mask).copy()
-        # Small additive Gaussian noise on the already-normalized image
+        """Intensity-only augmentations. No spatial transforms: spine MRI has fixed orientation."""
+        # Additive Gaussian noise
         if random.random() < 0.5:
             image = image + np.random.normal(0.0, 0.05, image.shape).astype(np.float32)
+        # Random brightness/contrast shift (image only)
+        if random.random() < 0.5:
+            image = image * random.uniform(0.85, 1.15) + random.uniform(-0.1, 0.1)
         return image, mask
 
     def __getitem__(self, idx: int) -> Tuple[torch.Tensor, torch.Tensor]:
-        rec = self.tiles[idx]
-        img_path, mask_path = self.pairs[rec.pair_idx]
+        img_path, mask_path = self.pairs[self.tiles[idx]]
 
-        image = self._get_cached_image(rec.pair_idx, img_path)  # float32, values in [0, 255]
-        mask = self._get_cached_mask(rec.pair_idx, mask_path)   # float32, values in {0, 1}
+        with Image.open(img_path) as img:
+            img_resized = img.convert("L").resize((self.image_size, self.image_size), Image.BILINEAR)
+        with Image.open(mask_path) as msk:
+            msk_resized = msk.convert("L").resize((self.image_size, self.image_size), Image.NEAREST)
 
-        # Normalize the full image before tiling so every tile shares the same statistics.
-        # Filling padded regions with 0 is consistent: after z-score 0 == the image mean.
+        image = np.array(img_resized, dtype=np.float32)
+        mask = (np.array(msk_resized, dtype=np.float32) > 0).astype(np.float32)
+
         image_norm = normalize_image_array(image / 255.0)
-
-        if rec.must_tile:
-            image_norm = pad_to_min_hw(image_norm, self.image_size, self.image_size, fill=0.0)
-            mask = pad_to_min_hw(mask, self.image_size, self.image_size, fill=0.0)
-            image_norm = image_norm[rec.y0 : rec.y0 + self.image_size, rec.x0 : rec.x0 + self.image_size].copy()
-            mask = mask[rec.y0 : rec.y0 + self.image_size, rec.x0 : rec.x0 + self.image_size].copy()
 
         if self.augment:
             image_norm, mask = self._augment(image_norm, mask)
@@ -264,6 +269,7 @@ def build_datasets(cfg: TrainConfig) -> Tuple[PairedSegmentationDataset, PairedS
         tile_threshold=cfg.tile_threshold,
         split="train",
         augment=cfg.augment,
+        cache_dir=cfg.cache_dir,
     )
     val_ds = PairedSegmentationDataset(
         image_dir=cfg.val_images,
@@ -275,15 +281,29 @@ def build_datasets(cfg: TrainConfig) -> Tuple[PairedSegmentationDataset, PairedS
         tile_threshold=cfg.tile_threshold,
         split="val",
         augment=False,
+        cache_dir=cfg.cache_dir,
     )
     return train_ds, val_ds
 
 
 def build_train_dataloader(cfg: TrainConfig, train_ds: PairedSegmentationDataset) -> DataLoader:
+    from torch.utils.data import WeightedRandomSampler
+    import numpy as np
+    from PIL import Image
+
+    # Compute per-sample weights: oversample images that contain foreground (spine)
+    weights = []
+    for img_path, mask_path in train_ds.pairs:
+        mask = np.array(Image.open(mask_path).convert("L"))
+        has_fg = float(mask.max() > 0)
+        # Positive images get weight 2, negatives get weight 1
+        weights.append(1.0 + has_fg)
+    sampler = WeightedRandomSampler(weights, num_samples=len(weights), replacement=True)
+
     return DataLoader(
         train_ds,
         batch_size=cfg.batch_size,
-        shuffle=True,
+        sampler=sampler,
         num_workers=cfg.num_workers,
         pin_memory=True,
         drop_last=False,
@@ -334,6 +354,7 @@ class NpzSegmentationDataset(Dataset):
         image_size: int,
         token_key: str = "patch_tokens",
         augment: bool = False,
+        preload: bool = True,
     ):
         self.data_dir   = Path(data_dir)
         self.image_size = image_size
@@ -361,6 +382,40 @@ class NpzSegmentationDataset(Dataset):
         # capture_val_overlays — we expose npz_paths under both attributes.
         self.pairs = [(p, p) for p in self.npz_paths]
 
+        # Preload all tokens + masks into RAM, using /dev/shm as a cross-process
+        # cache so that subsequent trials (same data_dir + token_key) skip the
+        # NPZ loading entirely and read straight from shared RAM.
+        self._tokens_cache: list | None = None
+        self._masks_cache:  list | None = None
+        if preload and self.has_tokens:
+            import hashlib, os
+            cache_key = hashlib.md5(f"{self.data_dir}|{token_key}|{image_size}".encode()).hexdigest()[:12]
+            shm_path  = Path(f"/dev/shm/npz_cache_{cache_key}.pt")
+
+            if shm_path.exists():
+                print(f"[NpzDataset] Loading cache from /dev/shm ({shm_path.name}) …", flush=True)
+                cached = torch.load(shm_path, map_location="cpu", weights_only=False)
+                self._tokens_cache = cached["tokens"]
+                self._masks_cache  = cached["masks"]
+                print(f"[NpzDataset] Cache loaded ({len(self._tokens_cache)} samples).", flush=True)
+            else:
+                print(f"[NpzDataset] Preloading {len(self.npz_paths)} samples into RAM …", flush=True)
+                tokens_list, masks_list = [], []
+                for p in self.npz_paths:
+                    npz = np.load(p)
+                    tokens_list.append(torch.from_numpy(npz[token_key].astype(np.float32)))
+                    mask = (npz["mask"].astype(np.float32) > 0).astype(np.float32)
+                    mask_t = torch.from_numpy(mask).unsqueeze(0).unsqueeze(0)
+                    mask_t = F.interpolate(
+                        mask_t, size=(image_size, image_size), mode="nearest"
+                    ).squeeze(0)
+                    masks_list.append(mask_t)
+                self._tokens_cache = tokens_list
+                self._masks_cache  = masks_list
+                print(f"[NpzDataset] Saving cache to /dev/shm …", flush=True)
+                torch.save({"tokens": tokens_list, "masks": masks_list}, shm_path)
+                print(f"[NpzDataset] Cache saved ({shm_path.name}).", flush=True)
+
     def __len__(self) -> int:
         return len(self.npz_paths)
 
@@ -377,10 +432,11 @@ class NpzSegmentationDataset(Dataset):
         return image, mask
 
     def __getitem__(self, idx: int):
-        d = np.load(self.npz_paths[idx])
-
         if self.has_tokens:
-            # Fast path: return pre-cached tokens + mask at backbone resolution.
+            # Fast path: serve from RAM cache if available.
+            if self._tokens_cache is not None:
+                return self._tokens_cache[idx], self._masks_cache[idx]
+            d = np.load(self.npz_paths[idx])
             patch_tokens = torch.from_numpy(d[self.token_key].astype(np.float32))  # (N, D)
             mask = (d["mask"].astype(np.float32) > 0).astype(np.float32)           # (H, W)
             mask_t = torch.from_numpy(mask).unsqueeze(0).unsqueeze(0)              # (1, 1, H, W)
@@ -424,22 +480,30 @@ def build_npz_datasets(cfg: "TrainConfig") -> Tuple[NpzSegmentationDataset, NpzS
 
 
 def build_npz_train_dataloader(cfg: "TrainConfig", train_ds: NpzSegmentationDataset) -> DataLoader:
+    preloaded = train_ds._tokens_cache is not None
+    nw = 0 if preloaded else cfg.num_workers
     return DataLoader(
         train_ds,
         batch_size=cfg.batch_size,
         shuffle=True,
-        num_workers=cfg.num_workers,
+        num_workers=nw,
         pin_memory=True,
         drop_last=False,
+        persistent_workers=(nw > 0),
+        prefetch_factor=(4 if nw > 0 else None),
     )
 
 
 def build_npz_val_dataloader(cfg: "TrainConfig", val_ds: NpzSegmentationDataset) -> DataLoader:
+    preloaded = val_ds._tokens_cache is not None
+    nw = 0 if preloaded else cfg.num_workers
     return DataLoader(
         val_ds,
         batch_size=cfg.batch_size,
         shuffle=False,
-        num_workers=cfg.num_workers,
+        num_workers=nw,
         pin_memory=True,
         drop_last=False,
+        persistent_workers=(nw > 0),
+        prefetch_factor=(4 if nw > 0 else None),
     )

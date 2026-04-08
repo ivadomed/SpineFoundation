@@ -26,7 +26,7 @@ from .dataset import (
     pad_to_min_hw,
 )
 from .losses import compute_dice_score, dice_loss_with_logits
-from .model import FrozenBackboneWithSegHead
+from .model import FrozenBackboneWithSegHead, TrainableBackboneWithSegHead
 
 
 def safe_import_wandb():
@@ -155,9 +155,11 @@ def run_train_epoch_from_tokens(
     dice_weight: float,
     amp: bool,
     target_hw: tuple[int, int],
+    bce_pos_weight: float = 1.0,
 ) -> tuple[float, float]:
     """Training epoch using pre-cached patch tokens — backbone is never called."""
     model.train()
+    _pos_w_val = bce_pos_weight if bce_pos_weight != 1.0 else None
     bce_loss_fn  = nn.BCEWithLogitsLoss()
     running_loss = 0.0
     running_dice = 0.0
@@ -172,7 +174,8 @@ def run_train_epoch_from_tokens(
 
         with autocast_context(device=device, enabled=amp):
             logits = model.forward_from_tokens(patch_tokens, target_hw)
-            bce    = bce_loss_fn(logits, masks)
+            _pw = torch.tensor([_pos_w_val], device=logits.device) if _pos_w_val is not None else None
+            bce    = torch.nn.functional.binary_cross_entropy_with_logits(logits, masks, pos_weight=_pw)
             dloss  = dice_loss_with_logits(logits, masks)
             loss   = bce_weight * bce + dice_weight * dloss
 
@@ -203,36 +206,52 @@ def run_full_image_eval_npz(
     amp: bool,
     target_hw: tuple[int, int],
     desc: str = "eval",
+    bce_pos_weight: float = 1.0,
+    batch_size: int = 16,
 ) -> tuple[float, float]:
     """Full-image eval for NpzSegmentationDataset.
 
-    Fast path (tokens cached): loads patch_tokens from NPZ, calls
-    forward_from_tokens() — backbone is never used.
+    Fast path (tokens cached): batched DataLoader over pre-cached tokens —
+    backbone is never used.
 
     Slow path (no tokens): falls back to predict_full_image_detiled()
     which runs the full backbone on the raw slice.
     """
+    from torch.utils.data import DataLoader
+
     model.eval()
-    bce_loss_fn  = nn.BCEWithLogitsLoss()
+    _pos_w_val = bce_pos_weight if bce_pos_weight != 1.0 else None
     running_loss = 0.0
     running_dice = 0.0
     num_samples  = 0
 
-    pbar = tqdm(range(len(ds)), desc=desc, leave=False)
-    for idx in pbar:
-        if ds.has_tokens:
-            d            = np.load(ds.npz_paths[idx])
-            patch_tokens = torch.from_numpy(d[ds.token_key].astype(np.float32))
-            mask_np      = (d["mask"].astype(np.float32) > 0)
+    if ds.has_tokens:
+        loader = DataLoader(ds, batch_size=batch_size, shuffle=False,
+                            num_workers=0, pin_memory=(device.type == "cuda"),
+                            drop_last=False)
+        pbar = tqdm(loader, desc=desc, leave=False)
+        for patch_tokens, masks in pbar:
+            patch_tokens = patch_tokens.to(device, non_blocking=True)
+            masks        = masks.to(device, non_blocking=True)
 
-            pt = patch_tokens.unsqueeze(0).to(device)
             with autocast_context(device=device, enabled=amp):
-                logits = model.forward_from_tokens(pt, target_hw)  # (1,1,H,W)
-            logits = logits.cpu()
+                logits = model.forward_from_tokens(patch_tokens, target_hw)
 
-            mask_t = torch.from_numpy(mask_np).unsqueeze(0).unsqueeze(0).float()
-            mask_t = F.interpolate(mask_t, size=target_hw, mode="nearest")
-        else:
+            _pw = torch.tensor([_pos_w_val], device=logits.device) if _pos_w_val is not None else None
+            bce   = torch.nn.functional.binary_cross_entropy_with_logits(logits, masks, pos_weight=_pw)
+            dloss = dice_loss_with_logits(logits, masks)
+            loss  = bce_weight * bce + dice_weight * dloss
+            dice  = compute_dice_score(logits, masks)
+
+            n = patch_tokens.shape[0]
+            running_loss += loss.item() * n
+            running_dice += dice * n
+            num_samples  += n
+            pbar.set_postfix(loss=f"{running_loss / num_samples:.4f}",
+                             dice=f"{running_dice / num_samples:.4f}")
+    else:
+        pbar = tqdm(range(len(ds)), desc=desc, leave=False)
+        for idx in pbar:
             image, mask_np = ds.load_raw_pair(idx)
             logits = predict_full_image_detiled(
                 model=model,
@@ -246,16 +265,17 @@ def run_full_image_eval_npz(
             ).unsqueeze(0)
             mask_t = torch.from_numpy(mask_np).unsqueeze(0).unsqueeze(0).float()
 
-        bce   = bce_loss_fn(logits, mask_t)
-        dloss = dice_loss_with_logits(logits, mask_t)
-        loss  = bce_weight * bce + dice_weight * dloss
-        dice  = compute_dice_score(logits, mask_t)
+            _pw = torch.tensor([_pos_w_val], device=logits.device) if _pos_w_val is not None else None
+            bce   = torch.nn.functional.binary_cross_entropy_with_logits(logits, mask_t, pos_weight=_pw)
+            dloss = dice_loss_with_logits(logits, mask_t)
+            loss  = bce_weight * bce + dice_weight * dloss
+            dice  = compute_dice_score(logits, mask_t)
 
-        running_loss += loss.item()
-        running_dice += dice
-        num_samples  += 1
-        pbar.set_postfix(loss=f"{running_loss / num_samples:.4f}",
-                         dice=f"{running_dice / num_samples:.4f}")
+            running_loss += loss.item()
+            running_dice += dice
+            num_samples  += 1
+            pbar.set_postfix(loss=f"{running_loss / num_samples:.4f}",
+                             dice=f"{running_dice / num_samples:.4f}")
 
     if num_samples == 0:
         return 0.0, 0.0
@@ -263,7 +283,7 @@ def run_full_image_eval_npz(
 
 
 def run_train_epoch(
-    model: FrozenBackboneWithSegHead,
+    model,
     loader,
     optimizer: torch.optim.Optimizer,
     device: torch.device,
@@ -271,10 +291,14 @@ def run_train_epoch(
     bce_weight: float,
     dice_weight: float,
     amp: bool,
+    finetune_backbone: bool = False,
+    bce_pos_weight: float = 1.0,
 ) -> Tuple[float, float]:
     model.train()
-    model.backbone.eval()
+    if not finetune_backbone:
+        model.backbone.eval()
 
+    _pos_w_val = bce_pos_weight if bce_pos_weight != 1.0 else None
     bce_loss_fn = nn.BCEWithLogitsLoss()
     running_loss = 0.0
     running_dice = 0.0
@@ -289,7 +313,8 @@ def run_train_epoch(
 
         with autocast_context(device=device, enabled=amp):
             logits = model(images)
-            bce = bce_loss_fn(logits, masks)
+            _pw = torch.tensor([_pos_w_val], device=logits.device) if _pos_w_val is not None else None
+            bce = torch.nn.functional.binary_cross_entropy_with_logits(logits, masks, pos_weight=_pw)
             dloss = dice_loss_with_logits(logits, masks)
             loss = bce_weight * bce + dice_weight * dloss
 
@@ -385,19 +410,27 @@ def run_full_image_eval(
     amp: bool,
     tile_batch_size: int,
     desc: str = "eval",
+    max_samples: int | None = None,
+    bce_pos_weight: float = 1.0,
 ) -> Tuple[float, float]:
     """Full-image evaluation: tile-stitch each image then compute loss/dice.
 
     Used for both train and val metrics so they are directly comparable —
     both operate on reconstructed full images, not on individual tiles.
     """
+    import random as _random
     model.eval()
+    _pos_w_val = bce_pos_weight if bce_pos_weight != 1.0 else None
     bce_loss_fn = nn.BCEWithLogitsLoss()
     running_loss = 0.0
     running_dice = 0.0
     num_samples = 0
 
-    pbar = tqdm(range(len(ds.pairs)), desc=desc, leave=False, total=len(ds.pairs))
+    indices = list(range(len(ds.pairs)))
+    if max_samples is not None and max_samples < len(indices):
+        indices = _random.sample(indices, max_samples)
+
+    pbar = tqdm(indices, desc=desc, leave=False, total=len(indices))
     for pair_idx in pbar:
         image, mask = ds.load_raw_pair(pair_idx)
 
@@ -413,7 +446,8 @@ def run_full_image_eval(
         )
 
         mask_t = torch.from_numpy(mask).unsqueeze(0).unsqueeze(0).float()
-        bce = bce_loss_fn(logits.unsqueeze(0), mask_t)
+        _pw = torch.tensor([_pos_w_val], device=logits.device) if _pos_w_val is not None else None
+        bce = torch.nn.functional.binary_cross_entropy_with_logits(logits.unsqueeze(0), mask_t, pos_weight=_pw)
         dloss = dice_loss_with_logits(logits.unsqueeze(0), mask_t)
         loss = bce_weight * bce + dice_weight * dloss
         dice = compute_dice_score(logits.unsqueeze(0), mask_t)
@@ -471,7 +505,7 @@ def capture_val_overlays(
         )
 
         sample = {
-            "name": img_path.name,
+            "name": Path(img_path).name,
             "overlay": panel,
             "dice": float(dice),
             "gt_pixels": gt_pixels,
@@ -491,7 +525,7 @@ def capture_val_overlays(
     return examples
 
 
-def train(cfg: TrainConfig) -> None:
+def train(cfg: TrainConfig) -> float:
     set_seed(cfg.seed)
     output_dir = Path(cfg.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -512,9 +546,46 @@ def train(cfg: TrainConfig) -> None:
         train_loader     = build_train_dataloader(cfg, train_ds)
         fast_path        = False
 
-    model = FrozenBackboneWithSegHead(cfg.model_dir).to(device)
-    optimizer = torch.optim.AdamW(model.seg_head.parameters(), lr=cfg.lr, weight_decay=cfg.weight_decay)
+    if cfg.finetune_backbone:
+        model = TrainableBackboneWithSegHead(
+            cfg.model_dir,
+            seg_head_channels=cfg.seg_head_channels,
+            seg_head_dropout=cfg.seg_head_dropout,
+            seg_head_norm=cfg.seg_head_norm,
+            seg_head_nonlin=cfg.seg_head_nonlin,
+            seg_head_depth=cfg.seg_head_depth,
+        ).to(device)
+        optimizer = torch.optim.AdamW([
+            {"params": model.backbone.parameters(), "lr": cfg.lr * cfg.backbone_lr_scale},
+            {"params": model.seg_head.parameters(),  "lr": cfg.lr},
+        ], weight_decay=cfg.weight_decay)
+        print(f"Fine-tuning backbone (lr={cfg.lr * cfg.backbone_lr_scale:.2e}) + head (lr={cfg.lr:.2e})")
+    else:
+        model = FrozenBackboneWithSegHead(
+            cfg.model_dir,
+            seg_head_channels=cfg.seg_head_channels,
+            seg_head_dropout=cfg.seg_head_dropout,
+            seg_head_norm=cfg.seg_head_norm,
+            seg_head_nonlin=cfg.seg_head_nonlin,
+            seg_head_depth=cfg.seg_head_depth,
+        ).to(device)
+        optimizer = torch.optim.AdamW(model.seg_head.parameters(), lr=cfg.lr, weight_decay=cfg.weight_decay)
     scaler = torch.amp.GradScaler("cuda", enabled=cfg.amp and device.type == "cuda")
+
+    # Compile seg head for faster GPU execution (PyTorch 2+, no-op if unavailable)
+    if device.type == "cuda" and hasattr(torch, "compile"):
+        try:
+            model.seg_head = torch.compile(model.seg_head, mode="reduce-overhead")
+            print("[torch.compile] seg_head compiled successfully.")
+        except Exception as e:
+            print(f"[torch.compile] skipped: {e}")
+
+    if cfg.init_seg_head:
+        ckpt = torch.load(cfg.init_seg_head, map_location=device, weights_only=False)
+        state = ckpt["model_state_dict"]
+        seg_head_state = {k.removeprefix("seg_head."): v for k, v in state.items() if k.startswith("seg_head.")}
+        missing, unexpected = model.seg_head.load_state_dict(seg_head_state, strict=True)
+        print(f"Warm-started seg_head from {cfg.init_seg_head} (missing={missing}, unexpected={unexpected})")
 
     wandb_run = None
     if cfg.use_wandb and cfg.wandb_mode != "disabled":
@@ -555,6 +626,7 @@ def train(cfg: TrainConfig) -> None:
                     dice_weight=cfg.dice_weight,
                     amp=cfg.amp,
                     target_hw=target_hw,
+                    bce_pos_weight=cfg.bce_pos_weight,
                 )
             else:
                 run_train_epoch(
@@ -566,19 +638,26 @@ def train(cfg: TrainConfig) -> None:
                     bce_weight=cfg.bce_weight,
                     dice_weight=cfg.dice_weight,
                     amp=cfg.amp,
+                    finetune_backbone=cfg.finetune_backbone,
+                    bce_pos_weight=cfg.bce_pos_weight,
                 )
 
             if use_npz:
-                train_loss, train_dice = run_full_image_eval_npz(
-                    model=model,
-                    ds=train_ds,
-                    device=device,
-                    bce_weight=cfg.bce_weight,
-                    dice_weight=cfg.dice_weight,
-                    amp=cfg.amp,
-                    target_hw=target_hw,
-                    desc="train-eval",
-                )
+                if cfg.skip_train_eval:
+                    train_loss, train_dice = 0.0, 0.0
+                else:
+                    train_loss, train_dice = run_full_image_eval_npz(
+                        model=model,
+                        ds=train_ds,
+                        device=device,
+                        bce_weight=cfg.bce_weight,
+                        dice_weight=cfg.dice_weight,
+                        amp=cfg.amp,
+                        target_hw=target_hw,
+                        desc="train-eval",
+                        bce_pos_weight=cfg.bce_pos_weight,
+                        batch_size=cfg.batch_size,
+                    )
                 val_loss, val_dice = run_full_image_eval_npz(
                     model=model,
                     ds=val_ds,
@@ -588,6 +667,8 @@ def train(cfg: TrainConfig) -> None:
                     amp=cfg.amp,
                     target_hw=target_hw,
                     desc="val",
+                    bce_pos_weight=cfg.bce_pos_weight,
+                    batch_size=cfg.batch_size,
                 )
             else:
                 train_loss, train_dice = run_full_image_eval(
@@ -599,6 +680,8 @@ def train(cfg: TrainConfig) -> None:
                     amp=cfg.amp,
                     tile_batch_size=cfg.batch_size,
                     desc="train-eval",
+                    max_samples=2000,
+                    bce_pos_weight=cfg.bce_pos_weight,
                 )
 
                 val_loss, val_dice = run_full_image_eval(
@@ -610,6 +693,7 @@ def train(cfg: TrainConfig) -> None:
                     amp=cfg.amp,
                     tile_batch_size=cfg.batch_size,
                     desc="val",
+                    bce_pos_weight=cfg.bce_pos_weight,
                 )
 
             want_overlays = (
@@ -684,3 +768,4 @@ def train(cfg: TrainConfig) -> None:
             wandb_run.finish()
 
     print(f"Done. Best val Dice: {best_val_dice:.4f}")
+    return best_val_dice

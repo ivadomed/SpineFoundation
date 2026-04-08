@@ -26,11 +26,23 @@ class TrainConfig:
     save_every: int = 1
     bce_weight: float = 0.5
     dice_weight: float = 0.5
+    bce_pos_weight: float = 1.0
     augment: bool = True
+    skip_train_eval: bool = True
     # NPZ fast path (pre-cached patch tokens)
     npz_train_dir: str | None = None
     npz_val_dir: str | None = None
     patch_token_key: str = "patch_tokens"
+
+    seg_head_channels: int = 256
+    seg_head_dropout: float = 0.0
+    seg_head_norm: str = "batch"
+    seg_head_nonlin: str = "gelu"
+    seg_head_depth: int = 4
+    init_seg_head: str | None = None
+    finetune_backbone: bool = False
+    backbone_lr_scale: float = 0.1
+    cache_dir: str | None = None
 
     use_wandb: bool = False
     wandb_project: str = "spine-seg"
@@ -72,6 +84,27 @@ def parse_args() -> TrainConfig:
 
     parser.add_argument("--bce_weight", type=float, default=0.5)
     parser.add_argument("--dice_weight", type=float, default=0.5)
+    parser.add_argument("--bce_pos_weight", type=float, default=1.0,
+                        help="Positive class weight for BCE loss (default: 1.0 = no weighting). "
+                             "Set to e.g. 100 for highly imbalanced datasets.")
+    parser.add_argument("--seg_head_channels", type=int, default=256,
+                        help="Base channel width for DeepSegHead (default 256, use 64 for small datasets)")
+    parser.add_argument("--seg_head_dropout", type=float, default=0.0,
+                        help="Dropout2d rate in DeepSegHead up-blocks (0=disabled, try 0.1-0.3 for small datasets)")
+    parser.add_argument("--seg_head_norm", type=str, default="batch",
+                        choices=["batch", "group", "instance"],
+                        help="Norm type in DeepSegHead: batch (default), group (better for small datasets), instance")
+    parser.add_argument("--seg_head_nonlin", type=str, default="gelu",
+                        choices=["gelu", "leakyrelu"],
+                        help="Activation in DeepSegHead: gelu (default) or leakyrelu (nnUNet-style)")
+    parser.add_argument("--init_seg_head", type=str, default=None,
+                        help="Path to a checkpoint (.pt) from which to load seg_head weights as warm start")
+    parser.add_argument("--finetune_backbone", action="store_true", default=False,
+                        help="Unfreeze backbone and fine-tune end-to-end with differential LR")
+    parser.add_argument("--backbone_lr_scale", type=float, default=0.1,
+                        help="Backbone LR = lr * backbone_lr_scale (default: 0.1)")
+    parser.add_argument("--cache_dir", type=str, default=None,
+                        help="Directory to cache dataset index (pairs + tiles). Speeds up subsequent runs.")
 
     parser.set_defaults(augment=True)
     parser.add_argument("--augment", dest="augment", action="store_true", help="Enable training augmentations (default: on)")
@@ -152,7 +185,16 @@ def parse_args() -> TrainConfig:
         save_every=args.save_every,
         bce_weight=args.bce_weight,
         dice_weight=args.dice_weight,
+        bce_pos_weight=args.bce_pos_weight,
         augment=args.augment,
+        seg_head_channels=args.seg_head_channels,
+        seg_head_dropout=args.seg_head_dropout,
+        seg_head_norm=args.seg_head_norm,
+        seg_head_nonlin=args.seg_head_nonlin,
+        init_seg_head=args.init_seg_head,
+        finetune_backbone=args.finetune_backbone,
+        backbone_lr_scale=args.backbone_lr_scale,
+        cache_dir=args.cache_dir,
         use_wandb=args.use_wandb,
         wandb_project=args.wandb_project,
         wandb_entity=args.wandb_entity,
