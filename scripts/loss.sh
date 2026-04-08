@@ -1,1 +1,1 @@
-python lossplot.py /home/ge.polymtl.ca/p123239/SpineFoundation/outputs_curia/custom_curia_512/log_files/main_rank0.log -o plots --every 5 --smooth 50 --tail-percent 20 --last-hours 0
+python lossplot.py /home/ge.polymtl.ca/p123239/SpineFoundation/outputs_curia_ft/curia_ft_01extracted/log_files/main_rank0.log -o plots --every 5 --smooth 50 --tail-percent 20 --last-hours 0
