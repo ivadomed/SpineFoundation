@@ -15,10 +15,10 @@ distribution:
   mixed_precision: bf16
   downcast_bf16: 'no'
 train:
-  model_name: 'custom_curia_512'
+  model_name: 'curia_ft_01extracted'
   model_type: 'curia'
   global_batch_size: 164
-  max_iterations: 100000
+  max_iterations: 200000
   gradient_checkpointing_enable: false
   clip_grad: 3.0
   freeze_last_layer: 100
@@ -28,15 +28,15 @@ train:
   warmup_teacher_temp: 0.04
   freeze_backbone_layers: 6
   momentum_teacher: 0.9992
-  centering: 'centering'
+  centering: 'sinkhorn_knopp'
   ibot_separate_head: true
   num_workers: 8
   use_pretrained: false
   checkpoint_path: /home/ge.polymtl.ca/p123239/SpineFoundation/curia_model/models--raidium--curia/snapshots/9657dc56276bc6c9503ef6f8d060879c8bee482f
   generate_samples: true
   PCA_component: 3
-  student_temp: 0.1
   center_momentum: 0.9
+  student_temp: 0.1
   lr: 7.5e-5
   min_lr: 1e-5
   weight_decay: 0.04
@@ -56,7 +56,7 @@ crops:
   local_crops_size: 160
 
 dataset:
-  dataset_path: /home/ge.polymtl.ca/p123239/slice_extractor/out_raw_numero
+  dataset_path: /home/ge.polymtl.ca/p123239/data_work/01_extracted/image
   shuffle: true
   size: 512
 
@@ -66,4 +66,4 @@ output_folders:
   training_samples_dir: training_samples
   training_results_dir: training_results
   log_dir: log_files
-  main_output: outputs_curia
+  main_output: outputs_curia_ft
