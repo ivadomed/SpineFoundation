@@ -133,6 +133,28 @@ python slice_extraction/05_run_pipeline.py \
 
 ---
 
+## Utilisation via fichier de config (recommandé)
+
+Tous les flags CLI peuvent être regroupés dans un fichier YAML et passés avec `--config` :
+
+```bash
+python slice_extraction/05_run_pipeline.py --config slice_extraction/config_pipeline_template.yaml
+```
+
+Le script `extract.sh` est un raccourci qui appelle cette commande directement.
+
+### Fichiers de config disponibles
+
+| Fichier | Description |
+|---------|-------------|
+| `config_pipeline_template.yaml` | Config complète : repos git-annex + images locales, image-only, `renumber: false` |
+| `config_pipeline_template_2.yaml` | Variante avec une liste de `input_images` différente |
+| `config_labels_only.yaml` | Re-clone les repos pour récupérer les `derivatives/` et extraire les labels sur des images déjà extraites (`skip_existing: true`) |
+
+Les clés YAML correspondent exactement aux flags CLI (e.g. `--work-root` → `work_root:`).
+
+---
+
 ## Scripts individuels
 
 ### `01_extract_slices.py`

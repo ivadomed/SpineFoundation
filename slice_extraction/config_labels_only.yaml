@@ -1,0 +1,88 @@
+# Labels-only extraction pipeline
+# Re-clones each dataset but only downloads derivatives/ (not the images).
+# Images are already in 01_extracted — skip_existing prevents re-extraction.
+# Only _seg labels are extracted and paired with existing image PNGs.
+
+work_root: /home/ge.polymtl.ca/p123239/data_work
+
+clone_root: /home/ge.polymtl.ca/p123239/data_work/00_cloned
+
+git_annex: true
+git_annex_jobs: 16
+
+# Download everything (images + derivatives) — needed for label matching
+# Images already in 01_extracted won't be re-written (skip_existing=true handles img+lbl pairs)
+git_annex_exclude:
+  - "sourcedata/**"
+  - "code/**"
+
+repos:
+  - git@data.neuro.polymtl.ca:datasets/sci-zurich.git
+  - git@data.neuro.polymtl.ca:datasets/canproco.git
+  - git@data.neuro.polymtl.ca:datasets/data-multi-subject.git
+  - git@data.neuro.polymtl.ca:datasets/data-single-subject.git
+  - git@data.neuro.polymtl.ca:datasets/dcm-zurich.git
+  - git@data.neuro.polymtl.ca:datasets/dcm-brno.git
+  - git@data.neuro.polymtl.ca:datasets/dcm-oklahoma.git
+  - git@data.neuro.polymtl.ca:datasets/ms-basel-2018.git
+  - git@data.neuro.polymtl.ca:datasets/ms-basel-2020.git
+  - git@data.neuro.polymtl.ca:datasets/ms-karolinska-2020.git
+  - git@data.neuro.polymtl.ca:datasets/ms-nyu.git
+  - git@data.neuro.polymtl.ca:datasets/ms-barcelona-psir.git
+  - git@data.neuro.polymtl.ca:datasets/ms-ucsf-2025.git
+  - git@data.neuro.polymtl.ca:datasets/ms-multi-spine-challenge-2024.git
+  - git@data.neuro.polymtl.ca:datasets/ms-mayo-critical-lesions-2025.git
+  - git@data.neuro.polymtl.ca:datasets/ms-mayo-critical-lesions-2026.git
+  - git@data.neuro.polymtl.ca:datasets/ms-dresden-mp2rage-2025.git
+  - git@data.neuro.polymtl.ca:datasets/sci-colorado.git
+  - git@data.neuro.polymtl.ca:datasets/sci-paris.git
+  - git@data.neuro.polymtl.ca:datasets/nisci-trial.git
+  - git@data.neuro.polymtl.ca:datasets/als-basel-ramira.git
+  - git@data.neuro.polymtl.ca:datasets/hc-lumbar-zurich.git
+  - git@data.neuro.polymtl.ca:datasets/hc-lumbar-shanghai.git
+  - git@data.neuro.polymtl.ca:datasets/hc-ucsf-psir.git
+  - git@data.neuro.polymtl.ca:datasets/hc-leipzig-7t-mp2rage.git
+  - git@data.neuro.polymtl.ca:datasets/pd-mcgill.git
+  - git@data.neuro.polymtl.ca:datasets/nrc-lumbar-balgrist.git
+  - git@data.neuro.polymtl.ca:datasets/gmseg-challenge-2016.git
+  - git@data.neuro.polymtl.ca:datasets/sct-testing-large.git
+  - git@data.neuro.polymtl.ca:datasets/lbp-lumbar-usf-2024.git
+  - git@data.neuro.polymtl.ca:datasets/lbp-lumbar-usf-2025.git
+  - git@data.neuro.polymtl.ca:datasets/spider-challenge-2023.git
+  - git@data.neuro.polymtl.ca:datasets/lumbar-epfl.git
+  - git@data.neuro.polymtl.ca:datasets/lumbar-marseille.git
+  - git@data.neuro.polymtl.ca:datasets/lumbar-nusantara.git
+  - git@data.neuro.polymtl.ca:datasets/lumbar-rsna-challenge-2024.git
+  - git@data.neuro.polymtl.ca:datasets/lumbar-vanderbilt.git
+  - git@data.neuro.polymtl.ca:datasets/inspired.git
+  - git@data.neuro.polymtl.ca:datasets/marseille-rootlets.git
+  - git@data.neuro.polymtl.ca:datasets/twh-rootlets.git
+  - git@data.neuro.polymtl.ca:datasets/beijing-tumor.git
+  - git@data.neuro.polymtl.ca:datasets/bavaria-quebec-spine-ms.git
+  - git@data.neuro.polymtl.ca:datasets/msseg_challenge_2016.git
+  - git@data.neuro.polymtl.ca:datasets/msseg_challenge_2021.git
+  - git@data.neuro.polymtl.ca:datasets/nih-ms-mp2rage.git
+  - git@data.neuro.polymtl.ca:datasets/dcm-zurich-lesions.git
+  - git@data.neuro.polymtl.ca:datasets/dcm-zurich-lesions-20231115.git
+
+label_suffix: _seg
+
+# Images already exist — don't re-extract, only extract labels
+skip_existing: true
+
+# No split change needed — reuse same seed/ratio as original extraction
+train_ratio: 0.999
+seed: 28
+
+clip_pct: [0.5, 99.5]
+iso_tol: 0.1
+workers: 16
+
+# No renumber/tiling needed for labels
+renumber: false
+tiling: false
+
+resample: false
+
+start_stage: 1
+keep_intermediate: false
