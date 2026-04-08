@@ -1,15 +1,36 @@
 
 
-import os 
+import os
+from pathlib import Path
 import torch
 import torchvision.transforms as transforms
 from torch.utils.data import DataLoader, Dataset
-from torchvision.datasets import ImageFolder 
+from torchvision.datasets import ImageFolder
 from PIL import Image, ImageFile, PngImagePlugin
-import torch.distributed as dist 
+import torch.distributed as dist
 import random
-from data.data_augmentation_custom import DataAugmentationDINO 
-from data.samplers import InfiniteSampler 
+from data.data_augmentation_custom import DataAugmentationDINO
+from data.samplers import InfiniteSampler
+
+
+class _FilteredImageFolder(ImageFolder):
+    """ImageFolder that silently skips class subdirectories with no valid image files."""
+    _VALID_EXTS = {'.jpg', '.jpeg', '.png', '.ppm', '.bmp', '.pgm', '.tif', '.tiff', '.webp'}
+
+    def find_classes(self, directory):
+        classes, class_to_idx = super().find_classes(directory)
+        non_empty = [
+            c for c in classes
+            if any(
+                f.suffix.lower() in self._VALID_EXTS
+                for f in Path(directory, c).iterdir()
+                if f.is_file()
+            )
+        ]
+        skipped = set(classes) - set(non_empty)
+        if skipped:
+            print(f"[datasetloader] skipping {len(skipped)} empty class(es): {sorted(skipped)}")
+        return non_empty, {c: class_to_idx[c] for c in non_empty}
  
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 Image.MAX_IMAGE_PIXELS = None
@@ -47,11 +68,11 @@ class RGBDatasetWithAugmentation(Dataset):
         self.stretch = stretch
         self.rng=random.Random()
 
-        folder_path = os.path.join(root, split) 
+        folder_path = os.path.join(root, split)
 
-        self.base_dataset = ImageFolder(
+        self.base_dataset = _FilteredImageFolder(
             root=folder_path,
-            transform=None  
+            transform=None,
         )
 
         self.to_gray = transforms.Compose([ 
