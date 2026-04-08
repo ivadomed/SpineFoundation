@@ -111,6 +111,134 @@ def _masked_avg_pool_tokens(
 
 # ── Build a HuggingFace DatasetDict from a local directory ────────────────────
 
+def load_fold_dataset(data_dir: str, fold_split_csv: str, fold_column: str) -> DatasetDict:
+    """
+    Returns a DatasetDict with "train" and "val" splits determined by a fold-split CSV
+    (e.g. fold_split_RSNA.json).
+
+    CSV format (comma-separated despite the .json extension):
+        subject_id  : e.g. "sub-100206310"
+        is_test     : 1 → subject is reserved for testing; excluded entirely
+        <fold_column>: "train", "val", or empty
+
+    File matching: each NPZ/image filename must start with "<subject_id>_" (BIDS-style).
+    """
+    import csv as _csv
+
+    data_path = Path(data_dir)
+    class_dirs = sorted([d for d in data_path.iterdir() if d.is_dir()])
+    if not class_dirs:
+        raise ValueError(f"No sub-directories found in {data_dir}")
+
+    class_names: List[str] = [d.name for d in class_dirs]
+
+    # ── Parse CSV: build subject_id → split mapping ───────────────────────────
+    train_subjects: set = set()
+    val_subjects: set   = set()
+
+    with open(fold_split_csv, newline="", encoding="utf-8") as fh:
+        reader = _csv.DictReader(fh)
+        if fold_column not in (reader.fieldnames or []):
+            available = (reader.fieldnames or [])[:10]
+            raise ValueError(
+                f"Column '{fold_column}' not found in {fold_split_csv}.\n"
+                f"First 10 columns: {available}"
+            )
+        for row in reader:
+            if row.get("is_test", "0").strip() == "1":
+                continue
+            split = row.get(fold_column, "").strip()
+            sub_id = row["subject_id"].strip()
+            if split == "train":
+                train_subjects.add(sub_id)
+            elif split == "val":
+                val_subjects.add(sub_id)
+
+    if not train_subjects:
+        raise ValueError(f"No training subjects found for column '{fold_column}' in {fold_split_csv}")
+    if not val_subjects:
+        raise ValueError(f"No validation subjects found for column '{fold_column}' in {fold_split_csv}")
+
+    print(f"[fold] column='{fold_column}'  train subjects={len(train_subjects)}  val subjects={len(val_subjects)}")
+
+    # ── Assign files to splits by subject ID prefix ────────────────────────────
+    train_paths: List[str] = []
+    train_labels: List[int] = []
+    val_paths: List[str]   = []
+    val_labels: List[int]  = []
+
+    for label, class_dir in enumerate(class_dirs):
+        files = sorted([
+            f for f in class_dir.iterdir()
+            if f.suffix.lower() in _IMG_EXTS or f.suffix.lower() == _NPZ_EXT
+        ])
+        for f in files:
+            # BIDS-style: "sub-XXXXXXXXXX_acq-..." → split on first '_'
+            sub_id = f.name.split("_")[0]
+            if sub_id in train_subjects:
+                train_paths.append(str(f))
+                train_labels.append(label)
+            elif sub_id in val_subjects:
+                val_paths.append(str(f))
+                val_labels.append(label)
+            # else: subject not in this fold (test set or unassigned) → skip
+
+    if not train_paths:
+        raise ValueError(f"No training files found in {data_dir} matching the given subjects")
+    if not val_paths:
+        raise ValueError(f"No validation files found in {data_dir} matching the given subjects")
+
+    train_ds = Dataset.from_dict({"path": train_paths, "target": train_labels})
+    val_ds   = Dataset.from_dict({"path": val_paths,   "target": val_labels})
+    ds = DatasetDict({"train": train_ds, "val": val_ds})
+    ds.class_names = class_names  # type: ignore[attr-defined]
+    return ds
+
+
+def load_test_dataset(data_dir: str, fold_split_csv: str) -> "Dataset":
+    """
+    Returns a HF Dataset (path, target) for all subjects with is_test=1 in the
+    fold-split CSV.  These are excluded from all training splits.
+    """
+    import csv as _csv
+
+    data_path = Path(data_dir)
+    class_dirs = sorted([d for d in data_path.iterdir() if d.is_dir()])
+    if not class_dirs:
+        raise ValueError(f"No sub-directories found in {data_dir}")
+
+    test_subjects: set = set()
+    with open(fold_split_csv, newline="", encoding="utf-8") as fh:
+        reader = _csv.DictReader(fh)
+        for row in reader:
+            if row.get("is_test", "0").strip() == "1":
+                test_subjects.add(row["subject_id"].strip())
+
+    if not test_subjects:
+        raise ValueError(f"No test subjects (is_test=1) found in {fold_split_csv}")
+
+    print(f"[test] Found {len(test_subjects)} test subjects in {fold_split_csv}")
+
+    paths: List[str]  = []
+    labels: List[int] = []
+    for label, class_dir in enumerate(class_dirs):
+        files = sorted([
+            f for f in class_dir.iterdir()
+            if f.suffix.lower() in _IMG_EXTS or f.suffix.lower() == _NPZ_EXT
+        ])
+        for f in files:
+            sub_id = f.name.split("_")[0]
+            if sub_id in test_subjects:
+                paths.append(str(f))
+                labels.append(label)
+
+    if not paths:
+        raise ValueError(f"No test files found in {data_dir} for the given test subjects")
+
+    print(f"[test] {len(paths)} test samples across {len(class_dirs)} classes")
+    return Dataset.from_dict({"path": paths, "target": labels})
+
+
 def load_local_dataset(data_dir: str, val_split: float = 0.15, seed: int = 42) -> DatasetDict:
     """
     Returns a DatasetDict with "train" and "val" splits built from a local

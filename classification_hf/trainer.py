@@ -47,7 +47,9 @@ class _QuietProgressCallback(ProgressCallback):
 from .dataset import (
     build_patch_token_datasets,
     extract_features_fn,
+    load_fold_dataset,
     load_local_dataset,
+    load_test_dataset,
     preprocess_function,
 )
 from .model import Classifier
@@ -199,9 +201,10 @@ def _plot_training_history(log_history: list, output_dir: str, task: str) -> Non
     print(f"Training curves saved to {out_path}")
 
 
-def _run_final_eval(model, val_dataset, eval_batch_size: int, config, timestamp: str, run_dir: str) -> None:
+def _run_final_eval(model, val_dataset, eval_batch_size: int, config, timestamp: str, run_dir: str,
+                    split_name: str = "val", sample_paths: list = None) -> None:
     """Run final evaluation, print detailed report, write to separate logs.
-    Also saves val_predictions.npz to run_dir for downstream bootstrap analysis."""
+    Saves {split_name}_predictions.npz to run_dir for downstream bootstrap analysis."""
     log_dir = Path(OmegaConf.select(config, "log_dir", default="classification_hf/logs"))
     log_dir.mkdir(parents=True, exist_ok=True)
 
@@ -231,8 +234,9 @@ def _run_final_eval(model, val_dataset, eval_batch_size: int, config, timestamp:
     preds  = np.argmax(logits, axis=-1)
 
     # Save raw predictions for bootstrap analysis
-    pred_path = Path(run_dir) / "val_predictions.npz"
-    np.savez_compressed(str(pred_path), logits=logits, labels=labels)
+    pred_path = Path(run_dir) / f"{split_name}_predictions.npz"
+    sample_names = np.array([Path(p).stem for p in sample_paths]) if sample_paths is not None else np.array([])
+    np.savez_compressed(str(pred_path), logits=logits, labels=labels, sample_names=sample_names)
     print(f"Predictions saved to {pred_path}")
 
     acc          = accuracy_score(labels, preds)
@@ -277,6 +281,65 @@ def _run_final_eval(model, val_dataset, eval_batch_size: int, config, timestamp:
     }
     _merge_into_train_csv(csv_path, row)
     print(f"Results written to {csv_path}")
+
+
+# ── Test-set inference (fold split only) ─────────────────────────────────────
+
+
+def _run_test_eval(model, config, fold_split_csv: str, run_dir: str, timestamp: str,
+                   pt_cache=None) -> None:
+    """
+    Run inference on all is_test=1 subjects and save test_predictions.npz to run_dir.
+
+    Requires the pooled-features cache (pooled_features[_suffix]_dil{N}.pt) in data_dir,
+    since test subjects must go through the same feature extraction as train/val.
+    pt_cache: pre-loaded cache dict (avoids reloading from NFS if already in memory).
+    """
+    from .dataset import _DictDataset
+
+    # ── Build test HF Dataset ─────────────────────────────────────────────────
+    hf_test = load_test_dataset(config.data_dir, fold_split_csv)
+
+    # ── Locate pooled-features cache ──────────────────────────────────────────
+    cache_suffix    = OmegaConf.select(config, "cache_suffix", default="") or ""
+    dilation_radius = int(OmegaConf.select(config, "dilation_radius", default=0))
+    suffix_part     = f"_{cache_suffix}" if cache_suffix else ""
+    pt_path         = Path(config.data_dir) / f"pooled_features{suffix_part}_dil{dilation_radius}.pt"
+
+    if pt_cache is not None:
+        cache = pt_cache
+        print(f"[test] Reusing in-memory cache (skipping NFS reload).")
+    elif not pt_path.exists():
+        print(f"[test] WARNING: cache not found at {pt_path} — skipping test inference")
+        return
+    else:
+        cache = torch.load(pt_path, weights_only=True)
+    path_to_idx = {p: i for i, p in enumerate(cache["paths"])}
+
+    # Filter to paths present in the cache (graceful for partial caches)
+    test_paths   = hf_test["path"]
+    test_targets = hf_test["target"]
+    idxs, keep_targets = [], []
+    missing = 0
+    for p, t in zip(test_paths, test_targets):
+        if p in path_to_idx:
+            idxs.append(path_to_idx[p])
+            keep_targets.append(t)
+        else:
+            missing += 1
+    if missing:
+        print(f"[test] WARNING: {missing} test files not found in cache — skipped")
+    if not idxs:
+        print("[test] No test samples found in cache — skipping test inference")
+        return
+
+    feats  = cache["features"][idxs]                          # (N, D)
+    labels = torch.tensor(keep_targets, dtype=torch.long)     # (N,)
+    test_ds = _DictDataset(torch.utils.data.TensorDataset(feats, labels))
+
+    # ── Inference ─────────────────────────────────────────────────────────────
+    _run_final_eval(model, test_ds, int(config.batch_size), config, timestamp, run_dir,
+                    split_name="test", sample_paths=test_paths)
 
 
 # ── LR scaling (verbatim from curia/trainer.py) ───────────────────────────────
@@ -342,19 +405,31 @@ def instantiate_cache_model_and_dataset(config, train_dataset, val_dataset):
     cache_suffix = OmegaConf.select(config, "cache_suffix", default="") or ""
     token_key    = f"patch_tokens_{cache_suffix}" if cache_suffix else "patch_tokens"
 
+    local_rank = int(os.environ.get("LOCAL_RANK", 0))
+    device     = torch.device(f"cuda:{local_rank}")
+
+    # Fast path: pooled_features .pt cache exists → skip NPZ inspection entirely
+    suffix_part = f"_{cache_suffix}" if cache_suffix else ""
+    pt_path = Path(config.data_dir) / f"pooled_features{suffix_part}_dil{dilation_radius}.pt"
+    use_pt_cache = pt_path.exists() and not force_recompute
+
     # Peek at the first sample to decide whether to load the backbone
     first_path    = train_dataset[0]["path"]
     use_npz_cache = _npz_has_cached(first_path, token_key) and not force_recompute
 
-    local_rank = int(os.environ.get("LOCAL_RANK", 0))
-    device     = torch.device(f"cuda:{local_rank}")
-
     d_first = np.load(first_path)
-    use_patch_tokens = use_npz_cache and token_key in d_first.files
+    use_patch_tokens = use_pt_cache or (use_npz_cache and token_key in d_first.files)
 
     if use_patch_tokens:
-        print(f"[cache] {token_key} detected — using on-the-fly PatchTokenDataset (no Map, no backbone).")
-        hidden_size = int(d_first[token_key].shape[-1])
+        if use_pt_cache:
+            print(f"[cache] {pt_path.name} detected — loading pooled features directly (no Map, no backbone).")
+            _pt_cache = torch.load(pt_path, weights_only=True)
+            hidden_size = int(_pt_cache["features"].shape[1])
+            # Expose cache so callers can reuse it for test-set inference (avoids a second NFS load)
+            instantiate_cache_model_and_dataset._last_pt_cache = _pt_cache
+        else:
+            print(f"[cache] {token_key} detected — using on-the-fly PatchTokenDataset (no Map, no backbone).")
+            hidden_size = int(d_first[token_key].shape[-1])
         train_pt, val_pt = build_patch_token_datasets(
             train_dataset, val_dataset, dilation_radius,
             data_dir=config.data_dir, cache_suffix=cache_suffix, token_key=token_key,
@@ -543,20 +618,27 @@ def main(config) -> None:
         sys.stdout = open(os.devnull, "w")
 
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
+    fold_split_csv = OmegaConf.select(config, "fold_split_csv", default=None)
+    fold_column    = OmegaConf.select(config, "fold_column",    default=None)
     # Each run gets its own subdirectory so previous runs are never overwritten
     task = OmegaConf.select(config, "task", default="run")
     run_tag = datetime.now().strftime("%Y%m%d_%H%M%S") + f"_{os.getpid()}"
-    run_dir = str(Path(config.output_dir) / f"{task}__{run_tag}")
+    run_dir = str(Path(config.output_dir) / f"{task}__{fold_column}__{run_tag}")
     Path(run_dir).mkdir(parents=True, exist_ok=True)
     print(f"Run directory: {run_dir}")
 
     # ── Load local dataset ────────────────────────────────────────────────────
-    ds = load_local_dataset(
-        config.data_dir,
-        val_split=float(OmegaConf.select(config, "val_split", default=0.15)),
-        seed=int(OmegaConf.select(config, "seed", default=42)),
-    )
+
+
+    if fold_split_csv and fold_column:
+        print(f"[fold] Using fold split from {fold_split_csv}  column={fold_column}")
+        ds = load_fold_dataset(config.data_dir, fold_split_csv, fold_column)
+    else:
+        ds = load_local_dataset(
+            config.data_dir,
+            val_split=float(OmegaConf.select(config, "val_split", default=0.15)),
+            seed=int(OmegaConf.select(config, "seed", default=42)),
+        )
     train_dataset = ds["train"]
     val_dataset   = ds["val"]
 
@@ -591,6 +673,16 @@ def main(config) -> None:
     if isinstance(train_dataset, _DD):
         # Pure PyTorch loop — all data on GPU, no DataLoader, no NFS writes.
         _fast_train_linear(model, train_dataset, val_dataset, config, run_dir, task, timestamp)
+        # Test-set inference (only when fold_split_csv is configured)
+        if fold_split_csv and int(os.environ.get("RANK", 0)) == 0:
+            _cached = getattr(instantiate_cache_model_and_dataset, "_last_pt_cache", None)
+            _run_test_eval(model, config, fold_split_csv, run_dir, timestamp, pt_cache=_cached)
+        # Free large cache tensor explicitly so GC doesn't delay process exit
+        _c = getattr(instantiate_cache_model_and_dataset, "_last_pt_cache", None)
+        if _c is not None:
+            instantiate_cache_model_and_dataset._last_pt_cache = None
+            del _c
+        plt.close("all")  # join matplotlib background threads before exit
         if dist.is_available() and dist.is_initialized():
             dist.destroy_process_group()
         if sys.stdout != sys.__stdout__:
@@ -646,6 +738,9 @@ def main(config) -> None:
     if int(os.environ.get("RANK", 0)) == 0:
         _plot_training_history(trainer.state.log_history, run_dir, task)
         _run_final_eval(trainer.model, val_dataset, trainer.args.per_device_eval_batch_size, config, timestamp, run_dir)
+        if fold_split_csv:
+            _cached = getattr(instantiate_cache_model_and_dataset, "_last_pt_cache", None)
+            _run_test_eval(trainer.model, config, fold_split_csv, run_dir, timestamp, pt_cache=_cached)
 
     if sys.stdout != sys.__stdout__:
         sys.stdout.close()

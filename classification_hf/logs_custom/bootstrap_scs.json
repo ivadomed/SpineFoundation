@@ -1,32 +1,32 @@
 {
-  "timestamp": "2026-03-06 12:20:01",
+  "timestamp": "2026-03-17 09:36:27",
   "mode": "trained",
   "task": "scs",
   "dilation_radius": 0,
-  "n_samples": 5736,
+  "n_samples": 7170,
   "n_bootstrap": 1000,
   "seed": 42,
   "point_estimates": {
-    "accuracy": 0.899756,
-    "auc_ovr_macro": 0.940062,
-    "auc_ovr_weighted": 0.950142
+    "accuracy": 0.89484,
+    "auc_ovr_macro": 0.936521,
+    "auc_ovr_weighted": 0.946819
   },
   "bootstrap": {
     "accuracy": {
-      "mean": 0.899734,
-      "ci_low": 0.892259,
-      "ci_high": 0.907427
+      "mean": 0.894798,
+      "ci_low": 0.887723,
+      "ci_high": 0.901953
     },
     "auc_ovr_macro": {
-      "mean": 0.940115,
-      "ci_low": 0.933725,
-      "ci_high": 0.946178
+      "mean": 0.936623,
+      "ci_low": 0.930894,
+      "ci_high": 0.942143
     },
     "auc_ovr_weighted": {
-      "mean": 0.950157,
-      "ci_low": 0.943393,
-      "ci_high": 0.956437
+      "mean": 0.946886,
+      "ci_low": 0.94107,
+      "ci_high": 0.952518
     }
   },
-  "n_runs": 4
+  "n_runs": 5
 }

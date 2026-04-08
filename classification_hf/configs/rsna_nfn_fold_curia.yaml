@@ -1,0 +1,28 @@
+model:
+  model_name: "/home/ge.polymtl.ca/p123239/.cache/huggingface/hub/models--raidium--curia/snapshots/9657dc56276bc6c9503ef6f8d060879c8bee482f"
+  subfolder: "neural_foraminal_narrowing"
+  num_classes: 3
+  attention_cfg: null
+
+data_dir: "/home/ge.polymtl.ca/p123239/data/RSNA_patches_nfn"
+
+# Fold-based split (overrides val_split / seed)
+# fold_column format: regime_<N>_split_<K>_set  (N = n training subjects, K = split index 1-10)
+fold_split_csv: "/home/ge.polymtl.ca/p123239/fold_split_RSNA.json"
+fold_column: "regime_50_split_1_set"
+#50, 100, 200, 300, 400, 500, 750, 1000, all
+epochs: 50
+batch_size: 512
+learning_rate: 0.005          # scaled internally: lr * batch_size / 256
+weight_decay: 0.0001
+num_workers: 8
+eval_steps: 4
+
+dilation_radius: 0
+use_feature_caching: true     # loads pooled_features_custom_dil0.pt
+
+
+task: "nfn"
+log_dir: "/home/ge.polymtl.ca/p123239/SpineFoundation/classification_hf/logs"
+output_dir: "/home/ge.polymtl.ca/p123239/SpineFoundation/outputs_cls/rsna_nfn_fold"
+use_pretrained_head: false
