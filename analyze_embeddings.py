@@ -219,6 +219,9 @@ def extract_embeddings(df: pd.DataFrame, model, processor,
         images = [np.array(Image.open(p).convert("RGB")) for p in batch]
         inputs = processor(images=images, return_tensors="pt")
         inputs = {k: v.to(device) for k, v in inputs.items()}
+        # some processors (e.g. curia) return pixel_values as (B, 1, C, H, W)
+        if "pixel_values" in inputs and inputs["pixel_values"].dim() == 5:
+            inputs["pixel_values"] = inputs["pixel_values"].squeeze(1)
         out = model(**inputs)
         # CLS token → first token of last hidden state
         cls = out.last_hidden_state[:, 0, :].cpu().float().numpy()
