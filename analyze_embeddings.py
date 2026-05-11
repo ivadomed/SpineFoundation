@@ -201,8 +201,8 @@ def collect_files(data_dir: Path, splits: list[str],
 
 def load_model(model_name: str, device: torch.device):
     print(f"Loading model  : {model_name}")
-    processor = AutoImageProcessor.from_pretrained(model_name)
-    model = AutoModel.from_pretrained(model_name).to(device).eval()
+    processor = AutoImageProcessor.from_pretrained(model_name, trust_remote_code=True)
+    model = AutoModel.from_pretrained(model_name, trust_remote_code=True).to(device).eval()
     return model, processor
 
 
