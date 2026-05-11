@@ -216,7 +216,7 @@ def extract_embeddings(df: pd.DataFrame, model, processor,
 
     for i in tqdm(range(0, len(paths), batch_size), desc="Embeddings"):
         batch = paths[i : i + batch_size]
-        images = [Image.open(p).convert("RGB") for p in batch]
+        images = [np.array(Image.open(p).convert("RGB")) for p in batch]
         inputs = processor(images=images, return_tensors="pt")
         inputs = {k: v.to(device) for k, v in inputs.items()}
         out = model(**inputs)
