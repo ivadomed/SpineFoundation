@@ -1,0 +1,26 @@
+# Models (too large for git)
+models/
+
+# Analysis outputs
+analysis_output/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+dist/
+build/
+
+# Data
+*.npy
+*.nii
+*.nii.gz
+
+# Jupyter
+.ipynb_checkpoints/
+
+# OS
+.DS_Store
+Thumbs.db
