@@ -14,6 +14,7 @@ Usage:
 """
 
 import argparse
+import os
 import re
 from pathlib import Path
 
@@ -25,7 +26,8 @@ import pandas as pd
 import torch
 import umap
 from PIL import Image
-from sklearn.linear_model import LogisticRegression
+import torch.nn as nn
+from torch.utils.data import DataLoader, Dataset
 from sklearn.metrics import balanced_accuracy_score
 from sklearn.model_selection import StratifiedKFold
 from sklearn.preprocessing import LabelEncoder, StandardScaler
@@ -199,31 +201,60 @@ def collect_files(data_dir: Path, splits: list[str],
 
 # ─── Model loading ────────────────────────────────────────────────────────────
 
+def model_slug(model_name: str) -> str:
+    return os.path.normpath(model_name).replace("/", "_").lstrip("_.")
+
+
 def load_model(model_name: str, device: torch.device):
     print(f"Loading model  : {model_name}")
     processor = AutoImageProcessor.from_pretrained(model_name, trust_remote_code=True)
     model = AutoModel.from_pretrained(model_name, trust_remote_code=True).to(device).eval()
+    model = torch.compile(model)
     return model, processor
 
 
 # ─── Embedding extraction ─────────────────────────────────────────────────────
 
+class _ImageDataset(Dataset):
+    def __init__(self, paths: list[str], img_mode: str):
+        self.paths = paths
+        self.img_mode = img_mode
+
+    def __len__(self):
+        return len(self.paths)
+
+    def __getitem__(self, idx):
+        return np.array(Image.open(self.paths[idx]).convert(self.img_mode))
+
+
 @torch.no_grad()
 def extract_embeddings(df: pd.DataFrame, model, processor,
-                       device: torch.device, batch_size: int) -> np.ndarray:
-    paths = df["path"].tolist()
-    all_embs: list[np.ndarray] = []
+                       device: torch.device, batch_size: int,
+                       num_workers: int = 8) -> np.ndarray:
+    inner = model._orig_mod if hasattr(model, "_orig_mod") else model
+    img_mode = "L" if getattr(inner.config, "num_channels", 3) == 1 else "RGB"
 
-    for i in tqdm(range(0, len(paths), batch_size), desc="Embeddings"):
-        batch = paths[i : i + batch_size]
-        images = [np.array(Image.open(p).convert("RGB")) for p in batch]
+    def collate(images):
         inputs = processor(images=images, return_tensors="pt")
-        inputs = {k: v.to(device) for k, v in inputs.items()}
-        # some processors (e.g. curia) return pixel_values as (B, 1, C, H, W)
-        if "pixel_values" in inputs and inputs["pixel_values"].dim() == 5:
-            inputs["pixel_values"] = inputs["pixel_values"].squeeze(1)
-        out = model(**inputs)
-        # CLS token → first token of last hidden state
+        # drop any spurious size-1 dims (e.g. (B,3,1,H,W) → (B,3,H,W))
+        if "pixel_values" in inputs and inputs["pixel_values"].dim() > 4:
+            pv = inputs["pixel_values"]
+            new_shape = [pv.shape[0]] + [s for s in pv.shape[1:] if s != 1]
+            inputs["pixel_values"] = pv.reshape(new_shape)
+        return inputs
+
+    loader = DataLoader(
+        _ImageDataset(df["path"].tolist(), img_mode),
+        batch_size=batch_size, num_workers=num_workers,
+        collate_fn=collate, pin_memory=True, prefetch_factor=2,
+    )
+
+    use_fp16 = device.type == "cuda"
+    all_embs: list[np.ndarray] = []
+    for inputs in tqdm(loader, desc="Embeddings"):
+        inputs = {k: v.to(device, non_blocking=True) for k, v in inputs.items()}
+        with torch.autocast("cuda", dtype=torch.float16, enabled=use_fp16):
+            out = model(**inputs)
         cls = out.last_hidden_state[:, 0, :].cpu().float().numpy()
         all_embs.append(cls)
 
@@ -235,11 +266,29 @@ def extract_embeddings(df: pd.DataFrame, model, processor,
 def run_umap(embeddings: np.ndarray,
              n_neighbors: int, min_dist: float) -> np.ndarray:
     print("Running UMAP…")
-    reducer = umap.UMAP(
-        n_neighbors=n_neighbors, min_dist=min_dist,
-        n_components=2, random_state=42, verbose=True,
-    )
-    return reducer.fit_transform(embeddings)
+    try:
+        import ctypes, os as _os
+        _conda = "/home/ge.polymtl.ca/p123239/.conda/envs/FM"
+        _os.environ.setdefault("CONDA_PREFIX", _conda)
+        ctypes.CDLL(f"{_conda}/lib/libnvJitLink.so.13", mode=ctypes.RTLD_GLOBAL)
+        from cuml.manifold import UMAP as cuUMAP
+        import cupy as cp
+        print("  Using GPU UMAP (cuML)")
+        X_gpu = cp.array(embeddings.astype(np.float32))
+        reducer = cuUMAP(
+            n_neighbors=n_neighbors, min_dist=min_dist,
+            n_components=2, output_type="numpy",
+        )
+        return reducer.fit_transform(X_gpu)
+    except Exception as e:
+        import traceback; traceback.print_exc()
+        print(f"  cuML unavailable ({type(e).__name__}: {e}), falling back to CPU UMAP")
+        reducer = umap.UMAP(
+            n_neighbors=n_neighbors, min_dist=min_dist,
+            n_components=2, random_state=42, verbose=True,
+            n_jobs=-1, low_memory=False,
+        )
+        return reducer.fit_transform(embeddings)
 
 
 def _make_colormap(labels: list[str]) -> dict[str, tuple]:
@@ -279,8 +328,48 @@ def plot_umap(coords: np.ndarray, df: pd.DataFrame,
 
 # ─── Linear probing ───────────────────────────────────────────────────────────
 
+def _fit_linear_probe(
+    X_train: np.ndarray, y_train: np.ndarray,
+    X_val: np.ndarray, y_val: np.ndarray,
+    n_classes: int, device: torch.device,
+    epochs: int = 300, lr: float = 1e-2,
+    batch_size: int = 512, weight_decay: float = 1e-4,
+) -> np.ndarray:
+    n_features = X_train.shape[1]
+
+    counts = np.bincount(y_train, minlength=n_classes).astype(float)
+    counts = np.where(counts == 0, 1, counts)
+    weights = torch.tensor(1.0 / counts, dtype=torch.float32, device=device)
+
+    model = nn.Linear(n_features, n_classes).to(device)
+    optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
+    criterion = nn.CrossEntropyLoss(weight=weights)
+
+    X_t = torch.tensor(X_train, dtype=torch.float32, device=device)
+    y_t = torch.tensor(y_train, dtype=torch.long, device=device)
+
+    model.train()
+    n = len(X_t)
+    for _ in range(epochs):
+        perm = torch.randperm(n, device=device)
+        for i in range(0, n, batch_size):
+            idx = perm[i : i + batch_size]
+            optimizer.zero_grad()
+            criterion(model(X_t[idx]), y_t[idx]).backward()
+            optimizer.step()
+
+    model.eval()
+    with torch.no_grad():
+        X_v = torch.tensor(X_val, dtype=torch.float32, device=device)
+        pred = model(X_v).argmax(dim=1).cpu().numpy()
+    return pred
+
+
 def linear_probing(embeddings: np.ndarray, df: pd.DataFrame,
                    columns: list[str], n_splits: int = 5) -> pd.DataFrame:
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    print(f"  Linear probing device: {device}")
+
     scaler = StandardScaler()
     X = scaler.fit_transform(embeddings)
     rows = []
@@ -296,17 +385,16 @@ def linear_probing(embeddings: np.ndarray, df: pd.DataFrame,
 
         le = LabelEncoder()
         y = le.fit_transform(y_raw)
-
-        clf = LogisticRegression(
-            max_iter=2000, C=1.0, solver="lbfgs",
-            class_weight="balanced", multi_class="auto", random_state=42,
-        )
+        n_classes = len(classes)
 
         skf = StratifiedKFold(n_splits=n_splits, shuffle=True, random_state=42)
         scores = []
         for train_idx, val_idx in skf.split(X, y):
-            clf.fit(X[train_idx], y[train_idx])
-            pred = clf.predict(X[val_idx])
+            pred = _fit_linear_probe(
+                X[train_idx], y[train_idx],
+                X[val_idx], y[val_idx],
+                n_classes, device,
+            )
             scores.append(balanced_accuracy_score(y[val_idx], pred))
 
         mean, std = float(np.mean(scores)), float(np.std(scores))
@@ -377,10 +465,16 @@ def main() -> None:
     parser.add_argument("--batch_size",  type=int, default=32)
     parser.add_argument("--max_per_dataset", type=int, default=None,
                         help="Cap images per dataset (useful for quick tests)")
+    parser.add_argument("--orientation", default=None,
+                        help="Keep only this orientation (e.g. ax, sag, cor)")
     parser.add_argument("--umap_neighbors", type=int, default=15)
     parser.add_argument("--umap_min_dist", type=float, default=0.1)
+    parser.add_argument("--num_workers",  type=int, default=8,
+                        help="DataLoader worker processes for image loading")
     parser.add_argument("--no_umap",            action="store_true")
     parser.add_argument("--no_linear_probing",  action="store_true")
+    parser.add_argument("--recompute",          action="store_true",
+                        help="Recompute embeddings even if cached files exist")
     parser.add_argument("--device",      default=None,
                         help="'cuda', 'cpu', or 'mps'. Auto-detected if omitted.")
     args = parser.parse_args()
@@ -407,18 +501,33 @@ def main() -> None:
     if df.empty:
         print("No PNG files found. Check --data_dir.")
         return
+    if args.orientation:
+        df = df[df["orientation"] == args.orientation].reset_index(drop=True)
+        print(f"Filtered to orientation='{args.orientation}': {len(df):,} images")
+        if df.empty:
+            print("No images left after filtering. Check --orientation value.")
+            return
     print(f"Found {len(df):,} images across {df['dataset'].nunique()} datasets")
     print(df[["split", "dataset", "contrast", "orientation",
               "body_part", "pathology"]].describe(include="all").to_string())
 
     # ── Model + embeddings ──
-    model, processor = load_model(args.model, device)
-    embeddings = extract_embeddings(df, model, processor, device, args.batch_size)
-    print(f"Embedding shape: {embeddings.shape}")
-
-    np.save(output_dir / "embeddings.npy", embeddings)
-    df.to_csv(output_dir / "metadata.csv", index=False)
-    print("Saved embeddings.npy + metadata.csv")
+    slug        = model_slug(args.model)
+    orient_slug = f"_{args.orientation}" if args.orientation else ""
+    cache_emb   = output_dir / f"embeddings_{slug}{orient_slug}.npy"
+    cache_meta  = output_dir / f"metadata_{slug}{orient_slug}.csv"
+    if not args.recompute and cache_emb.exists() and cache_meta.exists():
+        print(f"Loading cached embeddings from {cache_emb} …")
+        embeddings = np.load(cache_emb)
+        df = pd.read_csv(cache_meta)
+        print(f"Embedding shape: {embeddings.shape}")
+    else:
+        model, processor = load_model(args.model, device)
+        embeddings = extract_embeddings(df, model, processor, device, args.batch_size, args.num_workers)
+        print(f"Embedding shape: {embeddings.shape}")
+        np.save(cache_emb, embeddings)
+        df.to_csv(cache_meta, index=False)
+        print("Saved embeddings.npy + metadata.csv")
 
     probe_cols = ["contrast", "orientation", "body_part", "pathology", "split"]
     umap_cols  = ["contrast", "orientation", "body_part", "pathology",
@@ -437,7 +546,7 @@ def main() -> None:
         results = linear_probing(embeddings, df, probe_cols)
         results.to_csv(output_dir / "linear_probing_results.csv", index=False)
         plot_linear_probing(results, output_dir)
-        print("\n" + results.to_string(index=False))
+        print("\n" + results.drop(columns=["classes"]).to_string(index=False))
 
     print(f"\nAll outputs saved to {output_dir}/")
 
