@@ -28,7 +28,7 @@ import umap
 from PIL import Image
 import torch.nn as nn
 from torch.utils.data import DataLoader, Dataset
-from sklearn.metrics import balanced_accuracy_score
+from sklearn.metrics import balanced_accuracy_score, confusion_matrix, classification_report
 from sklearn.model_selection import StratifiedKFold
 from sklearn.preprocessing import LabelEncoder, StandardScaler
 from tqdm import tqdm
@@ -366,7 +366,8 @@ def _fit_linear_probe(
 
 
 def linear_probing(embeddings: np.ndarray, df: pd.DataFrame,
-                   columns: list[str], n_splits: int = 5) -> pd.DataFrame:
+                   columns: list[str], output_dir: Path,
+                   n_splits: int = 5) -> pd.DataFrame:
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"  Linear probing device: {device}")
 
@@ -389,6 +390,7 @@ def linear_probing(embeddings: np.ndarray, df: pd.DataFrame,
 
         skf = StratifiedKFold(n_splits=n_splits, shuffle=True, random_state=42)
         scores = []
+        all_y_true, all_y_pred = [], []
         for train_idx, val_idx in skf.split(X, y):
             pred = _fit_linear_probe(
                 X[train_idx], y[train_idx],
@@ -396,22 +398,97 @@ def linear_probing(embeddings: np.ndarray, df: pd.DataFrame,
                 n_classes, device,
             )
             scores.append(balanced_accuracy_score(y[val_idx], pred))
+            all_y_true.append(y[val_idx])
+            all_y_pred.append(pred)
 
         mean, std = float(np.mean(scores)), float(np.std(scores))
         chance = 1.0 / len(classes)
         print(f"  {col:30s}  bal_acc={mean:.3f} ± {std:.3f}  "
               f"(chance={chance:.3f}, n_classes={len(classes)})")
+
+        y_true_all = np.concatenate(all_y_true)
+        y_pred_all = np.concatenate(all_y_pred)
+
+        cm = confusion_matrix(y_true_all, y_pred_all, labels=np.arange(n_classes))
+
+        report = classification_report(
+            y_true_all, y_pred_all,
+            labels=np.arange(n_classes),
+            target_names=le.classes_,
+            output_dict=True, zero_division=0,
+        )
+
+        # per-class specificity = TN / (TN + FP)
+        specificity_per_class = {}
+        for i, cls in enumerate(le.classes_):
+            tp = cm[i, i]
+            fn = cm[i, :].sum() - tp
+            fp = cm[:, i].sum() - tp
+            tn = cm.sum() - tp - fn - fp
+            specificity_per_class[cls] = tn / (tn + fp) if (tn + fp) > 0 else 0.0
+
+        per_class_records = []
+        for cls in le.classes_:
+            r = report.get(cls, {})
+            per_class_records.append({
+                "class":       cls,
+                "precision":   round(r.get("precision", 0), 4),
+                "recall":      round(r.get("recall", 0), 4),      # sensitivity
+                "specificity": round(specificity_per_class[cls], 4),
+                "f1_score":    round(r.get("f1-score", 0), 4),
+                "support":     int(r.get("support", 0)),
+            })
+        per_class_df = pd.DataFrame(per_class_records)
+        per_class_df.to_csv(output_dir / f"linear_probing_{col}_per_class.csv", index=False)
+
+        if n_classes <= 20:
+            _plot_confusion_matrix(cm, le.classes_, output_dir, col)
+
+        acc  = report.get("accuracy", 0.0)
         rows.append({
-            "attribute":         col,
-            "n_classes":         len(classes),
-            "classes":           ", ".join(classes),
-            "chance":            round(chance, 4),
-            "bal_acc_mean":      round(mean, 4),
-            "bal_acc_std":       round(std, 4),
-            "delta_over_chance": round(mean - chance, 4),
+            "attribute":            col,
+            "n_classes":            len(classes),
+            "classes":              ", ".join(classes),
+            "chance":               round(chance, 4),
+            "accuracy":             round(acc, 4),
+            "bal_acc_mean":         round(mean, 4),
+            "bal_acc_std":          round(std, 4),
+            "delta_over_chance":    round(mean - chance, 4),
+            "macro_precision":      round(report["macro avg"]["precision"], 4),
+            "macro_recall":         round(report["macro avg"]["recall"], 4),
+            "macro_f1":             round(report["macro avg"]["f1-score"], 4),
+            "weighted_precision":   round(report["weighted avg"]["precision"], 4),
+            "weighted_recall":      round(report["weighted avg"]["recall"], 4),
+            "weighted_f1":          round(report["weighted avg"]["f1-score"], 4),
+            "macro_specificity":    round(np.mean(list(specificity_per_class.values())), 4),
         })
 
     return pd.DataFrame(rows)
+
+
+def _plot_confusion_matrix(cm: np.ndarray, class_names: np.ndarray,
+                            output_dir: Path, col: str) -> None:
+    cm_norm = cm.astype(float) / cm.sum(axis=1, keepdims=True).clip(min=1)
+    n = len(class_names)
+    fig, ax = plt.subplots(figsize=(max(6, n * 0.7), max(5, n * 0.6)))
+    im = ax.imshow(cm_norm, interpolation="nearest", cmap="Blues", vmin=0, vmax=1)
+    plt.colorbar(im, ax=ax, fraction=0.046, pad=0.04)
+    ax.set_xticks(np.arange(n)); ax.set_yticks(np.arange(n))
+    ax.set_xticklabels(class_names, rotation=45, ha="right", fontsize=7)
+    ax.set_yticklabels(class_names, fontsize=7)
+    thresh = 0.5
+    for i in range(n):
+        for j in range(n):
+            ax.text(j, i, f"{cm_norm[i, j]:.2f}",
+                    ha="center", va="center", fontsize=6,
+                    color="white" if cm_norm[i, j] > thresh else "black")
+    ax.set_xlabel("Predicted"); ax.set_ylabel("True")
+    ax.set_title(f"Confusion matrix — {col} (row-normalized)")
+    plt.tight_layout()
+    out_path = output_dir / f"confusion_matrix_{col}.png"
+    fig.savefig(out_path, dpi=150, bbox_inches="tight")
+    plt.close(fig)
+    print(f"  Saved {out_path.name}")
 
 
 def plot_linear_probing(results: pd.DataFrame, output_dir: Path) -> None:
@@ -467,6 +544,8 @@ def main() -> None:
                         help="Cap images per dataset (useful for quick tests)")
     parser.add_argument("--orientation", default=None,
                         help="Keep only this orientation (e.g. ax, sag, cor)")
+    parser.add_argument("--datasets", default=None,
+                        help="Comma-separated list of dataset names to keep")
     parser.add_argument("--umap_neighbors", type=int, default=15)
     parser.add_argument("--umap_min_dist", type=float, default=0.1)
     parser.add_argument("--num_workers",  type=int, default=8,
@@ -507,6 +586,13 @@ def main() -> None:
         if df.empty:
             print("No images left after filtering. Check --orientation value.")
             return
+    if args.datasets:
+        keep = [d.strip() for d in args.datasets.split(",")]
+        df = df[df["dataset"].isin(keep)].reset_index(drop=True)
+        print(f"Filtered to {len(keep)} datasets: {len(df):,} images")
+        if df.empty:
+            print("No images left after filtering. Check --datasets value.")
+            return
     print(f"Found {len(df):,} images across {df['dataset'].nunique()} datasets")
     print(df[["split", "dataset", "contrast", "orientation",
               "body_part", "pathology"]].describe(include="all").to_string())
@@ -543,7 +629,7 @@ def main() -> None:
     # ── Linear probing ──
     if not args.no_linear_probing:
         print("Running linear probing…")
-        results = linear_probing(embeddings, df, probe_cols)
+        results = linear_probing(embeddings, df, probe_cols, output_dir)
         results.to_csv(output_dir / "linear_probing_results.csv", index=False)
         plot_linear_probing(results, output_dir)
         print("\n" + results.drop(columns=["classes"]).to_string(index=False))
