@@ -29,6 +29,7 @@ import umap
 from PIL import Image
 import torch.nn as nn
 from torch.utils.data import DataLoader, Dataset
+from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import balanced_accuracy_score, confusion_matrix, classification_report
 from sklearn.model_selection import StratifiedGroupKFold, StratifiedKFold
 from sklearn.preprocessing import LabelEncoder, StandardScaler
@@ -84,7 +85,7 @@ DATASET_BODY_PART: dict[str, str] = {
     "sci-colorado":                   "cervical",
     "sci-paris":                      "cervical",
     "sci-zurich":                     "cervical",
-    "sct-testing-large":              "mixed",
+    "sct-testing-large":              "unknown",
     "spider-challenge-2023":          "lumbar",
     "twh-rootlets":                   "rootlets",
 }
@@ -134,8 +135,8 @@ DATASET_PATHOLOGY: dict[str, str] = {
     "sci-colorado":                   "SCI",
     "sci-paris":                      "SCI",
     "sci-zurich":                     "SCI",
-    "sct-testing-large":              "mixed",
-    "spider-challenge-2023":          "mixed",
+    "sct-testing-large":              "unknown",
+    "spider-challenge-2023":          "unknown",
     "twh-rootlets":                   "healthy",
 }
 
@@ -358,8 +359,15 @@ def _fit_linear_probe(
     epochs: int = 300, lr: float = 1e-2,
     batch_size: int = 4096, weight_decay: float = 1e-4,
 ) -> np.ndarray:
-    n_features = X_train.shape[1]
+    if device.type == "cpu":
+        clf = LogisticRegression(
+            max_iter=1000, C=1.0 / (weight_decay + 1e-12),
+            class_weight="balanced", solver="lbfgs",
+        )
+        clf.fit(X_train, y_train)
+        return clf.predict(X_val)
 
+    n_features = X_train.shape[1]
     counts = np.bincount(y_train, minlength=n_classes).astype(float)
     counts = np.where(counts == 0, 1, counts)
     weights = torch.tensor(1.0 / counts, dtype=torch.float32, device=device)
@@ -372,14 +380,15 @@ def _fit_linear_probe(
     y_t = torch.tensor(y_train, dtype=torch.long, device=device)
 
     model.train()
-    n = len(X_t)
+    prev_loss = float("inf")
     for _ in range(epochs):
-        perm = torch.randperm(n, device=device)
-        for i in range(0, n, batch_size):
-            idx = perm[i : i + batch_size]
-            optimizer.zero_grad()
-            criterion(model(X_t[idx]), y_t[idx]).backward()
-            optimizer.step()
+        optimizer.zero_grad()
+        loss = criterion(model(X_t), y_t)
+        loss.backward()
+        optimizer.step()
+        if abs(prev_loss - loss.item()) < 1e-6:
+            break
+        prev_loss = loss.item()
 
     model.eval()
     with torch.no_grad():
@@ -392,8 +401,10 @@ def linear_probing(embeddings: np.ndarray, df: pd.DataFrame,
                    columns: list[str], output_dir: Path,
                    holdout_emb: np.ndarray | None = None,
                    holdout_df: pd.DataFrame | None = None,
-                   n_splits: int = 5, suffix: str = "") -> pd.DataFrame:
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+                   n_splits: int = 5, suffix: str = "",
+                   device: torch.device | None = None) -> pd.DataFrame:
+    if device is None:
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"  Linear probing device: {device}")
 
     use_group_cv = "subject" in df.columns and df["subject"].nunique() >= n_splits
@@ -413,6 +424,13 @@ def linear_probing(embeddings: np.ndarray, df: pd.DataFrame,
         if col not in df.columns:
             continue
         y_raw = df[col].fillna("unknown").astype(str)
+        valid_mask = y_raw != "unknown"
+        if valid_mask.sum() == 0:
+            print(f"  {col}: no valid labels – skipping")
+            continue
+        y_raw = y_raw[valid_mask].reset_index(drop=True)
+        emb_col = embeddings[valid_mask.values]
+        groups_col = groups[valid_mask.values] if use_group_cv else None
         classes = sorted(y_raw.unique())
         if len(classes) < 2:
             print(f"  {col}: only 1 class – skipping")
@@ -422,13 +440,13 @@ def linear_probing(embeddings: np.ndarray, df: pd.DataFrame,
         y = le.fit_transform(y_raw)
         n_classes = len(classes)
 
-        split_iter = cv.split(embeddings, y, groups=groups) if use_group_cv else cv.split(embeddings, y)
+        split_iter = cv.split(emb_col, y, groups=groups_col) if use_group_cv else cv.split(emb_col, y)
         scores = []
         all_y_true, all_y_pred = [], []
         for train_idx, val_idx in split_iter:
             scaler = StandardScaler()
-            X_train = scaler.fit_transform(embeddings[train_idx])
-            X_val   = scaler.transform(embeddings[val_idx])
+            X_train = scaler.fit_transform(emb_col[train_idx])
+            X_val   = scaler.transform(emb_col[val_idx])
             pred = _fit_linear_probe(
                 X_train, y[train_idx],
                 X_val,   y[val_idx],
@@ -443,56 +461,41 @@ def linear_probing(embeddings: np.ndarray, df: pd.DataFrame,
         print(f"  {col:30s}  CV bal_acc={mean:.3f} ± {std:.3f}  "
               f"(chance={chance:.3f}, n_classes={len(classes)})", end="")
 
-        # ── Holdout evaluation ──────────────────────────────────────────────
+        # ── Holdout evaluation (all holdout images) ─────────────────────────
         holdout_bal_acc = None
         if holdout_emb is not None and holdout_df is not None and col in holdout_df.columns:
             y_holdout_raw = holdout_df[col].fillna("unknown").astype(str)
-            known_mask = y_holdout_raw.isin(le.classes_).values
+            holdout_valid = (y_holdout_raw != "unknown").values
+            if holdout_valid.sum() == 0:
+                print()
+                continue
+            y_holdout_raw = y_holdout_raw[holdout_valid].reset_index(drop=True)
+            holdout_emb_valid = holdout_emb[holdout_valid]
 
             scaler_final = StandardScaler()
-            X_train_final = scaler_final.fit_transform(embeddings)
+            X_train_final = scaler_final.fit_transform(emb_col)
+            X_holdout_all = scaler_final.transform(holdout_emb_valid)
 
+            pred_all = _fit_linear_probe(
+                X_train_final, y,
+                X_holdout_all, np.zeros(len(X_holdout_all), dtype=int),
+                n_classes, device,
+            )
+            pred_labels_all = le.inverse_transform(pred_all)
+
+            row_names = sorted(y_holdout_raw.unique())
+            col_names = list(le.classes_)
+            _plot_rectangular_confusion_matrix(
+                y_holdout_raw.values, pred_labels_all,
+                row_names, col_names,
+                output_dir, col, suffix + "_holdout",
+            )
+
+            known_mask = y_holdout_raw.isin(le.classes_).values
             if known_mask.sum() >= 1:
-                y_holdout = le.transform(y_holdout_raw[known_mask])
-                X_holdout = scaler_final.transform(holdout_emb[known_mask])
-                pred_holdout = _fit_linear_probe(
-                    X_train_final, y,
-                    X_holdout, y_holdout,
-                    n_classes, device,
-                )
-                holdout_bal_acc = float(balanced_accuracy_score(y_holdout, pred_holdout))
+                y_holdout_known = le.transform(y_holdout_raw[known_mask])
+                holdout_bal_acc = float(balanced_accuracy_score(y_holdout_known, pred_all[known_mask]))
                 print(f"  holdout_bal_acc={holdout_bal_acc:.3f}", end="")
-
-                cm_holdout = confusion_matrix(y_holdout, pred_holdout, labels=np.arange(n_classes))
-                if n_classes <= 20:
-                    _plot_confusion_matrix(cm_holdout, le.classes_, output_dir, col, suffix + "_holdout")
-
-            # For unseen holdout labels (e.g. holdout datasets), show where the model places them
-            unseen_mask = ~known_mask
-            if unseen_mask.sum() >= 1:
-                X_unseen = scaler_final.transform(holdout_emb[unseen_mask])
-                pred_unseen = _fit_linear_probe(
-                    X_train_final, y,
-                    X_unseen, np.zeros(unseen_mask.sum(), dtype=int),
-                    n_classes, device,
-                )
-                pred_labels = le.inverse_transform(pred_unseen)
-                unseen_true = y_holdout_raw[unseen_mask].values
-                dist_df = (
-                    pd.DataFrame({"true": unseen_true, "predicted_as": pred_labels})
-                    .groupby(["true", "predicted_as"])
-                    .size()
-                    .reset_index(name="count")
-                )
-                dist_df["frac"] = dist_df.groupby("true")["count"].transform(lambda x: x / x.sum())
-                dist_df["frac"] = dist_df["frac"].round(3)
-                out_path = output_dir / f"linear_probing_{col}_unseen_holdout{suffix}.csv"
-                dist_df.to_csv(out_path, index=False)
-                print(f"\n    Unseen holdout prediction distribution saved to {out_path.name}")
-                for true_ds, grp in dist_df.groupby("true"):
-                    top = grp.sort_values("frac", ascending=False).head(3)
-                    top_str = ", ".join(f"{r.predicted_as}({r.frac:.0%})" for _, r in top.iterrows())
-                    print(f"    {true_ds} → {top_str}")
         print()
 
         y_true_all = np.concatenate(all_y_true)
@@ -558,6 +561,44 @@ def linear_probing(embeddings: np.ndarray, df: pd.DataFrame,
     return pd.DataFrame(rows)
 
 
+def _plot_rectangular_confusion_matrix(
+    true_labels: np.ndarray, pred_labels: np.ndarray,
+    row_names: list[str], col_names: list[str],
+    output_dir: Path, col: str, suffix: str = "",
+) -> None:
+    n_rows, n_cols = len(row_names), len(col_names)
+    cm = np.zeros((n_rows, n_cols), dtype=int)
+    row_idx = {r: i for i, r in enumerate(row_names)}
+    col_idx = {c: i for i, c in enumerate(col_names)}
+    for t, p in zip(true_labels, pred_labels):
+        if t in row_idx and p in col_idx:
+            cm[row_idx[t], col_idx[p]] += 1
+    cm_norm = cm.astype(float) / cm.sum(axis=1, keepdims=True).clip(min=1)
+
+    fig, ax = plt.subplots(figsize=(max(6, n_cols * 0.9), max(3, n_rows * 0.7)))
+    im = ax.imshow(cm_norm, interpolation="nearest", cmap="Blues", vmin=0, vmax=1)
+    plt.colorbar(im, ax=ax, fraction=0.046, pad=0.04)
+    ax.set_xticks(np.arange(n_cols)); ax.set_yticks(np.arange(n_rows))
+    ax.set_xticklabels(col_names, rotation=45, ha="right", fontsize=7)
+    ax.set_yticklabels(row_names, fontsize=7)
+    for i in range(n_rows):
+        for j in range(n_cols):
+            ax.text(j, i, f"{cm_norm[i, j]:.2f}\n({cm[i, j]:,})",
+                    ha="center", va="center", fontsize=6,
+                    color="white" if cm_norm[i, j] > 0.5 else "black")
+    ax.set_xlabel("Predicted (train datasets)")
+    ax.set_ylabel("True (holdout datasets)")
+    title = f"Holdout dataset classification — {col}"
+    if suffix:
+        title += f"  [{suffix.lstrip('_')}]"
+    ax.set_title(title)
+    plt.tight_layout()
+    out_path = output_dir / f"confusion_matrix_{col}{suffix}.png"
+    fig.savefig(out_path, dpi=150, bbox_inches="tight")
+    plt.close(fig)
+    print(f"  Saved {out_path.name}")
+
+
 def _plot_confusion_matrix(cm: np.ndarray, class_names: np.ndarray,
                             output_dir: Path, col: str, suffix: str = "") -> None:
     cm_norm = cm.astype(float) / cm.sum(axis=1, keepdims=True).clip(min=1)
@@ -571,7 +612,7 @@ def _plot_confusion_matrix(cm: np.ndarray, class_names: np.ndarray,
     thresh = 0.5
     for i in range(n):
         for j in range(n):
-            ax.text(j, i, f"{cm_norm[i, j]:.2f}",
+            ax.text(j, i, f"{cm_norm[i, j]:.2f}\n({cm[i, j]:,})",
                     ha="center", va="center", fontsize=6,
                     color="white" if cm_norm[i, j] > thresh else "black")
     ax.set_xlabel("Predicted"); ax.set_ylabel("True")
@@ -796,7 +837,8 @@ def main() -> None:
     if not args.no_linear_probing:
         print("Running linear probing…")
         results = linear_probing(train_emb, train_df, probe_cols, output_dir,
-                                 holdout_emb=holdout_emb, holdout_df=holdout_df)
+                                 holdout_emb=holdout_emb, holdout_df=holdout_df,
+                                 device=device)
         results.to_csv(output_dir / "linear_probing_results.csv", index=False)
         plot_linear_probing(results, output_dir)
         drop_cols = [c for c in ["classes"] if c in results.columns]
