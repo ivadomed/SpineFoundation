@@ -3,6 +3,9 @@ models/
 
 # Analysis outputs
 analysis_output/
+analysis_output_*/
+seg_results/
+lesion_probing_results.*
 
 # Python
 __pycache__/
@@ -19,6 +22,8 @@ build/
 *.nii.gz
 *.csv
 *.png
+*.pdf
+*.pt
 
 # Jupyter
 .ipynb_checkpoints/

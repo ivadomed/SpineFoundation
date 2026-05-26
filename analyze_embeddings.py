@@ -141,6 +141,26 @@ DATASET_PATHOLOGY: dict[str, str] = {
 }
 
 
+# ─── Per-subject pathology overrides from external TSV files ─────────────────
+
+_SCT_TESTING_LARGE_TSV = Path(__file__).parent / "sct_testing_large_participants.tsv"
+_PATHOLOGY_REMAP = {"HC": "healthy", "n/a": "unknown", "": "unknown"}
+
+def _load_sct_testing_large_pathology() -> dict[str, str]:
+    if not _SCT_TESTING_LARGE_TSV.exists():
+        return {}
+    df = pd.read_csv(_SCT_TESTING_LARGE_TSV, sep="\t", usecols=["participant_id", "pathology"])
+    result = {}
+    for _, row in df.iterrows():
+        subj = str(row["participant_id"]).strip()
+        pat  = str(row["pathology"]).strip()
+        pat  = _PATHOLOGY_REMAP.get(pat, pat)
+        result[subj] = pat
+    return result
+
+_SCT_SUBJECT_PATHOLOGY: dict[str, str] = _load_sct_testing_large_pathology()
+
+
 # ─── File-level metadata parsing ─────────────────────────────────────────────
 
 _CONTRAST_RE = re.compile(r"^sub-[^_]+_(.*)")
@@ -215,7 +235,11 @@ def collect_files(data_dir: Path, splits: list[str],
                     "split": split,
                     "dataset": dataset,
                     "body_part": DATASET_BODY_PART.get(dataset, "unknown"),
-                    "pathology": DATASET_PATHOLOGY.get(dataset, "unknown"),
+                    "pathology": (
+                        _SCT_SUBJECT_PATHOLOGY.get(meta.get("subject", ""), "unknown")
+                        if dataset == "sct-testing-large"
+                        else DATASET_PATHOLOGY.get(dataset, "unknown")
+                    ),
                     **meta,
                 })
 
@@ -229,12 +253,69 @@ def model_slug(model_name: str) -> str:
     return os.path.normpath(model_name).replace("/", "_").lstrip("_.")
 
 
+def _is_mricore(model_name: str) -> bool:
+    """Detect MRI-CORE model by presence of .pth checkpoint in the directory."""
+    p = Path(model_name)
+    return p.is_dir() and any(p.glob("*.pth"))
+
+
 def load_model(model_name: str, device: torch.device):
     print(f"Loading model  : {model_name}")
+    if _is_mricore(model_name):
+        return _load_mricore(model_name, device)
     processor = AutoImageProcessor.from_pretrained(model_name, trust_remote_code=True)
     model = AutoModel.from_pretrained(model_name, trust_remote_code=True).to(device).eval()
     model = torch.compile(model)
     return model, processor
+
+
+def _load_mricore(model_dir: str, device: torch.device):
+    """Load MRI-CORE (SAM ViT-B) from local directory containing a .pth checkpoint."""
+    import sys, types, argparse
+    repo = str(Path(__file__).parent / "models" / "mricore_repo")
+    if repo not in sys.path:
+        sys.path.insert(0, repo)
+    from models.sam import sam_model_registry
+
+    args = argparse.Namespace(
+        if_encoder_adapter=False,
+        if_mask_decoder_adapter=False,
+        encoder_adapter_depths=[0, 1, 10, 11],
+        decoder_adapt_depth=2,
+        arch="vit_b",
+    )
+    ckpt = next(Path(model_dir).glob("*.pth"))
+    print(f"  Checkpoint    : {ckpt.name}")
+    model = sam_model_registry["vit_b"](
+        args, checkpoint=ckpt, num_classes=1,
+        image_size=256, pretrained_sam=False,
+    ).to(device).eval()
+
+    # Lightweight processor-like object
+    processor = _MRICoreProcessor(image_size=256)
+    return model, processor
+
+
+class _MRICoreProcessor:
+    """Minimal image processor for MRI-CORE: resize + [0,1] normalize + 3-channel."""
+    def __init__(self, image_size: int = 256):
+        self.image_size = image_size
+
+    def __call__(self, images, return_tensors="pt"):
+        import torchvision.transforms.functional as TF
+        tensors = []
+        for img in images:
+            # img is np.ndarray (H,W) or (H,W,3) from PIL.convert("RGB")
+            t = torch.from_numpy(img).float()
+            if t.ndim == 2:
+                t = t.unsqueeze(0).repeat(3, 1, 1)   # (3,H,W)
+            else:
+                t = t.permute(2, 0, 1)               # (3,H,W)
+            t = t / 255.0
+            t = TF.resize(t, [self.image_size, self.image_size],
+                          interpolation=TF.InterpolationMode.BICUBIC, antialias=True)
+            tensors.append(t)
+        return {"pixel_values": torch.stack(tensors)}
 
 
 # ─── Embedding extraction ─────────────────────────────────────────────────────
@@ -254,13 +335,22 @@ class _ImageDataset(Dataset):
 @torch.no_grad()
 def extract_embeddings(df: pd.DataFrame, model, processor,
                        device: torch.device, batch_size: int,
-                       num_workers: int = 8) -> np.ndarray:
-    inner = model._orig_mod if hasattr(model, "_orig_mod") else model
-    img_mode = "L" if getattr(inner.config, "num_channels", 3) == 1 else "RGB"
+                       num_workers: int = 8) -> tuple[np.ndarray, np.ndarray]:
+    """Returns (cls_embeddings, patch_mean_embeddings), both shape (N, D)."""
+    is_mricore = isinstance(processor, _MRICoreProcessor)
+
+    if is_mricore:
+        img_mode, n_reg = "RGB", 0
+        print("  MRI-CORE mode: SAM ViT-B encoder → global avg pool (256-dim)")
+    else:
+        inner = model._orig_mod if hasattr(model, "_orig_mod") else model
+        img_mode = "L" if getattr(inner.config, "num_channels", 3) == 1 else "RGB"
+        n_reg = getattr(inner.config, "num_register_tokens", 0)
+        if n_reg:
+            print(f"  Model has {n_reg} register token(s) — skipping them in patch_mean")
 
     def collate(images):
         inputs = processor(images=images, return_tensors="pt")
-        # drop any spurious size-1 dims (e.g. (B,3,1,H,W) → (B,3,H,W))
         if "pixel_values" in inputs and inputs["pixel_values"].dim() > 4:
             pv = inputs["pixel_values"]
             new_shape = [pv.shape[0]] + [s for s in pv.shape[1:] if s != 1]
@@ -274,15 +364,23 @@ def extract_embeddings(df: pd.DataFrame, model, processor,
     )
 
     use_fp16 = device.type == "cuda"
-    all_embs: list[np.ndarray] = []
+    cls_list:   list[np.ndarray] = []
+    patch_list: list[np.ndarray] = []
     for inputs in tqdm(loader, desc="Embeddings"):
-        inputs = {k: v.to(device, non_blocking=True) for k, v in inputs.items()}
+        pv = inputs["pixel_values"].to(device, non_blocking=True)
         with torch.autocast("cuda", dtype=torch.float16, enabled=use_fp16):
-            out = model(**inputs)
-        cls = out.last_hidden_state[:, 0, :].cpu().float().numpy()
-        all_embs.append(cls)
+            if is_mricore:
+                feat = model.image_encoder(pv).float()  # (B, 256, H', W')
+                emb  = feat.mean(dim=[2, 3])             # (B, 256) global avg pool
+                cls_list.append(emb.cpu().numpy())
+                patch_list.append(emb.cpu().numpy())     # same — no CLS/patch distinction
+            else:
+                out = model(**inputs)
+                hs  = out.last_hidden_state.float()      # (B, 1+N_reg+N_patches, D)
+                cls_list.append(hs[:, 0, :].cpu().numpy())
+                patch_list.append(hs[:, 1 + n_reg:, :].mean(dim=1).cpu().numpy())
 
-    return np.vstack(all_embs)
+    return np.vstack(cls_list), np.vstack(patch_list)
 
 
 # ─── UMAP ────────────────────────────────────────────────────────────────────
@@ -367,17 +465,27 @@ def _fit_linear_probe(
         clf.fit(X_train, y_train)
         return clf.predict(X_val)
 
-    n_features = X_train.shape[1]
-    counts = np.bincount(y_train, minlength=n_classes).astype(float)
+    # accept either numpy arrays or GPU tensors
+    if isinstance(X_train, np.ndarray):
+        X_t = torch.tensor(X_train, dtype=torch.float32, device=device)
+        X_v = torch.tensor(X_val,   dtype=torch.float32, device=device)
+    else:
+        X_t, X_v = X_train, X_val
+
+    if isinstance(y_train, np.ndarray):
+        y_t = torch.tensor(y_train, dtype=torch.long, device=device)
+    else:
+        y_t = y_train
+
+    n_features = X_t.shape[1]
+    counts = np.bincount(y_train if isinstance(y_train, np.ndarray) else y_train.cpu().numpy(),
+                         minlength=n_classes).astype(float)
     counts = np.where(counts == 0, 1, counts)
     weights = torch.tensor(1.0 / counts, dtype=torch.float32, device=device)
 
     model = nn.Linear(n_features, n_classes).to(device)
     optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
     criterion = nn.CrossEntropyLoss(weight=weights)
-
-    X_t = torch.tensor(X_train, dtype=torch.float32, device=device)
-    y_t = torch.tensor(y_train, dtype=torch.long, device=device)
 
     model.train()
     prev_loss = float("inf")
@@ -392,7 +500,6 @@ def _fit_linear_probe(
 
     model.eval()
     with torch.no_grad():
-        X_v = torch.tensor(X_val, dtype=torch.float32, device=device)
         pred = model(X_v).argmax(dim=1).cpu().numpy()
     return pred
 
@@ -440,18 +547,37 @@ def linear_probing(embeddings: np.ndarray, df: pd.DataFrame,
         y = le.fit_transform(y_raw)
         n_classes = len(classes)
 
+        # pre-transfer to GPU once per probe
+        if device.type == "cuda":
+            emb_gpu = torch.tensor(emb_col, dtype=torch.float32, device=device)
+        else:
+            emb_gpu = None
+
         split_iter = cv.split(emb_col, y, groups=groups_col) if use_group_cv else cv.split(emb_col, y)
         scores = []
         all_y_true, all_y_pred = [], []
+        y_gpu = torch.tensor(y, dtype=torch.long, device=device) if emb_gpu is not None else None
         for train_idx, val_idx in split_iter:
-            scaler = StandardScaler()
-            X_train = scaler.fit_transform(emb_col[train_idx])
-            X_val   = scaler.transform(emb_col[val_idx])
-            pred = _fit_linear_probe(
-                X_train, y[train_idx],
-                X_val,   y[val_idx],
-                n_classes, device,
-            )
+            if emb_gpu is not None:
+                X_tr_t = emb_gpu[train_idx]
+                mean_t = X_tr_t.mean(0, keepdim=True)
+                std_t  = X_tr_t.std(0, keepdim=True).clamp(min=1e-8)
+                X_train_t = (X_tr_t - mean_t) / std_t
+                X_val_t   = (emb_gpu[val_idx] - mean_t) / std_t
+                pred = _fit_linear_probe(
+                    X_train_t, y_gpu[train_idx],
+                    X_val_t,   y_gpu[val_idx],
+                    n_classes, device,
+                )
+            else:
+                scaler = StandardScaler()
+                X_train = scaler.fit_transform(emb_col[train_idx])
+                X_val   = scaler.transform(emb_col[val_idx])
+                pred = _fit_linear_probe(
+                    X_train, y[train_idx],
+                    X_val,   y[val_idx],
+                    n_classes, device,
+                )
             scores.append(balanced_accuracy_score(y[val_idx], pred))
             all_y_true.append(y[val_idx])
             all_y_pred.append(pred)
@@ -472,26 +598,39 @@ def linear_probing(embeddings: np.ndarray, df: pd.DataFrame,
             y_holdout_raw = y_holdout_raw[holdout_valid].reset_index(drop=True)
             holdout_emb_valid = holdout_emb[holdout_valid]
 
-            scaler_final = StandardScaler()
-            X_train_final = scaler_final.fit_transform(emb_col)
-            X_holdout_all = scaler_final.transform(holdout_emb_valid)
-
-            pred_all = _fit_linear_probe(
-                X_train_final, y,
-                X_holdout_all, np.zeros(len(X_holdout_all), dtype=int),
-                n_classes, device,
-            )
+            if emb_gpu is not None:
+                mean_f = emb_gpu.mean(0, keepdim=True)
+                std_f  = emb_gpu.std(0, keepdim=True).clamp(min=1e-8)
+                X_train_final_t = (emb_gpu - mean_f) / std_f
+                hv_t = torch.tensor(holdout_emb_valid, dtype=torch.float32, device=device)
+                X_holdout_all_t = (hv_t - mean_f) / std_f
+                pred_all = _fit_linear_probe(
+                    X_train_final_t, y_gpu,
+                    X_holdout_all_t, torch.zeros(len(X_holdout_all_t), dtype=torch.long, device=device),
+                    n_classes, device,
+                )
+            else:
+                scaler_final = StandardScaler()
+                X_train_final = scaler_final.fit_transform(emb_col)
+                X_holdout_all = scaler_final.transform(holdout_emb_valid)
+                pred_all = _fit_linear_probe(
+                    X_train_final, y,
+                    X_holdout_all, np.zeros(len(X_holdout_all), dtype=int),
+                    n_classes, device,
+                )
             pred_labels_all = le.inverse_transform(pred_all)
 
-            row_names = sorted(y_holdout_raw.unique())
+            known_mask = y_holdout_raw.isin(le.classes_).values
+            # for dataset probe all holdout are unseen → show all; otherwise filter to known
+            plot_mask = known_mask if known_mask.sum() > 0 else np.ones(len(y_holdout_raw), dtype=bool)
+            row_names = sorted(y_holdout_raw[plot_mask].unique())
             col_names = list(le.classes_)
             _plot_rectangular_confusion_matrix(
-                y_holdout_raw.values, pred_labels_all,
+                y_holdout_raw[plot_mask].values, pred_labels_all[plot_mask],
                 row_names, col_names,
                 output_dir, col, suffix + "_holdout",
             )
 
-            known_mask = y_holdout_raw.isin(le.classes_).values
             if known_mask.sum() >= 1:
                 y_holdout_known = le.transform(y_holdout_raw[known_mask])
                 holdout_bal_acc = float(balanced_accuracy_score(y_holdout_known, pred_all[known_mask]))
@@ -663,6 +802,36 @@ def plot_linear_probing(results: pd.DataFrame, output_dir: Path,
     print(f"  Saved {out_path.name}")
 
 
+def _plot_cls_vs_patch(cls_res: pd.DataFrame, patch_res: pd.DataFrame,
+                       output_dir: Path) -> None:
+    merged = cls_res[["attribute", "bal_acc_mean"]].rename(
+        columns={"bal_acc_mean": "CLS"}
+    ).merge(
+        patch_res[["attribute", "bal_acc_mean"]].rename(
+            columns={"bal_acc_mean": "patch_mean"}
+        ),
+        on="attribute",
+    )
+    if merged.empty:
+        return
+    x = np.arange(len(merged))
+    w = 0.35
+    fig, ax = plt.subplots(figsize=(max(8, len(merged) * 1.6), 5))
+    ax.bar(x - w / 2, merged["CLS"],        w, label="CLS token",  color="steelblue", alpha=0.85)
+    ax.bar(x + w / 2, merged["patch_mean"], w, label="patch mean", color="darkorange", alpha=0.85)
+    ax.set_xticks(x)
+    ax.set_xticklabels(merged["attribute"], rotation=25, ha="right")
+    ax.set_ylabel("Balanced accuracy (5-fold CV)")
+    ax.set_title("CLS token vs patch mean — linear probing")
+    ax.set_ylim(0, 1.1)
+    ax.legend()
+    plt.tight_layout()
+    out_path = output_dir / "linear_probing_cls_vs_patch_mean.png"
+    fig.savefig(out_path, dpi=150, bbox_inches="tight")
+    plt.close(fig)
+    print(f"  Saved {out_path.name}")
+
+
 # ─── Main ─────────────────────────────────────────────────────────────────────
 
 def main() -> None:
@@ -746,6 +915,7 @@ def main() -> None:
     orient_slug = f"_{args.orientation}" if args.orientation else ""
     cache_emb   = cache_dir / f"embeddings_{slug}{orient_slug}.npy"
     cache_meta  = cache_dir / f"metadata_{slug}{orient_slug}.csv"
+    cache_patch = cache_dir / f"patch_mean_{slug}{orient_slug}.npy"
     if not args.recompute and cache_emb.exists() and cache_meta.exists():
         print(f"Loading cached embeddings from {cache_emb} …")
         embeddings = np.load(cache_emb)
@@ -757,21 +927,34 @@ def main() -> None:
         if args.datasets:
             keep = [d.strip() for d in args.datasets.split(",")]
             mask &= df_cache["dataset"].isin(keep)
+        if args.split != "both":
+            mask &= df_cache["split"] == args.split
         df = df_cache[mask].reset_index(drop=True)
         embeddings = embeddings[mask.values]
+        patch_mean = np.load(cache_patch)[mask.values] if cache_patch.exists() else None
+        if patch_mean is not None:
+            print(f"Patch-mean shape after filtering: {patch_mean.shape}")
         print(f"Embedding shape after filtering: {embeddings.shape}")
         parsed = df["path"].apply(lambda p: parse_filename(Path(p).name))
         if "spacing_mm" not in df.columns:
             df["spacing_mm"] = parsed.apply(lambda d: d.get("spacing_mm", float("nan")))
         if "subject" not in df.columns:
             df["subject"] = parsed.apply(lambda d: d.get("subject", "unknown"))
+        df["body_part"] = df["dataset"].map(lambda d: DATASET_BODY_PART.get(d, "unknown"))
+        df["pathology"] = df.apply(
+            lambda r: _SCT_SUBJECT_PATHOLOGY.get(r["subject"], "unknown")
+            if r["dataset"] == "sct-testing-large"
+            else DATASET_PATHOLOGY.get(r["dataset"], "unknown"),
+            axis=1,
+        )
     else:
         model, processor = load_model(args.model, device)
-        embeddings = extract_embeddings(df, model, processor, device, args.batch_size, args.num_workers)
+        embeddings, patch_mean = extract_embeddings(df, model, processor, device, args.batch_size, args.num_workers)
         print(f"Embedding shape: {embeddings.shape}")
         np.save(cache_emb, embeddings)
+        np.save(cache_patch, patch_mean)
         df.to_csv(cache_meta, index=False)
-        print("Saved embeddings.npy + metadata.csv")
+        print(f"Saved embeddings.npy + patch_mean.npy + metadata.csv")
 
     if "spacing_mm" in df.columns:
         def _bin_spacing(v):
@@ -793,6 +976,8 @@ def main() -> None:
     mask = df["contrast_type"].notna().values
     df = df[mask].reset_index(drop=True)
     embeddings = embeddings[mask]
+    if patch_mean is not None:
+        patch_mean = patch_mean[mask]
     print(f"  Contrast filter: {mask.sum():,} / {len(mask):,} images kept "
           f"({df['contrast_type'].value_counts().to_dict()})")
 
@@ -820,8 +1005,14 @@ def main() -> None:
     probe_cols = ["contrast_type", "body_part", "pathology",
                   "dataset", "spacing_bin"]
 
+    # ── UMAP ──
+    if not args.no_umap:
+        umap_coords = run_umap(embeddings, args.umap_neighbors, args.umap_min_dist)
+        plot_umap(umap_coords, df, output_dir, probe_cols)
+
     # ── Train / holdout split ──
     holdout_emb, holdout_df = None, None
+    holdout_patch, train_patch = None, patch_mean
     train_emb, train_df = embeddings, df
     if args.holdout_datasets:
         holdout_names = {d.strip() for d in args.holdout_datasets.split(",")}
@@ -830,19 +1021,41 @@ def main() -> None:
         holdout_df  = df[holdout_mask].reset_index(drop=True)
         train_emb   = embeddings[~holdout_mask]
         train_df    = df[~holdout_mask].reset_index(drop=True)
+        if patch_mean is not None:
+            holdout_patch = patch_mean[holdout_mask]
+            train_patch   = patch_mean[~holdout_mask]
         print(f"\nHoldout set ({holdout_mask.sum():,} images): {sorted(holdout_names)}")
         print(f"Train set   ({(~holdout_mask).sum():,} images)")
 
     # ── Linear probing ──
     if not args.no_linear_probing:
-        print("Running linear probing…")
-        results = linear_probing(train_emb, train_df, probe_cols, output_dir,
-                                 holdout_emb=holdout_emb, holdout_df=holdout_df,
-                                 device=device)
-        results.to_csv(output_dir / "linear_probing_results.csv", index=False)
-        plot_linear_probing(results, output_dir)
-        drop_cols = [c for c in ["classes"] if c in results.columns]
-        print("\n" + results.drop(columns=drop_cols).to_string(index=False))
+        print("\nRunning linear probing — CLS token…")
+        results_cls = linear_probing(train_emb, train_df, probe_cols, output_dir,
+                                     holdout_emb=holdout_emb, holdout_df=holdout_df,
+                                     device=device)
+        results_cls.to_csv(output_dir / "linear_probing_results_cls.csv", index=False)
+        plot_linear_probing(results_cls, output_dir, suffix="_cls",
+                            title_suffix=" — CLS token")
+        drop_cols = [c for c in ["classes"] if c in results_cls.columns]
+        print("\n" + results_cls.drop(columns=drop_cols).to_string(index=False))
+
+        if train_patch is not None:
+            print("\nRunning linear probing — patch mean…")
+            results_patch = linear_probing(train_patch, train_df, probe_cols, output_dir,
+                                           holdout_emb=holdout_patch, holdout_df=holdout_df,
+                                           device=device)
+            results_patch.to_csv(output_dir / "linear_probing_results_patch_mean.csv", index=False)
+            plot_linear_probing(results_patch, output_dir, suffix="_patch_mean",
+                                title_suffix=" — patch mean")
+            drop_cols = [c for c in ["classes"] if c in results_patch.columns]
+            print("\n" + results_patch.drop(columns=drop_cols).to_string(index=False))
+
+            # Comparison plot
+            _plot_cls_vs_patch(results_cls, results_patch, output_dir)
+
+        # Keep backward-compat alias
+        results_cls.to_csv(output_dir / "linear_probing_results.csv", index=False)
+        plot_linear_probing(results_cls, output_dir)
 
     print(f"\nAll outputs saved to {output_dir}/")
 

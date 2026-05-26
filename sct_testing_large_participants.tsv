@@ -1,0 +1,1415 @@
+participant_id	sex	age	first_name	last_name	date_of_birth	date_of_scan	pathology	data_id	institution_id
+sub-amuAMU15001	n/a	n/a	unknown	unknown	n/a	n/a	HC	amu_T2star-AMU15_G1-1	amuAMU15
+sub-amuAMU15002	n/a	n/a	unknown	unknown	n/a	n/a	HC	amu_T2star-AMU15_G1-10	amuAMU15
+sub-amuAMU15003	n/a	n/a	unknown	unknown	n/a	n/a	HC	amu_T2star-AMU15_G1-11	amuAMU15
+sub-amuAMU15004	n/a	n/a	unknown	unknown	n/a	n/a	HC	amu_T2star-AMU15_G1-12	amuAMU15
+sub-amuAMU15005	n/a	n/a	unknown	unknown	n/a	n/a	HC	amu_T2star-AMU15_G1-13	amuAMU15
+sub-amuAMU15006	n/a	n/a	unknown	unknown	n/a	n/a	HC	amu_T2star-AMU15_G1-14	amuAMU15
+sub-amuAMU15007	n/a	n/a	unknown	unknown	n/a	n/a	HC	amu_T2star-AMU15_G1-15	amuAMU15
+sub-amuAMU15008	n/a	n/a	unknown	unknown	n/a	n/a	HC	amu_T2star-AMU15_G1-2	amuAMU15
+sub-amuAMU15009	n/a	n/a	unknown	unknown	n/a	n/a	HC	amu_T2star-AMU15_G1-3	amuAMU15
+sub-amuAMU15010	n/a	n/a	unknown	unknown	n/a	n/a	HC	amu_T2star-AMU15_G1-4	amuAMU15
+sub-amuAMU15011	n/a	n/a	unknown	unknown	n/a	n/a	HC	amu_T2star-AMU15_G1-5	amuAMU15
+sub-amuAMU15012	n/a	n/a	unknown	unknown	n/a	n/a	HC	amu_T2star-AMU15_G1-6	amuAMU15
+sub-amuAMU15013	n/a	n/a	unknown	unknown	n/a	n/a	HC	amu_T2star-AMU15_G1-7	amuAMU15
+sub-amuAMU15014	n/a	n/a	unknown	unknown	n/a	n/a	HC	amu_T2star-AMU15_G1-8	amuAMU15
+sub-amuAMU15015	n/a	n/a	unknown	unknown	n/a	n/a	HC	amu_T2star-AMU15_G1-9	amuAMU15
+sub-amuPAM50001	M	n/a	LT	A	n/a	2013-07-31	HC	amu_PAM50_ALT	amuPAM50
+sub-amuPAM50002	M	n/a	M	A	n/a	2015-12-05	HC	amu_PAM50_AM	amuPAM50
+sub-amuPAM50003	F	n/a	P	A	n/a	2014-11-19	HC	amu_PAM50_AP-T077	amuPAM50
+sub-amuPAM50004	M	n/a	D	E	n/a	2013-07-29	HC	amu_PAM50_ED-20130729	amuPAM50
+sub-amuPAM50005	F	n/a	D	E	n/a	2013-07-31	HC	amu_PAM50_ED-20130731	amuPAM50
+sub-amuPAM50006	M	n/a	L	F	n/a	2015-02-18	HC	amu_PAM50_FL-T056b	amuPAM50
+sub-amuPAM50007	n/a	n/a	R	F	n/a	n/a	HC	amu_PAM50_FR	amuPAM50
+sub-amuPAM50008	n/a	n/a	B	G	n/a	n/a	HC	amu_PAM50_GB	amuPAM50
+sub-amuPAM50009	M	n/a	B	H	n/a	2015-03-09	HC	amu_PAM50_HB	amuPAM50
+sub-amuPAM50010	M	n/a	D	J	n/a	2013-08-21	HC	amu_PAM50_JD	amuPAM50
+sub-amuPAM50011	M	n/a	W	J	n/a	2013-08-16	HC	amu_PAM50_JW	amuPAM50
+sub-amuPAM50012	M	n/a	D	M	n/a	2014-10-15	HC	amu_PAM50_MD-T075	amuPAM50
+sub-amuPAM50013	n/a	n/a	L	ML	n/a	n/a	HC	amu_PAM50_MLL	amuPAM50
+sub-amuPAM50014	M	n/a	T	M	n/a	2013-10-18	HC	amu_PAM50_MT	amuPAM50
+sub-amuPAM50015	F	n/a	A	P	n/a	2015-08-19	HC	amu_PAM50_PA	amuPAM50
+sub-amuPAM50016	M	n/a	unknown	unknown	n/a	2013-09-25	HC	amu_PAM50_T020b	amuPAM50
+sub-amuPAM50017	M	n/a	unknown	unknown	n/a	2013-04-09	HC	amu_PAM50_T045	amuPAM50
+sub-amuPAM50018	F	n/a	unknown	unknown	n/a	2013-11-09	HC	amu_PAM50_T047	amuPAM50
+sub-amuPAM50019	M	n/a	M	T	n/a	2015-04-03	HC	amu_PAM50_TM-T057c	amuPAM50
+sub-amuPAM50020	M	n/a	R	T	n/a	2014-10-22	HC	amu_PAM50_TR-T076	amuPAM50
+sub-amuPAM50021	M	n/a	T	T	n/a	2013-08-23	HC	amu_PAM50_TT	amuPAM50
+sub-amuPAM50022	F	n/a	C	V	n/a	2013-07-26	HC	amu_PAM50_VC-20130726	amuPAM50
+sub-amuPAM50023	F	n/a	C	V	n/a	2014-10-14	HC	amu_PAM50_VC-20141014	amuPAM50
+sub-amuPAM50024	F	n/a	G	V	n/a	2013-07-08	HC	amu_PAM50_VG-20130807	amuPAM50
+sub-amuPAM50025	F	n/a	G	V	n/a	2013-08-23	HC	amu_PAM50_VG-20130823	amuPAM50
+sub-amuPAM50026	M	n/a	P	V	n/a	2013-07-08	HC	amu_PAM50_VP	amuPAM50
+sub-amuVirginie001	n/a	n/a	unknown	unknown	n/a	n/a	DCM	amu_2017-virginie_20140317	amuVirginie
+sub-amuVirginie002	n/a	n/a	unknown	unknown	n/a	n/a	SYR	amu_2017-virginie_20140505	amuVirginie
+sub-amuVirginie003	n/a	n/a	unknown	unknown	n/a	n/a	DCM	amu_2017-virginie_20170118	amuVirginie
+sub-amuVirginie004	M	n/a	unknown	unknown	n/a	n/a	MS	amu_2017-virginie_AS	amuVirginie
+sub-amuVirginie005	M	n/a	unknown	unknown	n/a	n/a	MS	amu_2017-virginie_AT	amuVirginie
+sub-amuVirginie006	F	n/a	unknown	unknown	n/a	n/a	MS	amu_2017-virginie_BS	amuVirginie
+sub-amuVirginie007	M	n/a	unknown	unknown	n/a	n/a	MS	amu_2017-virginie_BZ	amuVirginie
+sub-amuVirginie008	F	n/a	unknown	unknown	n/a	n/a	MS	amu_2017-virginie_CL	amuVirginie
+sub-amuVirginie009	F	n/a	unknown	unknown	n/a	n/a	MS	amu_2017-virginie_CS-0424	amuVirginie
+sub-amuVirginie010	F	n/a	unknown	unknown	n/a	n/a	MS	amu_2017-virginie_CS-P014	amuVirginie
+sub-amuVirginie011	M	n/a	unknown	unknown	n/a	n/a	MS	amu_2017-virginie_EL	amuVirginie
+sub-amuVirginie012	M	n/a	unknown	unknown	n/a	n/a	MS	amu_2017-virginie_JG	amuVirginie
+sub-amuVirginie013	M	n/a	unknown	unknown	n/a	n/a	MS	amu_2017-virginie_KJ	amuVirginie
+sub-amuVirginie014	F	n/a	unknown	unknown	n/a	n/a	MS	amu_2017-virginie_MH	amuVirginie
+sub-amuVirginie015	n/a	n/a	unknown	unknown	n/a	n/a	n/a	amu_2017-virginie_NA	amuVirginie
+sub-amuVirginie016	F	n/a	unknown	unknown	n/a	n/a	MS	amu_2017-virginie_NG	amuVirginie
+sub-amuVirginie017	F	n/a	unknown	unknown	n/a	n/a	MS	amu_2017-virginie_NM	amuVirginie
+sub-amuVirginie018	F	n/a	unknown	unknown	n/a	n/a	MS	amu_2017-virginie_PA	amuVirginie
+sub-amuVirginie019	M	n/a	unknown	unknown	n/a	n/a	MS	amu_2017-virginie_RM	amuVirginie
+sub-amuVirginie020	M	n/a	unknown	unknown	n/a	n/a	MS	amu_2017-virginie_SA	amuVirginie
+sub-bordeauxOfsep001	F	n/a	unknown	unknown	n/a	n/a		bordeaux_ofsep_0100004	bordeauxOfsep
+sub-bordeauxOfsep002	F	n/a	unknown	unknown	n/a	n/a		bordeaux_ofsep_0100018	bordeauxOfsep
+sub-bordeauxOfsep003	M	n/a	unknown	unknown	n/a	n/a		bordeaux_ofsep_0100022	bordeauxOfsep
+sub-bordeauxOfsep004	F	n/a	unknown	unknown	n/a	n/a		bordeaux_ofsep_0100027	bordeauxOfsep
+sub-bordeauxOfsep005	F	n/a	unknown	unknown	n/a	n/a		bordeaux_ofsep_0100036	bordeauxOfsep
+sub-bordeauxOfsep006	F	n/a	unknown	unknown	n/a	n/a		bordeaux_ofsep_0100043	bordeauxOfsep
+sub-bordeauxOfsep007	F	n/a	unknown	unknown	n/a	n/a		bordeaux_ofsep_0100045	bordeauxOfsep
+sub-bordeauxOfsep008	F	n/a	unknown	unknown	n/a	n/a		bordeaux_ofsep_0100050	bordeauxOfsep
+sub-bordeauxOfsep009	n/a	n/a	unknown	unknown	n/a	n/a		bordeaux_ofsep_03001PELU	bordeauxOfsep
+sub-bordeauxOfsep010	n/a	n/a	unknown	unknown	n/a	n/a		bordeaux_ofsep_03002GADE	bordeauxOfsep
+sub-bordeauxOfsep011	n/a	n/a	unknown	unknown	n/a	n/a		bordeaux_ofsep_03003ALDE	bordeauxOfsep
+sub-bordeauxOfsep012	n/a	n/a	unknown	unknown	n/a	n/a		bordeaux_ofsep_03004CAHE	bordeauxOfsep
+sub-bordeauxOfsep013	n/a	n/a	unknown	unknown	n/a	n/a		bordeaux_ofsep_03005MASA	bordeauxOfsep
+sub-bordeauxOfsep014	n/a	n/a	unknown	unknown	n/a	n/a		bordeaux_ofsep_03006JEPU	bordeauxOfsep
+sub-bordeauxOfsep015	n/a	n/a	unknown	unknown	n/a	n/a		bordeaux_ofsep_03008SYCE	bordeauxOfsep
+sub-bordeauxOfsep016	n/a	n/a	unknown	unknown	n/a	n/a		bordeaux_ofsep_03013JUJA	bordeauxOfsep
+sub-bwh001	F	n/a	unknown	unknown	n/a	2015-08-15	MS	bwh_20160615-Bakshi_CIS1	bwh
+sub-bwh002	F	n/a	unknown	unknown	n/a	2015-10-01	MS	bwh_20160615-Bakshi_CIS10	bwh
+sub-bwh003	F	n/a	unknown	unknown	n/a	2015-05-12	MS	bwh_20160615-Bakshi_CIS11	bwh
+sub-bwh004	F	n/a	unknown	unknown	n/a	2016-05-09	MS	bwh_20160615-Bakshi_CIS12	bwh
+sub-bwh005	M	n/a	unknown	unknown	n/a	2015-10-21	MS	bwh_20160615-Bakshi_CIS13	bwh
+sub-bwh006	F	n/a	unknown	unknown	n/a	2016-09-29	MS	bwh_20160615-Bakshi_CIS14	bwh
+sub-bwh007	F	n/a	unknown	unknown	n/a	2014-12-30	MS	bwh_20160615-Bakshi_CIS15	bwh
+sub-bwh008	F	n/a	unknown	unknown	n/a	2016-08-24	MS	bwh_20160615-Bakshi_CIS16	bwh
+sub-bwh009	M	n/a	unknown	unknown	n/a	2016-06-10	MS	bwh_20160615-Bakshi_CIS17	bwh
+sub-bwh010	F	n/a	unknown	unknown	n/a	2016-04-11	MS	bwh_20160615-Bakshi_CIS18	bwh
+sub-bwh011	F	n/a	unknown	unknown	n/a	2014-12-09	MS	bwh_20160615-Bakshi_CIS19	bwh
+sub-bwh012	M	n/a	unknown	unknown	n/a	2015-08-10	MS	bwh_20160615-Bakshi_CIS2	bwh
+sub-bwh013	F	n/a	unknown	unknown	n/a	2015-02-03	MS	bwh_20160615-Bakshi_CIS3	bwh
+sub-bwh014	M	n/a	unknown	unknown	n/a	2016-04-16	MS	bwh_20160615-Bakshi_CIS4	bwh
+sub-bwh015	F	n/a	unknown	unknown	n/a	2015-06-08	MS	bwh_20160615-Bakshi_CIS5	bwh
+sub-bwh016	F	n/a	unknown	unknown	n/a	2015-05-16	MS	bwh_20160615-Bakshi_CIS6	bwh
+sub-bwh017	M	n/a	unknown	unknown	n/a	2016-12-06	MS	bwh_20160615-Bakshi_CIS7	bwh
+sub-bwh018	F	n/a	unknown	unknown	n/a	2016-02-15	MS	bwh_20160615-Bakshi_CIS8	bwh
+sub-bwh019	F	n/a	unknown	unknown	n/a	2014-11-14	MS	bwh_20160615-Bakshi_CIS9	bwh
+sub-bwh020	M	n/a	unknown	unknown	n/a	2014-09-06	MS	bwh_20160615-Bakshi_PP1	bwh
+sub-bwh021	M	n/a	unknown	unknown	n/a	2015-01-14	MS	bwh_20160615-Bakshi_PP10	bwh
+sub-bwh022	F	n/a	unknown	unknown	n/a	2016-01-26	MS	bwh_20160615-Bakshi_PP11	bwh
+sub-bwh023	F	n/a	unknown	unknown	n/a	2015-03-18	MS	bwh_20160615-Bakshi_PP12	bwh
+sub-bwh024	M	n/a	unknown	unknown	n/a	2016-10-04	MS	bwh_20160615-Bakshi_PP13	bwh
+sub-bwh025	M	n/a	unknown	unknown	n/a	2015-09-01	MS	bwh_20160615-Bakshi_PP14	bwh
+sub-bwh026	M	n/a	unknown	unknown	n/a	2014-08-21	MS	bwh_20160615-Bakshi_PP15	bwh
+sub-bwh027	F	n/a	unknown	unknown	n/a	2014-06-13	MS	bwh_20160615-Bakshi_PP16	bwh
+sub-bwh028	F	n/a	unknown	unknown	n/a	2015-03-18	MS	bwh_20160615-Bakshi_PP17	bwh
+sub-bwh029	F	n/a	unknown	unknown	n/a	2015-01-05	MS	bwh_20160615-Bakshi_PP18	bwh
+sub-bwh030	F	n/a	unknown	unknown	n/a	2015-03-27	MS	bwh_20160615-Bakshi_PP19	bwh
+sub-bwh031	F	n/a	unknown	unknown	n/a	2015-05-19	MS	bwh_20160615-Bakshi_PP2	bwh
+sub-bwh032	M	n/a	unknown	unknown	n/a	2015-05-13	MS	bwh_20160615-Bakshi_PP3	bwh
+sub-bwh033	F	n/a	unknown	unknown	n/a	2014-08-16	MS	bwh_20160615-Bakshi_PP4	bwh
+sub-bwh034	F	n/a	unknown	unknown	n/a	2015-05-26	MS	bwh_20160615-Bakshi_PP5	bwh
+sub-bwh035	F	n/a	unknown	unknown	n/a	2016-06-14	MS	bwh_20160615-Bakshi_PP6	bwh
+sub-bwh036	F	n/a	unknown	unknown	n/a	2015-05-09	MS	bwh_20160615-Bakshi_PP7	bwh
+sub-bwh037	F	n/a	unknown	unknown	n/a	2014-08-25	MS	bwh_20160615-Bakshi_PP8	bwh
+sub-bwh038	M	n/a	unknown	unknown	n/a	2016-06-03	MS	bwh_20160615-Bakshi_PP9	bwh
+sub-bwh039	M	n/a	unknown	unknown	n/a	2015-05-10	MS	bwh_20160615-Bakshi_RR1	bwh
+sub-bwh040	F	n/a	unknown	unknown	n/a	2015-05-12	MS	bwh_20160615-Bakshi_RR10	bwh
+sub-bwh041	M	n/a	unknown	unknown	n/a	2016-07-26	MS	bwh_20160615-Bakshi_RR11	bwh
+sub-bwh042	F	n/a	unknown	unknown	n/a	2015-12-30	MS	bwh_20160615-Bakshi_RR12	bwh
+sub-bwh043	M	n/a	unknown	unknown	n/a	2016-09-06	MS	bwh_20160615-Bakshi_RR13	bwh
+sub-bwh044	F	n/a	unknown	unknown	n/a	2015-03-25	MS	bwh_20160615-Bakshi_RR14	bwh
+sub-bwh045	F	n/a	unknown	unknown	n/a	2016-12-02	MS	bwh_20160615-Bakshi_RR15	bwh
+sub-bwh046	F	n/a	unknown	unknown	n/a	2016-03-05	MS	bwh_20160615-Bakshi_RR16	bwh
+sub-bwh047	F	n/a	unknown	unknown	n/a	2015-04-03	MS	bwh_20160615-Bakshi_RR17	bwh
+sub-bwh048	M	n/a	unknown	unknown	n/a	2015-03-31	MS	bwh_20160615-Bakshi_RR18	bwh
+sub-bwh049	M	n/a	unknown	unknown	n/a	2016-04-17	MS	bwh_20160615-Bakshi_RR19	bwh
+sub-bwh050	M	n/a	unknown	unknown	n/a	2016-01-19	MS	bwh_20160615-Bakshi_RR2	bwh
+sub-bwh051	F	n/a	unknown	unknown	n/a	2015-12-18	MS	bwh_20160615-Bakshi_RR20	bwh
+sub-bwh052	F	n/a	unknown	unknown	n/a	2016-07-02	MS	bwh_20160615-Bakshi_RR21	bwh
+sub-bwh053	F	n/a	unknown	unknown	n/a	2014-10-21	MS	bwh_20160615-Bakshi_RR3	bwh
+sub-bwh054	M	n/a	unknown	unknown	n/a	2015-06-16	MS	bwh_20160615-Bakshi_RR4	bwh
+sub-bwh055	F	n/a	unknown	unknown	n/a	2015-09-14	MS	bwh_20160615-Bakshi_RR5	bwh
+sub-bwh056	M	n/a	unknown	unknown	n/a	2014-11-25	MS	bwh_20160615-Bakshi_RR6	bwh
+sub-bwh057	F	n/a	unknown	unknown	n/a	2016-01-06	MS	bwh_20160615-Bakshi_RR7	bwh
+sub-bwh058	F	n/a	unknown	unknown	n/a	2016-03-23	MS	bwh_20160615-Bakshi_RR8	bwh
+sub-bwh059	F	n/a	unknown	unknown	n/a	2015-11-07	MS	bwh_20160615-Bakshi_RR9	bwh
+sub-bwh060	F	n/a	unknown	unknown	n/a	2014-10-14	MS	bwh_20160615-Bakshi_SP1	bwh
+sub-bwh061	F	n/a	unknown	unknown	n/a	2016-10-17	MS	bwh_20160615-Bakshi_SP10	bwh
+sub-bwh062	M	n/a	unknown	unknown	n/a	2015-08-24	MS	bwh_20160615-Bakshi_SP11	bwh
+sub-bwh063	M	n/a	unknown	unknown	n/a	2015-07-02	MS	bwh_20160615-Bakshi_SP12	bwh
+sub-bwh064	F	n/a	unknown	unknown	n/a	2014-12-08	MS	bwh_20160615-Bakshi_SP13	bwh
+sub-bwh065	F	n/a	unknown	unknown	n/a	2016-08-05	MS	bwh_20160615-Bakshi_SP14	bwh
+sub-bwh066	M	n/a	unknown	unknown	n/a	2015-04-23	MS	bwh_20160615-Bakshi_SP15	bwh
+sub-bwh067	M	n/a	unknown	unknown	n/a	2014-05-17	MS	bwh_20160615-Bakshi_SP16	bwh
+sub-bwh068	F	n/a	unknown	unknown	n/a	2015-08-11	MS	bwh_20160615-Bakshi_SP17	bwh
+sub-bwh069	M	n/a	unknown	unknown	n/a	2016-07-01	MS	bwh_20160615-Bakshi_SP18	bwh
+sub-bwh070	F	n/a	unknown	unknown	n/a	2015-12-23	MS	bwh_20160615-Bakshi_SP19	bwh
+sub-bwh071	F	n/a	unknown	unknown	n/a	2015-08-12	MS	bwh_20160615-Bakshi_SP2	bwh
+sub-bwh072	F	n/a	unknown	unknown	n/a	2016-09-23	MS	bwh_20160615-Bakshi_SP20	bwh
+sub-bwh073	F	n/a	unknown	unknown	n/a	2016-07-25	MS	bwh_20160615-Bakshi_SP21	bwh
+sub-bwh074	M	n/a	unknown	unknown	n/a	2015-11-17	MS	bwh_20160615-Bakshi_SP3	bwh
+sub-bwh075	F	n/a	unknown	unknown	n/a	2015-01-28	MS	bwh_20160615-Bakshi_SP4	bwh
+sub-bwh076	F	n/a	unknown	unknown	n/a	2016-01-04	MS	bwh_20160615-Bakshi_SP5	bwh
+sub-bwh077	F	n/a	unknown	unknown	n/a	2014-01-10	MS	bwh_20160615-Bakshi_SP6	bwh
+sub-bwh078	F	n/a	unknown	unknown	n/a	2016-12-12	MS	bwh_20160615-Bakshi_SP7	bwh
+sub-bwh079	F	n/a	unknown	unknown	n/a	2014-11-28	MS	bwh_20160615-Bakshi_SP8	bwh
+sub-bwh080	M	n/a	unknown	unknown	n/a	2016-02-02	MS	bwh_20160615-Bakshi_SP9	bwh
+sub-bwh081	n/a	n/a	unknown	unknown	n/a	n/a	MS	bwh_20160204_GE-1.5T	bwh
+sub-bwh082	n/a	n/a	unknown	unknown	n/a	n/a	MS	bwh_20160204_GE-3T	bwh
+sub-bwh083	n/a	n/a	unknown	unknown	n/a	n/a	MS	bwh_20160204_Phillips-1.5T	bwh
+sub-bwh084	n/a	n/a	unknown	unknown	n/a	n/a	MS	bwh_20160204_Siemens-3T	bwh
+sub-calCadotte001	n/a	n/a	unknown	unknown	n/a	n/a	n/a	cal_2017-cadotte_SPINE01	calCadotte
+sub-chbSCTusers001	n/a	n/a	unknown	unknown	n/a	n/a	HC	chb_sct-users_20170226-florence	chbSCTusers
+sub-chibaSCTusers001	n/a	n/a	unknown	unknown	n/a	n/a	HC	chiba_sct-users_GE	chibaSCTusers
+sub-clermontferrandOfsep001	F	n/a	unknown	unknown	n/a	n/a		clermontferrand_ofsep_0330001	clermontferrandOfsep
+sub-clermontferrandOfsep002	M	n/a	unknown	unknown	n/a	n/a		clermontferrand_ofsep_0330004	clermontferrandOfsep
+sub-clermontferrandOfsep003	F	n/a	unknown	unknown	n/a	n/a		clermontferrand_ofsep_0330005	clermontferrandOfsep
+sub-clermontferrandOfsep004	F	n/a	unknown	unknown	n/a	n/a		clermontferrand_ofsep_0330006	clermontferrandOfsep
+sub-clermontferrandOfsep005	F	n/a	unknown	unknown	n/a	n/a		clermontferrand_ofsep_0330007	clermontferrandOfsep
+sub-clermontferrandOfsep006	F	n/a	unknown	unknown	n/a	n/a		clermontferrand_ofsep_0330008	clermontferrandOfsep
+sub-clermontferrandOfsep007	F	n/a	unknown	unknown	n/a	n/a		clermontferrand_ofsep_0330009	clermontferrandOfsep
+sub-clermontferrandOfsep008	F	n/a	unknown	unknown	n/a	n/a		clermontferrand_ofsep_0330013	clermontferrandOfsep
+sub-clermontferrandOfsep009	F	n/a	unknown	unknown	n/a	n/a		clermontferrand_ofsep_0330014	clermontferrandOfsep
+sub-clermontferrandOfsep010	F	n/a	unknown	unknown	n/a	n/a		clermontferrand_ofsep_0330015	clermontferrandOfsep
+sub-clermontferrandOfsep011	F	n/a	unknown	unknown	n/a	n/a		clermontferrand_ofsep_0330017	clermontferrandOfsep
+sub-clermontferrandOfsep012	F	n/a	unknown	unknown	n/a	n/a		clermontferrand_ofsep_0330020	clermontferrandOfsep
+sub-gmChallange001	n/a	n/a	n/a	n/a	n/a	2018-05-14	n/a	chum_gm-challenge_20180514	gmChallange
+sub-gmChallange002	n/a	n/a	n/a	n/a	n/a	2018-05-14	n/a	mountsinai_gm-challenge_20180514	gmChallange
+sub-gmChallange003	n/a	n/a	n/a	n/a	n/a	2018-05-15	n/a	oxford-7t_gm-challenge_20180515_9611	gmChallange
+sub-gmChallange004	n/a	n/a	n/a	n/a	n/a	2018-05-15	n/a	oxford-7t_gm-challenge_20180515_9612	gmChallange
+sub-gmChallange005	n/a	n/a	n/a	n/a	n/a	2018-05-15	n/a	oxford-7t_gm-challenge_20180515_9613	gmChallange
+sub-gmChallange006	n/a	n/a	n/a	n/a	n/a	2018-04-16	n/a	ucl_gm-challenge_20180416	gmChallange
+sub-grenobleOfsep001	F	n/a	unknown	unknown	n/a	n/a		grenoble_ofsep_0020003	grenobleOfsep
+sub-grenobleOfsep002	F	n/a	unknown	unknown	n/a	n/a		grenoble_ofsep_0020004	grenobleOfsep
+sub-grenobleOfsep003	F	n/a	unknown	unknown	n/a	n/a		grenoble_ofsep_0020005	grenobleOfsep
+sub-grenobleOfsep004	F	n/a	unknown	unknown	n/a	n/a		grenoble_ofsep_0020007	grenobleOfsep
+sub-grenobleOfsep005	M	n/a	unknown	unknown	n/a	n/a		grenoble_ofsep_0020009	grenobleOfsep
+sub-grenobleOfsep006	F	n/a	unknown	unknown	n/a	n/a		grenoble_ofsep_0020010	grenobleOfsep
+sub-grenobleOfsep007	F	n/a	unknown	unknown	n/a	n/a		grenoble_ofsep_0020012	grenobleOfsep
+sub-grenobleOfsep008	F	n/a	unknown	unknown	n/a	n/a		grenoble_ofsep_0020014	grenobleOfsep
+sub-grenobleOfsep009	F	n/a	unknown	unknown	n/a	n/a		grenoble_ofsep_0020015	grenobleOfsep
+sub-grenobleOfsep010	F	n/a	unknown	unknown	n/a	n/a		grenoble_ofsep_0020017	grenobleOfsep
+sub-grenobleOfsep011	F	n/a	unknown	unknown	n/a	n/a		grenoble_ofsep_0020018	grenobleOfsep
+sub-grenobleOfsep012	M	n/a	unknown	unknown	n/a	n/a		grenoble_ofsep_0020019	grenobleOfsep
+sub-grenobleOfsep013	F	n/a	unknown	unknown	n/a	n/a		grenoble_ofsep_0020020	grenobleOfsep
+sub-grenobleOfsep014	F	n/a	unknown	unknown	n/a	n/a		grenoble_ofsep_0020021	grenobleOfsep
+sub-grenobleOfsep015	M	n/a	unknown	unknown	n/a	n/a		grenoble_ofsep_0020023	grenobleOfsep
+sub-grenobleOfsep016	F	n/a	unknown	unknown	n/a	n/a		grenoble_ofsep_0020024	grenobleOfsep
+sub-grenobleOfsep017	F	n/a	unknown	unknown	n/a	n/a		grenoble_ofsep_0020025	grenobleOfsep
+sub-grenobleOfsep018	F	n/a	unknown	unknown	n/a	n/a		grenoble_ofsep_0020026	grenobleOfsep
+sub-grenobleOfsep019	M	n/a	unknown	unknown	n/a	n/a		grenoble_ofsep_0020027	grenobleOfsep
+sub-grenobleOfsep020	M	n/a	unknown	unknown	n/a	n/a		grenoble_ofsep_0020029	grenobleOfsep
+sub-grenobleOfsep021	F	n/a	unknown	unknown	n/a	n/a		grenoble_ofsep_0020030	grenobleOfsep
+sub-grenobleOfsep022	F	n/a	unknown	unknown	n/a	n/a		grenoble_ofsep_0020032	grenobleOfsep
+sub-grenobleOfsep023	F	n/a	unknown	unknown	n/a	n/a		grenoble_ofsep_0020033	grenobleOfsep
+sub-grenobleOfsep024	n/a	n/a	unknown	unknown	n/a	n/a		grenoble_ofsep_02007GAFI	grenobleOfsep
+sub-grenobleOfsep029	n/a	n/a	unknown	unknown	n/a	n/a		grenoble_ofsep_02012VIDI	grenobleOfsep
+sub-grenobleOfsep030	n/a	n/a	unknown	unknown	n/a	n/a		grenoble_ofsep_02013FRMO	grenobleOfsep
+sub-grenobleOfsep032	n/a	n/a	unknown	unknown	n/a	n/a		grenoble_ofsep_02017PARU	grenobleOfsep
+sub-grenobleOfsep033	n/a	n/a	unknown	unknown	n/a	n/a		grenoble_ofsep_02022KOBA	grenobleOfsep
+sub-grenobleOfsep034	n/a	n/a	unknown	unknown	n/a	n/a		grenoble_ofsep_02023LIBA	grenobleOfsep
+sub-grenobleOfsep035	n/a	n/a	unknown	unknown	n/a	n/a		grenoble_ofsep_02025HEPE	grenobleOfsep
+sub-grenobleOfsep036	n/a	n/a	unknown	unknown	n/a	n/a		grenoble_ofsep_02026ATAB	grenobleOfsep
+sub-grenobleOfsep038	n/a	n/a	unknown	unknown	n/a	n/a		grenoble_ofsep_02028ANSA	grenobleOfsep
+sub-grenobleOfsep039	n/a	n/a	unknown	unknown	n/a	n/a		grenoble_ofsep_02030COAN	grenobleOfsep
+sub-grenobleOfsep040	n/a	n/a	unknown	unknown	n/a	n/a		grenoble_ofsep_02031NATA	grenobleOfsep
+sub-grenobleOfsep041	n/a	n/a	unknown	unknown	n/a	n/a		grenoble_ofsep_02033ANBO	grenobleOfsep
+sub-grenobleOfsep042	n/a	n/a	unknown	unknown	n/a	n/a		grenoble_ofsep_02034ALRE	grenobleOfsep
+sub-grenobleOfsep043	n/a	n/a	unknown	unknown	n/a	n/a		grenoble_ofsep_02035SAPR	grenobleOfsep
+sub-grenobleOfsep046	n/a	n/a	unknown	unknown	n/a	n/a		grenoble_ofsep_02038BESO	grenobleOfsep
+sub-grenobleOfsep047	n/a	n/a	unknown	unknown	n/a	n/a		grenoble_ofsep_02039AYHI	grenobleOfsep
+sub-grenobleOfsep048	n/a	n/a	unknown	unknown	n/a	n/a		grenoble_ofsep_02040PAHE	grenobleOfsep
+sub-grenobleOfsep049	n/a	n/a	unknown	unknown	n/a	n/a		grenoble_ofsep_02042SAIV	grenobleOfsep
+sub-grenobleOfsep050	n/a	n/a	unknown	unknown	n/a	n/a		grenoble_ofsep_02043NAAK	grenobleOfsep
+sub-grenobleOfsep051	n/a	n/a	unknown	unknown	n/a	n/a		grenoble_ofsep_02045JOCH	grenobleOfsep
+sub-grenobleOfsep052	n/a	n/a	unknown	unknown	n/a	n/a		grenoble_ofsep_02045MAGR	grenobleOfsep
+sub-grenobleOfsep053	n/a	n/a	unknown	unknown	n/a	n/a		grenoble_ofsep_02046MACO	grenobleOfsep
+sub-grenobleOfsep054	n/a	n/a	unknown	unknown	n/a	n/a		grenoble_ofsep_02047MACO	grenobleOfsep
+sub-grenobleOfsep055	n/a	n/a	unknown	unknown	n/a	n/a		grenoble_ofsep_02048ISRO	grenobleOfsep
+sub-grenobleOfsep056	n/a	n/a	unknown	unknown	n/a	n/a		grenoble_ofsep_02050XABO	grenobleOfsep
+sub-grenobleOfsep057	n/a	n/a	unknown	unknown	n/a	n/a		grenoble_ofsep_02052ROLA	grenobleOfsep
+sub-grenobleOfsep058	n/a	n/a	unknown	unknown	n/a	n/a		grenoble_ofsep_02053JELO	grenobleOfsep
+sub-grenobleOfsep059	n/a	n/a	unknown	unknown	n/a	n/a		grenoble_ofsep_02054EMDU	grenobleOfsep
+sub-grenobleOfsep060	n/a	n/a	unknown	unknown	n/a	n/a		grenoble_ofsep_02055LUCA	grenobleOfsep
+sub-grenobleOfsep061	n/a	n/a	unknown	unknown	n/a	n/a		grenoble_ofsep_02056FAHA	grenobleOfsep
+sub-grenobleOfsep062	n/a	n/a	unknown	unknown	n/a	n/a		grenoble_ofsep_02058KABE	grenobleOfsep
+sub-grenobleOfsep063	n/a	n/a	unknown	unknown	n/a	n/a		grenoble_ofsep_02059VIMA	grenobleOfsep
+sub-grenobleOfsep064	n/a	n/a	unknown	unknown	n/a	n/a		grenoble_ofsep_02061MYBR	grenobleOfsep
+sub-grenobleOfsep065	n/a	n/a	unknown	unknown	n/a	n/a		grenoble_ofsep_02062SATR	grenobleOfsep
+sub-grenobleOfsep067	n/a	n/a	unknown	unknown	n/a	n/a		grenoble_ofsep_02065SYST	grenobleOfsep
+sub-grenobleOfsep069	n/a	n/a	unknown	unknown	n/a	n/a		grenoble_ofsep_02068AUDE	grenobleOfsep
+sub-grenobleOfsep070	n/a	n/a	unknown	unknown	n/a	n/a		grenoble_ofsep_02069NAAY	grenobleOfsep
+sub-grenobleOfsep074	n/a	n/a	unknown	unknown	n/a	n/a		grenoble_ofsep_02081CACH	grenobleOfsep
+sub-issue2596	n/a	n/a	unknown	unknown	n/a	n/a		n/a	n/a
+sub-issue2637	n/a	n/a	unknown	unknown	n/a	n/a		n/a	n/a
+sub-ivdm3seg001	n/a	n/a	unknown	unknown	n/a	n/a		unknown_ivdm3seg_01	ivdm3seg
+sub-ivdm3seg002	n/a	n/a	unknown	unknown	n/a	n/a		unknown_ivdm3seg_02	ivdm3seg
+sub-ivdm3seg003	n/a	n/a	unknown	unknown	n/a	n/a		unknown_ivdm3seg_03	ivdm3seg
+sub-ivdm3seg004	n/a	n/a	unknown	unknown	n/a	n/a		unknown_ivdm3seg_04	ivdm3seg
+sub-ivdm3seg005	n/a	n/a	unknown	unknown	n/a	n/a		unknown_ivdm3seg_05	ivdm3seg
+sub-ivdm3seg006	n/a	n/a	unknown	unknown	n/a	n/a		unknown_ivdm3seg_06	ivdm3seg
+sub-ivdm3seg007	n/a	n/a	unknown	unknown	n/a	n/a		unknown_ivdm3seg_07	ivdm3seg
+sub-ivdm3seg008	n/a	n/a	unknown	unknown	n/a	n/a		unknown_ivdm3seg_08	ivdm3seg
+sub-karo1773	n/a	n/a	n/a	n/a	n/a	n/a	n/a	n/a	karo
+sub-karo1781	n/a	n/a	n/a	n/a	n/a	n/a	n/a	n/a	karo
+sub-karo1822	n/a	n/a	n/a	n/a	n/a	n/a	n/a	n/a	karo
+sub-karo1846	n/a	n/a	n/a	n/a	n/a	n/a	n/a	n/a	karo
+sub-karo1875	n/a	n/a	n/a	n/a	n/a	n/a	n/a	n/a	karo
+sub-karo1898	n/a	n/a	n/a	n/a	n/a	n/a	n/a	n/a	karo
+sub-karo1913	n/a	n/a	n/a	n/a	n/a	n/a	n/a	n/a	karo
+sub-karo2000	n/a	n/a	n/a	n/a	n/a	n/a	n/a	n/a	karo
+sub-karo2005	n/a	n/a	n/a	n/a	n/a	n/a	n/a	n/a	karo
+sub-karo2011	n/a	n/a	n/a	n/a	n/a	n/a	n/a	n/a	karo
+sub-karo2032	n/a	n/a	n/a	n/a	n/a	n/a	n/a	n/a	karo
+sub-karo2036	n/a	n/a	n/a	n/a	n/a	n/a	n/a	n/a	karo
+sub-karo2038	n/a	n/a	n/a	n/a	n/a	n/a	n/a	n/a	karo
+sub-karo2039	n/a	n/a	n/a	n/a	n/a	n/a	n/a	n/a	karo
+sub-karo2040	n/a	n/a	n/a	n/a	n/a	n/a	n/a	n/a	karo
+sub-karo2045	n/a	n/a	n/a	n/a	n/a	n/a	n/a	n/a	karo
+sub-karo2046	n/a	n/a	n/a	n/a	n/a	n/a	n/a	n/a	karo
+sub-karo2050	n/a	n/a	n/a	n/a	n/a	n/a	n/a	n/a	karo
+sub-karo2109	n/a	n/a	n/a	n/a	n/a	n/a	n/a	n/a	karo
+sub-karo2111	n/a	n/a	n/a	n/a	n/a	n/a	n/a	n/a	karo
+sub-karo2116	n/a	n/a	n/a	n/a	n/a	n/a	n/a	n/a	karo
+sub-karo2123	n/a	n/a	n/a	n/a	n/a	n/a	n/a	n/a	karo
+sub-karo2128	n/a	n/a	n/a	n/a	n/a	n/a	n/a	n/a	karo
+sub-karo2209	n/a	n/a	n/a	n/a	n/a	n/a	n/a	n/a	karo
+sub-karo2222	n/a	n/a	n/a	n/a	n/a	n/a	n/a	n/a	karo
+sub-karo2231	n/a	n/a	n/a	n/a	n/a	n/a	n/a	n/a	karo
+sub-karo2236	n/a	n/a	n/a	n/a	n/a	n/a	n/a	n/a	karo
+sub-karo2246	n/a	n/a	n/a	n/a	n/a	n/a	n/a	n/a	karo
+sub-karoTobiasMS001	F	n/a	unknown	unknown	n/a	n/a	MS	karo_2017-tobias-MS_N001313	karoTobiasMS
+sub-karoTobiasMS002	F	n/a	unknown	unknown	n/a	n/a	MS	karo_2017-tobias-MS_N001397	karoTobiasMS
+sub-karoTobiasMS003	M	n/a	unknown	unknown	n/a	n/a	MS	karo_2017-tobias-MS_N001980	karoTobiasMS
+sub-karoTobiasMS004	M	n/a	unknown	unknown	n/a	n/a	MS	karo_2017-tobias-MS_N002082	karoTobiasMS
+sub-karoTobiasMS005	F	n/a	unknown	unknown	n/a	n/a	MS	karo_2017-tobias-MS_N002443	karoTobiasMS
+sub-karoTobiasMS006	F	n/a	unknown	unknown	n/a	n/a	MS	karo_2017-tobias-MS_N003672	karoTobiasMS
+sub-karoTobiasMS007	F	n/a	unknown	unknown	n/a	n/a	MS	karo_2017-tobias-MS_N003855	karoTobiasMS
+sub-karoTobiasMS008	F	n/a	unknown	unknown	n/a	n/a	MS	karo_2017-tobias-MS_N004022	karoTobiasMS
+sub-karoTobiasMS009	F	n/a	unknown	unknown	n/a	n/a	MS	karo_2017-tobias-MS_N004078	karoTobiasMS
+sub-karoTobiasMS010	M	n/a	unknown	unknown	n/a	n/a	MS	karo_2017-tobias-MS_N004467	karoTobiasMS
+sub-karoTobiasMS011	M	n/a	unknown	unknown	n/a	n/a	MS	karo_2017-tobias-MS_N004508	karoTobiasMS
+sub-karoTobiasMS012	F	n/a	unknown	unknown	n/a	n/a	MS	karo_2017-tobias-MS_N004699	karoTobiasMS
+sub-karoTobiasMS013	F	n/a	unknown	unknown	n/a	n/a	MS	karo_2017-tobias-MS_N005498	karoTobiasMS
+sub-karoTobiasMS014	M	n/a	unknown	unknown	n/a	n/a	MS	karo_2017-tobias-MS_N005510	karoTobiasMS
+sub-karoTobiasMS015	F	n/a	unknown	unknown	n/a	n/a	MS	karo_2017-tobias-MS_N005574	karoTobiasMS
+sub-karoTobiasMS016	F	n/a	unknown	unknown	n/a	n/a	MS	karo_2017-tobias-MS_N005668	karoTobiasMS
+sub-karoTobiasMS017	F	n/a	unknown	unknown	n/a	n/a	MS	karo_2017-tobias-MS_N007559	karoTobiasMS
+sub-karoTobiasMS018	M	n/a	unknown	unknown	n/a	n/a	MS	karo_2017-tobias-MS_N007674	karoTobiasMS
+sub-karoTobiasMS019	F	n/a	unknown	unknown	n/a	n/a	MS	karo_2017-tobias-MS_N008287	karoTobiasMS
+sub-karoTobiasMS020	F	n/a	unknown	unknown	n/a	n/a	MS	karo_2017-tobias-MS_N008591	karoTobiasMS
+sub-karoTobiasMS021	F	n/a	unknown	unknown	n/a	n/a	MS	karo_2017-tobias-MS_N008678	karoTobiasMS
+sub-karoTobiasMS022	F	n/a	unknown	unknown	n/a	n/a	MS	karo_2017-tobias-MS_N009591	karoTobiasMS
+sub-karoTobiasMS023	M	n/a	unknown	unknown	n/a	n/a	MS	karo_2017-tobias-MS_N009787	karoTobiasMS
+sub-karoTobiasMS024	F	n/a	unknown	unknown	n/a	n/a	MS	karo_2017-tobias-MS_N017552	karoTobiasMS
+sub-karoTobiasMS025	F	n/a	unknown	unknown	n/a	n/a	MS	karo_2017-tobias-MS_N021689	karoTobiasMS
+sub-karoTobiasMS026	F	n/a	unknown	unknown	n/a	n/a	MS	karo_2017-tobias-MS_N022605	karoTobiasMS
+sub-karoTobiasMS027	M	n/a	unknown	unknown	n/a	n/a	MS	karo_2017-tobias-MS_N026530	karoTobiasMS
+sub-karoTobiasMS028	F	n/a	unknown	unknown	n/a	n/a	MS	karo_2017-tobias-MS_N026944	karoTobiasMS
+sub-karoTobiasMS029	M	n/a	unknown	unknown	n/a	n/a	MS	karo_2017-tobias-MS_N027025	karoTobiasMS
+sub-karoTobiasMS030	F	n/a	unknown	unknown	n/a	n/a	MS	karo_2017-tobias-MS_N027054	karoTobiasMS
+sub-karoTobiasMS031	F	n/a	unknown	unknown	n/a	n/a	MS	karo_2017-tobias-MS_N027700	karoTobiasMS
+sub-karoTobiasMS032	F	n/a	unknown	unknown	n/a	n/a	MS	karo_2017-tobias-MS_N027716	karoTobiasMS
+sub-karoTobiasMS033	F	n/a	unknown	unknown	n/a	n/a	MS	karo_2017-tobias-MS_N027739	karoTobiasMS
+sub-karoTobiasMS034	M	n/a	unknown	unknown	n/a	n/a	MS	karo_2017-tobias-MS_N027762	karoTobiasMS
+sub-karoTobiasMS035	F	n/a	unknown	unknown	n/a	n/a	MS	karo_2017-tobias-MS_N027775	karoTobiasMS
+sub-karoTobiasMS036	F	n/a	unknown	unknown	n/a	n/a	MS	karo_2017-tobias-MS_N027804	karoTobiasMS
+sub-karoTobiasMS037	F	n/a	unknown	unknown	n/a	n/a	MS	karo_2017-tobias-MS_N029895	karoTobiasMS
+sub-karoTobiasMS038	F	n/a	unknown	unknown	n/a	n/a	MS	karo_2017-tobias-MS_N031715	karoTobiasMS
+sub-karoTobiasMS039	F	n/a	unknown	unknown	n/a	n/a	MS	karo_2017-tobias-MS_N031722	karoTobiasMS
+sub-karoTobiasMS040	F	n/a	unknown	unknown	n/a	n/a	MS	karo_2017-tobias-MS_N034048	karoTobiasMS
+sub-karoTobiasMS041	F	n/a	unknown	unknown	n/a	n/a	MS	karo_2017-tobias-MS_N034231	karoTobiasMS
+sub-karoTobiasMS042	F	n/a	unknown	unknown	n/a	n/a	MS	karo_2017-tobias-MS_N035122	karoTobiasMS
+sub-karoTobiasMS043	M	n/a	unknown	unknown	n/a	n/a	MS	karo_2017-tobias-MS_N035386	karoTobiasMS
+sub-karoTobiasMS044	F	n/a	unknown	unknown	n/a	n/a	MS	karo_2017-tobias-MS_N036407	karoTobiasMS
+sub-karoTobiasMS045	F	n/a	unknown	unknown	n/a	n/a	MS	karo_2017-tobias-MS_N038302	karoTobiasMS
+sub-karoTobiasMS046	F	n/a	unknown	unknown	n/a	n/a	MS	karo_2017-tobias-MS_N039260	karoTobiasMS
+sub-karoTobiasMS047	M	n/a	unknown	unknown	n/a	n/a	MS	karo_2017-tobias-MS_N039336	karoTobiasMS
+sub-karoTobiasMS048	M	n/a	unknown	unknown	n/a	n/a	MS	karo_2017-tobias-MS_N039366	karoTobiasMS
+sub-karoTobiasMS049	F	n/a	unknown	unknown	n/a	n/a	MS	karo_2017-tobias-MS_N039370	karoTobiasMS
+sub-karoTobiasMS050	F	n/a	unknown	unknown	n/a	n/a	MS	karo_2017-tobias-MS_N039450	karoTobiasMS
+sub-karoTobiasMS051	F	n/a	unknown	unknown	n/a	n/a	MS	karo_2017-tobias-MS_N040720	karoTobiasMS
+sub-karoTobiasMS052	F	n/a	unknown	unknown	n/a	n/a	MS	karo_2017-tobias-MS_N040753	karoTobiasMS
+sub-karoTobiasMS053	M	n/a	unknown	unknown	n/a	n/a	MS	karo_2017-tobias-MS_N040986	karoTobiasMS
+sub-koreajisun001	n/a	n/a	unknown	unknown	n/a	n/a	DCM	korea_jisun_AHN-BH	koreajisun
+sub-koreajisun002	n/a	n/a	unknown	unknown	n/a	n/a	DCM	korea_jisun_HAE-WK	koreajisun
+sub-koreajisun003	n/a	n/a	unknown	unknown	n/a	n/a	DCM	korea_jisun_KIM-KH	koreajisun
+sub-koreajisun004	n/a	n/a	unknown	unknown	n/a	n/a	DCM	korea_jisun_KIM-SL	koreajisun
+sub-koreajisun005	n/a	n/a	unknown	unknown	n/a	n/a	DCM	korea_jisun_LEE-KS	koreajisun
+sub-koreajisun006	n/a	n/a	unknown	unknown	n/a	n/a	DCM	korea_jisun_LEE-MK	koreajisun
+sub-koreajisun007	n/a	n/a	unknown	unknown	n/a	n/a	DCM	korea_jisun_LEE-YH	koreajisun
+sub-koreajisun008	n/a	n/a	unknown	unknown	n/a	n/a	DCM	korea_jisun_LIM-YS	koreajisun
+sub-koreajisun009	n/a	n/a	unknown	unknown	n/a	n/a	DCM	korea_jisun_MA-SH	koreajisun
+sub-koreajisun010	n/a	n/a	unknown	unknown	n/a	n/a	DCM	korea_jisun_WOO-JE	koreajisun
+sub-lyonOfsep001	F	n/a	unknown	unknown	n/a	n/a		lyon_ofsep_0080002	lyonOfsep
+sub-lyonOfsep002	M	n/a	unknown	unknown	n/a	n/a		lyon_ofsep_0080008	lyonOfsep
+sub-lyonOfsep003	M	n/a	unknown	unknown	n/a	n/a		lyon_ofsep_0080010	lyonOfsep
+sub-lyonOfsep004	M	n/a	unknown	unknown	n/a	n/a		lyon_ofsep_0080011	lyonOfsep
+sub-lyonOfsep005	F	n/a	unknown	unknown	n/a	n/a		lyon_ofsep_0090013	lyonOfsep
+sub-lyonOfsep006	F	n/a	unknown	unknown	n/a	n/a		lyon_ofsep_0090022	lyonOfsep
+sub-lyonOfsep007	M	n/a	unknown	unknown	n/a	n/a		lyon_ofsep_0110001	lyonOfsep
+sub-lyonOfsep008	F	n/a	unknown	unknown	n/a	n/a		lyon_ofsep_0110002	lyonOfsep
+sub-lyonOfsep009	F	n/a	unknown	unknown	n/a	n/a		lyon_ofsep_0110003	lyonOfsep
+sub-lyonOfsep010	n/a	n/a	unknown	unknown	n/a	n/a		lyon_ofsep_07001MOEL	lyonOfsep
+sub-lyonOfsep011	n/a	n/a	unknown	unknown	n/a	n/a		lyon_ofsep_07002MAWA	lyonOfsep
+sub-lyonOfsep012	n/a	n/a	unknown	unknown	n/a	n/a		lyon_ofsep_07006BEYO	lyonOfsep
+sub-lyonOfsep013	n/a	n/a	unknown	unknown	n/a	n/a		lyon_ofsep_07008YAME	lyonOfsep
+sub-lyonOfsep014	n/a	n/a	unknown	unknown	n/a	n/a		lyon_ofsep_07009NOOU	lyonOfsep
+sub-lyonOfsep015	n/a	n/a	unknown	unknown	n/a	n/a		lyon_ofsep_07017INBA	lyonOfsep
+sub-lyonOfsep016	n/a	n/a	unknown	unknown	n/a	n/a		lyon_ofsep_07020ISMA	lyonOfsep
+sub-lyonOfsep017	n/a	n/a	unknown	unknown	n/a	n/a		lyon_ofsep_07022KAPE	lyonOfsep
+sub-lyonOfsep018	n/a	n/a	unknown	unknown	n/a	n/a		lyon_ofsep_07023GACA	lyonOfsep
+sub-lyonOfsep019	n/a	n/a	unknown	unknown	n/a	n/a		lyon_ofsep_07024MICH	lyonOfsep
+sub-lyonOfsep020	n/a	n/a	unknown	unknown	n/a	n/a		lyon_ofsep_07029VIBE	lyonOfsep
+sub-lyonOfsep021	n/a	n/a	unknown	unknown	n/a	n/a		lyon_ofsep_07030SOFO	lyonOfsep
+sub-lyonOfsep022	n/a	n/a	unknown	unknown	n/a	n/a		lyon_ofsep_07031EVHI	lyonOfsep
+sub-lyonOfsep023	n/a	n/a	unknown	unknown	n/a	n/a		lyon_ofsep_07033VEDU	lyonOfsep
+sub-lyonOfsep024	n/a	n/a	unknown	unknown	n/a	n/a		lyon_ofsep_07034JLMI	lyonOfsep
+sub-lyonOfsep025	n/a	n/a	unknown	unknown	n/a	n/a		lyon_ofsep_07043SEME	lyonOfsep
+sub-lyonOfsep026	n/a	n/a	unknown	unknown	n/a	n/a		lyon_ofsep_07044AZMA	lyonOfsep
+sub-lyonOfsep027	n/a	n/a	unknown	unknown	n/a	n/a		lyon_ofsep_07045CYMA	lyonOfsep
+sub-lyonOfsep028	n/a	n/a	unknown	unknown	n/a	n/a		lyon_ofsep_07046ADSI	lyonOfsep
+sub-lyonOfsep029	n/a	n/a	unknown	unknown	n/a	n/a		lyon_ofsep_07047VATS	lyonOfsep
+sub-lyonOfsep030	n/a	n/a	unknown	unknown	n/a	n/a		lyon_ofsep_07051SATH	lyonOfsep
+sub-lyonOfsep031	n/a	n/a	unknown	unknown	n/a	n/a		lyon_ofsep_07052SIHA	lyonOfsep
+sub-lyonOfsep032	n/a	n/a	unknown	unknown	n/a	n/a		lyon_ofsep_07053ISAL	lyonOfsep
+sub-lyonOfsep033	n/a	n/a	unknown	unknown	n/a	n/a		lyon_ofsep_07055NABE	lyonOfsep
+sub-lyonOfsep034	n/a	n/a	unknown	unknown	n/a	n/a		lyon_ofsep_07058JERI	lyonOfsep
+sub-lyonOfsep035	n/a	n/a	unknown	unknown	n/a	n/a		lyon_ofsep_07061SYPI	lyonOfsep
+sub-lyonOfsep036	n/a	n/a	unknown	unknown	n/a	n/a		lyon_ofsep_07064COBO	lyonOfsep
+sub-lyonOfsep037	n/a	n/a	unknown	unknown	n/a	n/a		lyon_ofsep_07065JEIM	lyonOfsep
+sub-lyonOfsep038	n/a	n/a	unknown	unknown	n/a	n/a		lyon_ofsep_07066MAGA	lyonOfsep
+sub-lyonOfsep039	n/a	n/a	unknown	unknown	n/a	n/a		lyon_ofsep_07068MALO	lyonOfsep
+sub-lyonOfsep040	n/a	n/a	unknown	unknown	n/a	n/a		lyon_ofsep_07069SAFR	lyonOfsep
+sub-lyonOfsep041	n/a	n/a	unknown	unknown	n/a	n/a		lyon_ofsep_07071PIKA	lyonOfsep
+sub-lyonOfsep042	n/a	n/a	unknown	unknown	n/a	n/a		lyon_ofsep_07072ISBR	lyonOfsep
+sub-lyonOfsep043	n/a	n/a	unknown	unknown	n/a	n/a		lyon_ofsep_07073JATI	lyonOfsep
+sub-lyonOfsep044	n/a	n/a	unknown	unknown	n/a	n/a		lyon_ofsep_07074HADE	lyonOfsep
+sub-lyonOfsep045	n/a	n/a	unknown	unknown	n/a	n/a		lyon_ofsep_07075MAPA	lyonOfsep
+sub-lyonOfsep046	n/a	n/a	unknown	unknown	n/a	n/a		lyon_ofsep_07076CLCH	lyonOfsep
+sub-lyonOfsep047	n/a	n/a	unknown	unknown	n/a	n/a		lyon_ofsep_07081MIVA	lyonOfsep
+sub-lyonOfsep048	n/a	n/a	unknown	unknown	n/a	n/a		lyon_ofsep_07085ASBO	lyonOfsep
+sub-lyonOfsep049	n/a	n/a	unknown	unknown	n/a	n/a		lyon_ofsep_07086YVOL	lyonOfsep
+sub-lyonOfsep050	n/a	n/a	unknown	unknown	n/a	n/a		lyon_ofsep_07089CAJO	lyonOfsep
+sub-lyonOfsep051	n/a	n/a	unknown	unknown	n/a	n/a		lyon_ofsep_07090KAFO	lyonOfsep
+sub-lyonOfsep052	n/a	n/a	unknown	unknown	n/a	n/a		lyon_ofsep_07093CAGU	lyonOfsep
+sub-lyonOfsep053	n/a	n/a	unknown	unknown	n/a	n/a		lyon_ofsep_07095VECH	lyonOfsep
+sub-lyonOfsep054	n/a	n/a	unknown	unknown	n/a	n/a		lyon_ofsep_07096CAES	lyonOfsep
+sub-lyonOfsep055	n/a	n/a	unknown	unknown	n/a	n/a		lyon_ofsep_07097YAES	lyonOfsep
+sub-lyonOfsep056	n/a	n/a	unknown	unknown	n/a	n/a		lyon_ofsep_07100BRCH	lyonOfsep
+sub-lyonOfsep057	n/a	n/a	unknown	unknown	n/a	n/a		lyon_ofsep_07104NICR	lyonOfsep
+sub-lyonOfsep058	n/a	n/a	unknown	unknown	n/a	n/a		lyon_ofsep_07105GUBA	lyonOfsep
+sub-lyonOfsep059	n/a	n/a	unknown	unknown	n/a	n/a		lyon_ofsep_07107LOCH	lyonOfsep
+sub-lyonOfsep060	n/a	n/a	unknown	unknown	n/a	n/a		lyon_ofsep_07108MITO	lyonOfsep
+sub-lyonOfsep061	n/a	n/a	unknown	unknown	n/a	n/a		lyon_ofsep_07109KEJI	lyonOfsep
+sub-lyonOfsep062	n/a	n/a	unknown	unknown	n/a	n/a		lyon_ofsep_07112WABA	lyonOfsep
+sub-lyonOfsep063	n/a	n/a	unknown	unknown	n/a	n/a		lyon_ofsep_07115CAFA	lyonOfsep
+sub-lyonOfsep064	n/a	n/a	unknown	unknown	n/a	n/a		lyon_ofsep_07117BOGH	lyonOfsep
+sub-lyonOfsep065	n/a	n/a	unknown	unknown	n/a	n/a		lyon_ofsep_07119CARE	lyonOfsep
+sub-lyonOfsep066	n/a	n/a	unknown	unknown	n/a	n/a		lyon_ofsep_07120KASE	lyonOfsep
+sub-lyonOfsep067	n/a	n/a	unknown	unknown	n/a	n/a		lyon_ofsep_07121GHVA	lyonOfsep
+sub-lyonOfsep068	n/a	n/a	unknown	unknown	n/a	n/a		lyon_ofsep_07122PATE	lyonOfsep
+sub-lyonOfsep069	n/a	n/a	unknown	unknown	n/a	n/a		lyon_ofsep_07123AHKH	lyonOfsep
+sub-lyonOfsep070	n/a	n/a	unknown	unknown	n/a	n/a		lyon_ofsep_07124RAOU	lyonOfsep
+sub-lyonOfsep071	n/a	n/a	unknown	unknown	n/a	n/a		lyon_ofsep_07127RAMO	lyonOfsep
+sub-lyonOfsep072	n/a	n/a	unknown	unknown	n/a	n/a		lyon_ofsep_07129PILA	lyonOfsep
+sub-lyonOfsep073	n/a	n/a	unknown	unknown	n/a	n/a		lyon_ofsep_07132NAMA	lyonOfsep
+sub-lyonOfsep074	n/a	n/a	unknown	unknown	n/a	n/a		lyon_ofsep_07134LILO	lyonOfsep
+sub-lyonOfsep075	n/a	n/a	unknown	unknown	n/a	n/a		lyon_ofsep_07138NALA	lyonOfsep
+sub-lyonOfsep076	n/a	n/a	unknown	unknown	n/a	n/a		lyon_ofsep_07139PICH	lyonOfsep
+sub-lyonOfsep077	n/a	n/a	unknown	unknown	n/a	n/a		lyon_ofsep_07141XABE	lyonOfsep
+sub-lyonOfsep078	n/a	n/a	unknown	unknown	n/a	n/a		lyon_ofsep_07144CHDR	lyonOfsep
+sub-lyonOfsep079	n/a	n/a	unknown	unknown	n/a	n/a		lyon_ofsep_07145COGU	lyonOfsep
+sub-lyonOfsep080	n/a	n/a	unknown	unknown	n/a	n/a		lyon_ofsep_07146EVMI	lyonOfsep
+sub-lyonOfsep081	n/a	n/a	unknown	unknown	n/a	n/a		lyon_ofsep_07147MARO	lyonOfsep
+sub-lyonOfsep082	n/a	n/a	unknown	unknown	n/a	n/a		lyon_ofsep_07148CHAB	lyonOfsep
+sub-lyonOfsep083	n/a	n/a	unknown	unknown	n/a	n/a		lyon_ofsep_07149MAGR	lyonOfsep
+sub-lyonOfsep084	n/a	n/a	unknown	unknown	n/a	n/a		lyon_ofsep_07150PABE	lyonOfsep
+sub-lyonOfsep085	n/a	n/a	unknown	unknown	n/a	n/a		lyon_ofsep_07152CHVA	lyonOfsep
+sub-lyonOfsep086	n/a	n/a	unknown	unknown	n/a	n/a		lyon_ofsep_07157VEGR	lyonOfsep
+sub-lyonOfsep087	n/a	n/a	unknown	unknown	n/a	n/a		lyon_ofsep_07159LAAN	lyonOfsep
+sub-lyonOfsep088	n/a	n/a	unknown	unknown	n/a	n/a		lyon_ofsep_07160CAMO	lyonOfsep
+sub-lyonOfsep089	n/a	n/a	unknown	unknown	n/a	n/a		lyon_ofsep_07169LAHA	lyonOfsep
+sub-lyonOfsep090	n/a	n/a	unknown	unknown	n/a	n/a		lyon_ofsep_07211PARO	lyonOfsep
+sub-lyonOfsep091	n/a	n/a	unknown	unknown	n/a	n/a		lyon_ofsep_0754COSE	lyonOfsep
+sub-lyonOfsep092	n/a	n/a	unknown	unknown	n/a	n/a		lyon_ofsep_08004BAEL	lyonOfsep
+sub-lyonOfsep093	n/a	n/a	unknown	unknown	n/a	n/a		lyon_ofsep_08029IVDI	lyonOfsep
+sub-lyonOfsep094	n/a	n/a	unknown	unknown	n/a	n/a		lyon_ofsep_10003MAGA	lyonOfsep
+sub-lyonOfsep095	n/a	n/a	unknown	unknown	n/a	n/a		lyon_ofsep_11001AUFR	lyonOfsep
+sub-lyonOfsep096	n/a	n/a	unknown	unknown	n/a	n/a		lyon_ofsep_11003NAAG	lyonOfsep
+sub-lyonOfsep097	n/a	n/a	unknown	unknown	n/a	n/a		lyon_ofsep_11004LISL	lyonOfsep
+sub-lyonOfsep098	n/a	n/a	unknown	unknown	n/a	n/a		lyon_ofsep_11005CABO	lyonOfsep
+sub-lyonOfsep099	n/a	n/a	unknown	unknown	n/a	n/a		lyon_ofsep_11007BRIR	lyonOfsep
+sub-lyonOfsep100	n/a	n/a	unknown	unknown	n/a	n/a		lyon_ofsep_11008NIBI	lyonOfsep
+sub-lyonOfsep101	n/a	n/a	unknown	unknown	n/a	n/a		lyon_ofsep_11011HEBR	lyonOfsep
+sub-lyonOfsep102	n/a	n/a	unknown	unknown	n/a	n/a		lyon_ofsep_11014SASE	lyonOfsep
+sub-lyonOfsep103	n/a	n/a	unknown	unknown	n/a	n/a		lyon_ofsep_11015CHHA	lyonOfsep
+sub-lyonOfsep104	n/a	n/a	unknown	unknown	n/a	n/a		lyon_ofsep_11017THPA	lyonOfsep
+sub-lyonOfsep105	n/a	n/a	unknown	unknown	n/a	n/a		lyon_ofsep_11018SUOE	lyonOfsep
+sub-mgh3Tconnectome001	F	n/a	unknown	unknown	n/a	2014-07-24	MS	mgh-3t_connectome_MS-SC-002	mgh3Tconnectome
+sub-mgh3Tconnectome002	F	n/a	unknown	unknown	n/a	2016-01-18	MS	mgh-3t_connectome_MS-SC-003-011816	mgh3Tconnectome
+sub-mgh3Tconnectome003	F	n/a	unknown	unknown	n/a	2016-01-19	MS	mgh-3t_connectome_MS-SC-004-011916	mgh3Tconnectome
+sub-mgh3Tconnectome004	F	n/a	unknown	unknown	n/a	2016-01-19	MS	mgh-3t_connectome_MS-SC-005-011916	mgh3Tconnectome
+sub-mgh3Tconnectome005	F	n/a	unknown	unknown	n/a	2016-12-04	MS	mgh-3t_connectome_MS-SC-005-041216	mgh3Tconnectome
+sub-mgh3Tmarco001	n/a	n/a	unknown	unknown	n/a	n/a		mgh-3t_marco_004E	mgh3Tmarco
+sub-mgh3Tmarco002	n/a	n/a	unknown	unknown	n/a	n/a		mgh-3t_marco_005E	mgh3Tmarco
+sub-mgh7Tspine001	n/a	n/a	unknown	unknown	n/a	n/a	HC	mgh-7t_spine7T_005	mgh7Tspine
+sub-mghCaterina001	n/a	n/a	unknown	unknown	n/a	n/a	HC	mgh-7t_caterina_Ctrl031-RO1-04	mghCaterina
+sub-mghCaterina002	n/a	n/a	unknown	unknown	n/a	n/a	HC	mgh-7t_caterina_Ctrl033-RO1-06	mghCaterina
+sub-mghCaterina003	n/a	n/a	unknown	unknown	n/a	n/a	HC	mgh-7t_caterina_Ctrl043-RO1-16	mghCaterina
+sub-mghCaterina004	n/a	n/a	unknown	unknown	n/a	n/a	HC	mgh-7t_caterina_Ctrl044-RO1-17	mghCaterina
+sub-mghCaterina005	n/a	n/a	unknown	unknown	n/a	n/a	HC	mgh-7t_caterina_Ctrl045-RO1-18	mghCaterina
+sub-mghCaterina006	n/a	n/a	unknown	unknown	n/a	n/a	HC	mgh-7t_caterina_Ctrl047-RO1-20	mghCaterina
+sub-mghCaterina007	n/a	n/a	unknown	unknown	n/a	n/a	HC	mgh-7t_caterina_Ctrl048-RO1-21	mghCaterina
+sub-mghCaterina008	n/a	n/a	unknown	unknown	n/a	n/a	HC	mgh-7t_caterina_Ctrl050-RO1-23	mghCaterina
+sub-mghCaterina009	n/a	n/a	unknown	unknown	n/a	n/a	HC	mgh-7t_caterina_Ctrl051-RO1-24	mghCaterina
+sub-mghCaterina010	n/a	n/a	unknown	unknown	n/a	n/a	HC	mgh-7t_caterina_Ctrl052-RO1-25	mghCaterina
+sub-mghCaterina011	n/a	n/a	unknown	unknown	n/a	n/a	HC	mgh-7t_caterina_Ctrl053-RO1-26	mghCaterina
+sub-mghCaterina012	F	n/a	unknown	unknown	n/a	n/a	MS	mgh-7t_caterina_MS070-RO1-02	mghCaterina
+sub-mghCaterina013	F	n/a	unknown	unknown	n/a	n/a	MS	mgh-7t_caterina_MS073-RO1-05	mghCaterina
+sub-mghCaterina014	M	n/a	unknown	unknown	n/a	n/a	MS	mgh-7t_caterina_MS075-RO1-07	mghCaterina
+sub-mghCaterina015	F	n/a	unknown	unknown	n/a	n/a	MS	mgh-7t_caterina_MS079-RO1-11	mghCaterina
+sub-mghCaterina016	F	n/a	unknown	unknown	n/a	n/a	MS	mgh-7t_caterina_MS081-RO1-13	mghCaterina
+sub-mghCaterina017	F	n/a	unknown	unknown	n/a	n/a	MS	mgh-7t_caterina_MS084-RO1-16	mghCaterina
+sub-mghCaterina018	F	n/a	unknown	unknown	n/a	n/a	MS	mgh-7t_caterina_MS087-RO1-19	mghCaterina
+sub-mghCaterina019	M	n/a	unknown	unknown	n/a	n/a	MS	mgh-7t_caterina_MS088-RO1-20	mghCaterina
+sub-mghCaterina020	F	n/a	unknown	unknown	n/a	n/a	MS	mgh-7t_caterina_MS089-RO1-29	mghCaterina
+sub-mghCaterina021	F	n/a	unknown	unknown	n/a	n/a	MS	mgh-7t_caterina_MS091-RO1-22	mghCaterina
+sub-mghCaterina022	F	n/a	unknown	unknown	n/a	n/a	MS	mgh-7t_caterina_MS093-RO1-24	mghCaterina
+sub-mghCaterina023	F	n/a	unknown	unknown	n/a	n/a	MS	mgh-7t_caterina_MS095-RO1-26	mghCaterina
+sub-mghCaterina024	F	n/a	unknown	unknown	n/a	n/a	MS	mgh-7t_caterina_MS096-RO1-27	mghCaterina
+sub-mghCaterina025	F	n/a	unknown	unknown	n/a	n/a	MS	mgh-7t_caterina_MS098-RO1-30	mghCaterina
+sub-mghCaterina026	M	n/a	unknown	unknown	n/a	n/a	MS	mgh-7t_caterina_MS099-RO1-31	mghCaterina
+sub-mghCaterina027	F	n/a	unknown	unknown	n/a	n/a	MS	mgh-7t_caterina_MS100-RO1-32	mghCaterina
+sub-mghCaterina028	F	n/a	unknown	unknown	n/a	n/a	MS	mgh-7t_caterina_MS101-RO1-33	mghCaterina
+sub-mghCaterina029	M	n/a	unknown	unknown	n/a	n/a	MS	mgh-7t_caterina_MS103-RO1-35	mghCaterina
+sub-milanFilippi001	F	n/a	unknown	unknown	n/a	n/a	MS	milan_2017-filippi_001	milanFilippi
+sub-milanFilippi002	F	n/a	unknown	unknown	n/a	n/a	MS	milan_2017-filippi_002	milanFilippi
+sub-milanFilippi003	F	n/a	unknown	unknown	n/a	n/a	MS	milan_2017-filippi_003	milanFilippi
+sub-milanFilippi004	F	n/a	unknown	unknown	n/a	n/a	MS	milan_2017-filippi_004	milanFilippi
+sub-milanFilippi005	M	n/a	unknown	unknown	n/a	n/a	MS	milan_2017-filippi_005	milanFilippi
+sub-milanFilippi006	M	n/a	unknown	unknown	n/a	n/a	MS	milan_2017-filippi_006	milanFilippi
+sub-milanFilippi007	F	n/a	unknown	unknown	n/a	n/a	MS	milan_2017-filippi_007	milanFilippi
+sub-milanFilippi008	M	n/a	unknown	unknown	n/a	n/a	MS	milan_2017-filippi_008	milanFilippi
+sub-milanFilippi009	M	n/a	unknown	unknown	n/a	n/a	MS	milan_2017-filippi_009	milanFilippi
+sub-milanFilippi010	M	n/a	unknown	unknown	n/a	n/a	MS	milan_2017-filippi_010	milanFilippi
+sub-milanFilippi011	M	n/a	unknown	unknown	n/a	n/a	MS	milan_2017-filippi_011	milanFilippi
+sub-milanFilippi012	F	n/a	unknown	unknown	n/a	n/a	MS	milan_2017-filippi_012	milanFilippi
+sub-milanFilippi013	M	n/a	unknown	unknown	n/a	n/a	MS	milan_2017-filippi_013	milanFilippi
+sub-milanFilippi014	M	n/a	unknown	unknown	n/a	n/a	MS	milan_2017-filippi_014	milanFilippi
+sub-milanFilippi015	F	n/a	unknown	unknown	n/a	n/a	MS	milan_2017-filippi_015	milanFilippi
+sub-milanFilippi016	M	n/a	unknown	unknown	n/a	n/a	MS	milan_2017-filippi_016	milanFilippi
+sub-milanFilippi017	M	n/a	unknown	unknown	n/a	n/a	MS	milan_2017-filippi_017	milanFilippi
+sub-milanFilippi018	F	n/a	unknown	unknown	n/a	n/a	MS	milan_2017-filippi_018	milanFilippi
+sub-milanFilippi019	M	n/a	unknown	unknown	n/a	n/a	MS	milan_2017-filippi_019	milanFilippi
+sub-milanFilippi020	F	n/a	unknown	unknown	n/a	n/a	MS	milan_2017-filippi_020	milanFilippi
+sub-milanFilippi021	F	n/a	unknown	unknown	n/a	n/a	MS	milan_2017-filippi_021	milanFilippi
+sub-milanFilippi022	F	n/a	unknown	unknown	n/a	n/a	MS	milan_2017-filippi_022	milanFilippi
+sub-milanFilippi023	F	n/a	unknown	unknown	n/a	n/a	MS	milan_2017-filippi_023	milanFilippi
+sub-milanFilippi024	F	n/a	unknown	unknown	n/a	n/a	MS	milan_2017-filippi_024	milanFilippi
+sub-milanFilippi025	F	n/a	unknown	unknown	n/a	n/a	MS	milan_2017-filippi_025	milanFilippi
+sub-milanFilippi026	F	n/a	unknown	unknown	n/a	n/a	MS	milan_2017-filippi_026	milanFilippi
+sub-milanFilippi027	M	n/a	unknown	unknown	n/a	n/a	MS	milan_2017-filippi_027	milanFilippi
+sub-milanFilippi028	F	n/a	unknown	unknown	n/a	n/a	MS	milan_2017-filippi_028	milanFilippi
+sub-milanFilippi029	M	n/a	unknown	unknown	n/a	n/a	MS	milan_2017-filippi_029	milanFilippi
+sub-milanFilippi030	F	n/a	unknown	unknown	n/a	n/a	MS	milan_2017-filippi_030	milanFilippi
+sub-milanFilippi031	M	n/a	unknown	unknown	n/a	n/a	MS	milan_2017-filippi_031	milanFilippi
+sub-milanFilippi032	F	n/a	unknown	unknown	n/a	n/a	MS	milan_2017-filippi_032	milanFilippi
+sub-milanFilippi033	F	n/a	unknown	unknown	n/a	n/a	MS	milan_2017-filippi_033	milanFilippi
+sub-milanFilippi034	F	n/a	unknown	unknown	n/a	n/a	MS	milan_2017-filippi_034	milanFilippi
+sub-milanFilippi035	M	n/a	unknown	unknown	n/a	n/a	MS	milan_2017-filippi_035	milanFilippi
+sub-milanFilippi036	M	n/a	unknown	unknown	n/a	n/a	MS	milan_2017-filippi_036	milanFilippi
+sub-milanFilippi037	M	n/a	unknown	unknown	n/a	n/a	MS	milan_2017-filippi_037	milanFilippi
+sub-milanFilippi038	F	n/a	unknown	unknown	n/a	n/a	MS	milan_2017-filippi_038	milanFilippi
+sub-milanFilippi039	F	n/a	unknown	unknown	n/a	n/a	MS	milan_2017-filippi_039	milanFilippi
+sub-milanFilippi040	F	n/a	unknown	unknown	n/a	n/a	MS	milan_2017-filippi_040	milanFilippi
+sub-milanFilippi041	F	n/a	unknown	unknown	n/a	n/a	MS	milan_2017-filippi_041	milanFilippi
+sub-milanFilippi042	F	n/a	unknown	unknown	n/a	n/a	MS	milan_2017-filippi_042	milanFilippi
+sub-milanFilippi043	M	n/a	unknown	unknown	n/a	n/a	MS	milan_2017-filippi_043	milanFilippi
+sub-milanFilippi044	F	n/a	unknown	unknown	n/a	n/a	MS	milan_2017-filippi_044	milanFilippi
+sub-milanFilippi045	M	n/a	unknown	unknown	n/a	n/a	MS	milan_2017-filippi_045	milanFilippi
+sub-milanFilippi046	F	n/a	unknown	unknown	n/a	n/a	MS	milan_2017-filippi_046	milanFilippi
+sub-milanFilippi047	F	n/a	unknown	unknown	n/a	n/a	MS	milan_2017-filippi_047	milanFilippi
+sub-milanFilippi048	M	n/a	unknown	unknown	n/a	n/a	MS	milan_2017-filippi_048	milanFilippi
+sub-milanFilippi049	F	n/a	unknown	unknown	n/a	n/a	MS	milan_2017-filippi_049	milanFilippi
+sub-milanFilippi050	F	n/a	unknown	unknown	n/a	n/a	MS	milan_2017-filippi_050	milanFilippi
+sub-milanFilippi051	M	n/a	unknown	unknown	n/a	n/a	MS	milan_2017-filippi_051	milanFilippi
+sub-milanFilippi052	M	n/a	unknown	unknown	n/a	n/a	MS	milan_2017-filippi_052	milanFilippi
+sub-milanFilippi053	F	n/a	unknown	unknown	n/a	n/a	MS	milan_2017-filippi_053	milanFilippi
+sub-milanFilippi054	F	n/a	unknown	unknown	n/a	n/a	MS	milan_2017-filippi_054	milanFilippi
+sub-milanFilippi055	M	n/a	unknown	unknown	n/a	n/a	MS	milan_2017-filippi_055	milanFilippi
+sub-milanFilippi056	M	n/a	unknown	unknown	n/a	n/a	MS	milan_2017-filippi_056	milanFilippi
+sub-milanFilippi057	F	n/a	unknown	unknown	n/a	n/a	MS	milan_2017-filippi_057	milanFilippi
+sub-milanFilippi058	F	n/a	unknown	unknown	n/a	n/a	MS	milan_2017-filippi_058	milanFilippi
+sub-milanFilippi059	F	n/a	unknown	unknown	n/a	n/a	MS	milan_2017-filippi_059	milanFilippi
+sub-milanFilippi060	M	n/a	unknown	unknown	n/a	n/a	MS	milan_2017-filippi_060	milanFilippi
+sub-milanFilippi061	M	n/a	unknown	unknown	n/a	n/a	MS	milan_2017-filippi_061	milanFilippi
+sub-milanFilippi062	M	n/a	unknown	unknown	n/a	n/a	MS	milan_2017-filippi_062	milanFilippi
+sub-milanFilippi063	F	n/a	unknown	unknown	n/a	n/a	MS	milan_2017-filippi_063	milanFilippi
+sub-milanFilippi064	F	n/a	unknown	unknown	n/a	n/a	MS	milan_2017-filippi_064	milanFilippi
+sub-milanFilippi065	M	n/a	unknown	unknown	n/a	n/a	MS	milan_2017-filippi_065	milanFilippi
+sub-milanFilippi066	M	n/a	unknown	unknown	n/a	n/a	MS	milan_2017-filippi_066	milanFilippi
+sub-milanFilippi067	M	n/a	unknown	unknown	n/a	n/a	MS	milan_2017-filippi_067	milanFilippi
+sub-milanFilippi068	M	n/a	unknown	unknown	n/a	n/a	MS	milan_2017-filippi_068	milanFilippi
+sub-milanFilippi069	F	n/a	unknown	unknown	n/a	n/a	MS	milan_2017-filippi_069	milanFilippi
+sub-milanFilippi070	F	n/a	unknown	unknown	n/a	n/a	MS	milan_2017-filippi_070	milanFilippi
+sub-milanFilippi071	F	n/a	unknown	unknown	n/a	n/a	MS	milan_2017-filippi_071	milanFilippi
+sub-milanFilippi072	F	n/a	unknown	unknown	n/a	n/a	MS	milan_2017-filippi_072	milanFilippi
+sub-milanFilippi073	M	n/a	unknown	unknown	n/a	n/a	MS	milan_2017-filippi_073	milanFilippi
+sub-milanFilippi074	M	n/a	unknown	unknown	n/a	n/a	MS	milan_2017-filippi_074	milanFilippi
+sub-milanFilippi075	M	n/a	unknown	unknown	n/a	n/a	MS	milan_2017-filippi_075	milanFilippi
+sub-milanFilippi076	M	n/a	unknown	unknown	n/a	n/a	MS	milan_2017-filippi_076	milanFilippi
+sub-milanFilippi077	F	n/a	unknown	unknown	n/a	n/a	MS	milan_2017-filippi_077	milanFilippi
+sub-milanFilippi078	F	n/a	unknown	unknown	n/a	n/a	MS	milan_2017-filippi_078	milanFilippi
+sub-milanFilippi079	F	n/a	unknown	unknown	n/a	n/a	MS	milan_2017-filippi_079	milanFilippi
+sub-milanFilippi080	F	n/a	unknown	unknown	n/a	n/a	MS	milan_2017-filippi_080	milanFilippi
+sub-milanFilippi081	M	n/a	unknown	unknown	n/a	n/a	MS	milan_2017-filippi_081	milanFilippi
+sub-milanFilippi082	F	n/a	unknown	unknown	n/a	n/a	MS	milan_2017-filippi_082	milanFilippi
+sub-milanFilippi083	F	n/a	unknown	unknown	n/a	n/a	MS	milan_2017-filippi_083	milanFilippi
+sub-milanFilippi084	F	n/a	unknown	unknown	n/a	n/a	MS	milan_2017-filippi_084	milanFilippi
+sub-milanFilippi085	F	n/a	unknown	unknown	n/a	n/a	MS	milan_2017-filippi_085	milanFilippi
+sub-milanFilippi086	F	n/a	unknown	unknown	n/a	n/a	MS	milan_2017-filippi_086	milanFilippi
+sub-milanFilippi087	M	n/a	unknown	unknown	n/a	n/a	MS	milan_2017-filippi_087	milanFilippi
+sub-milanFilippi088	M	n/a	unknown	unknown	n/a	n/a	MS	milan_2017-filippi_088	milanFilippi
+sub-milanFilippi089	F	n/a	unknown	unknown	n/a	n/a	MS	milan_2017-filippi_089	milanFilippi
+sub-milanFilippi090	F	n/a	unknown	unknown	n/a	n/a	MS	milan_2017-filippi_090	milanFilippi
+sub-milanFilippi091	M	n/a	unknown	unknown	n/a	n/a	MS	milan_2017-filippi_091	milanFilippi
+sub-milanFilippi092	F	n/a	unknown	unknown	n/a	n/a	MS	milan_2017-filippi_092	milanFilippi
+sub-milanFilippi093	F	n/a	unknown	unknown	n/a	n/a	MS	milan_2017-filippi_093	milanFilippi
+sub-milanFilippi094	F	n/a	unknown	unknown	n/a	n/a	MS	milan_2017-filippi_094	milanFilippi
+sub-milanFilippi095	M	n/a	unknown	unknown	n/a	n/a	MS	milan_2017-filippi_095	milanFilippi
+sub-milanFilippi096	F	n/a	unknown	unknown	n/a	n/a	MS	milan_2017-filippi_096	milanFilippi
+sub-milanFilippi097	M	n/a	unknown	unknown	n/a	n/a	MS	milan_2017-filippi_097	milanFilippi
+sub-milanFilippi098	M	n/a	unknown	unknown	n/a	n/a	MS	milan_2017-filippi_098	milanFilippi
+sub-milanFilippi099	M	n/a	unknown	unknown	n/a	n/a	MS	milan_2017-filippi_099	milanFilippi
+sub-milanFilippi100	F	n/a	unknown	unknown	n/a	n/a	MS	milan_2017-filippi_100	milanFilippi
+sub-milanFilippi101	F	n/a	unknown	unknown	n/a	n/a	MS	milan_2017-filippi_101	milanFilippi
+sub-milanFilippi102	M	n/a	unknown	unknown	n/a	n/a	MS	milan_2017-filippi_102	milanFilippi
+sub-milanFilippi103	F	n/a	unknown	unknown	n/a	n/a	MS	milan_2017-filippi_103	milanFilippi
+sub-milanFilippi104	M	n/a	unknown	unknown	n/a	n/a	MS	milan_2017-filippi_104	milanFilippi
+sub-milanFilippi105	F	n/a	unknown	unknown	n/a	n/a	MS	milan_2017-filippi_105	milanFilippi
+sub-milanFilippi106	F	n/a	unknown	unknown	n/a	n/a	MS	milan_2017-filippi_106	milanFilippi
+sub-milanFilippi107	F	n/a	unknown	unknown	n/a	n/a	MS	milan_2017-filippi_107	milanFilippi
+sub-milanFilippi108	F	n/a	unknown	unknown	n/a	n/a	MS	milan_2017-filippi_108	milanFilippi
+sub-milanFilippi109	M	n/a	unknown	unknown	n/a	n/a	MS	milan_2017-filippi_109	milanFilippi
+sub-milanFilippi110	F	n/a	unknown	unknown	n/a	n/a	MS	milan_2017-filippi_110	milanFilippi
+sub-milanFilippi111	M	n/a	unknown	unknown	n/a	n/a	MS	milan_2017-filippi_111	milanFilippi
+sub-milanFilippi112	M	n/a	unknown	unknown	n/a	n/a	MS	milan_2017-filippi_112	milanFilippi
+sub-milanFilippi113	F	n/a	unknown	unknown	n/a	n/a	MS	milan_2017-filippi_113	milanFilippi
+sub-milanFilippi114	M	n/a	unknown	unknown	n/a	n/a	MS	milan_2017-filippi_114	milanFilippi
+sub-milanFilippi115	M	n/a	unknown	unknown	n/a	n/a	MS	milan_2017-filippi_115	milanFilippi
+sub-milanFilippi116	M	n/a	unknown	unknown	n/a	n/a	MS	milan_2017-filippi_116	milanFilippi
+sub-milanFilippi117	F	n/a	unknown	unknown	n/a	n/a	MS	milan_2017-filippi_117	milanFilippi
+sub-milanMarcella001	n/a	n/a	unknown	unknown	n/a	n/a	DCD	milan_20160628-marcella_DCD-20110907	milanMarcella
+sub-montpellierLesion001	F	n/a	unknown	unknown	n/a	n/a	MS	montpellier_20170112_07	montpellierLesion
+sub-montpellierLesion002	F	n/a	unknown	unknown	n/a	n/a	MS	montpellier_20170112_08	montpellierLesion
+sub-montpellierLesion003	F	n/a	unknown	unknown	n/a	n/a	MS	montpellier_20170112_13	montpellierLesion
+sub-montpellierLesion004	F	n/a	unknown	unknown	n/a	n/a	MS	montpellier_20170112_14	montpellierLesion
+sub-montpellierLesion005	F	n/a	unknown	unknown	n/a	n/a	MS	montpellier_20170112_15	montpellierLesion
+sub-montpellierLesion006	F	n/a	unknown	unknown	n/a	n/a	MS	montpellier_20170112_17	montpellierLesion
+sub-montpellierLesion007	F	n/a	unknown	unknown	n/a	n/a	MS	montpellier_20170112_29	montpellierLesion
+sub-montpellierLesion008	M	n/a	unknown	unknown	n/a	n/a	MS	montpellier_20170112_31	montpellierLesion
+sub-montpellierLesion009	M	n/a	unknown	unknown	n/a	n/a	MS	montpellier_20170112_38	montpellierLesion
+sub-montpellierLesion010	F	n/a	unknown	unknown	n/a	n/a	MS	montpellier_20170112_53	montpellierLesion
+sub-montpellierLesion011	F	n/a	unknown	unknown	n/a	n/a	MS	montpellier_20170112_55	montpellierLesion
+sub-montpellierLesion012	M	n/a	unknown	unknown	n/a	n/a	MS	montpellier_20170112_59	montpellierLesion
+sub-montpellierLesion013	F	n/a	unknown	unknown	n/a	n/a	MS	montpellier_20170112_65	montpellierLesion
+sub-montpellierLesion014	M	n/a	unknown	unknown	n/a	n/a	MS	montpellier_20170112_66	montpellierLesion
+sub-nihReich001	M	n/a	unknown	unknown	n/a	n/a		nih_2017-reich_MS-1	nihReich
+sub-nihReich002	M	n/a	unknown	unknown	n/a	n/a		nih_2017-reich_MS-10	nihReich
+sub-nihReich003	F	n/a	unknown	unknown	n/a	n/a		nih_2017-reich_MS-11	nihReich
+sub-nihReich004	M	n/a	unknown	unknown	n/a	n/a		nih_2017-reich_MS-12	nihReich
+sub-nihReich005	F	n/a	unknown	unknown	n/a	n/a		nih_2017-reich_MS-13	nihReich
+sub-nihReich006	M	n/a	unknown	unknown	n/a	n/a		nih_2017-reich_MS-14	nihReich
+sub-nihReich007	F	n/a	unknown	unknown	n/a	n/a		nih_2017-reich_MS-15	nihReich
+sub-nihReich008	M	n/a	unknown	unknown	n/a	n/a		nih_2017-reich_MS-16	nihReich
+sub-nihReich009	F	n/a	unknown	unknown	n/a	n/a		nih_2017-reich_MS-17	nihReich
+sub-nihReich010	F	n/a	unknown	unknown	n/a	n/a		nih_2017-reich_MS-18	nihReich
+sub-nihReich011	F	n/a	unknown	unknown	n/a	n/a		nih_2017-reich_MS-19	nihReich
+sub-nihReich012	F	n/a	unknown	unknown	n/a	n/a		nih_2017-reich_MS-2	nihReich
+sub-nihReich013	F	n/a	unknown	unknown	n/a	n/a		nih_2017-reich_MS-20	nihReich
+sub-nihReich014	M	n/a	unknown	unknown	n/a	n/a		nih_2017-reich_MS-21	nihReich
+sub-nihReich015	M	n/a	unknown	unknown	n/a	n/a		nih_2017-reich_MS-22	nihReich
+sub-nihReich016	F	n/a	unknown	unknown	n/a	n/a		nih_2017-reich_MS-23	nihReich
+sub-nihReich017	F	n/a	unknown	unknown	n/a	n/a		nih_2017-reich_MS-24	nihReich
+sub-nihReich018	F	n/a	unknown	unknown	n/a	n/a		nih_2017-reich_MS-25	nihReich
+sub-nihReich019	M	n/a	unknown	unknown	n/a	n/a		nih_2017-reich_MS-26	nihReich
+sub-nihReich020	F	n/a	unknown	unknown	n/a	n/a		nih_2017-reich_MS-27	nihReich
+sub-nihReich021	F	n/a	unknown	unknown	n/a	n/a		nih_2017-reich_MS-28	nihReich
+sub-nihReich022	F	n/a	unknown	unknown	n/a	n/a		nih_2017-reich_MS-29	nihReich
+sub-nihReich023	F	n/a	unknown	unknown	n/a	n/a		nih_2017-reich_MS-3	nihReich
+sub-nihReich024	M	n/a	unknown	unknown	n/a	n/a		nih_2017-reich_MS-30	nihReich
+sub-nihReich025	M	n/a	unknown	unknown	n/a	n/a		nih_2017-reich_MS-4	nihReich
+sub-nihReich026	M	n/a	unknown	unknown	n/a	n/a		nih_2017-reich_MS-5	nihReich
+sub-nihReich027	M	n/a	unknown	unknown	n/a	n/a		nih_2017-reich_MS-6	nihReich
+sub-nihReich028	M	n/a	unknown	unknown	n/a	n/a		nih_2017-reich_MS-7	nihReich
+sub-nihReich029	F	n/a	unknown	unknown	n/a	n/a		nih_2017-reich_MS-8	nihReich
+sub-nihReich030	M	n/a	unknown	unknown	n/a	n/a		nih_2017-reich_MS-9	nihReich
+sub-nihReich031	F	n/a	unknown	unknown	n/a	2017-06-04	MS	nih_2017-reich_pat1	nihReich
+sub-nihReich032	F	n/a	unknown	unknown	n/a	2017-03-03	MS	nih_2017-reich_pat2	nihReich
+sub-nihReich033	F	n/a	unknown	unknown	n/a	2016-12-02	MS	nih_2017-reich_pat3	nihReich
+sub-nihReich034	M	n/a	unknown	unknown	n/a	2016-03-24	MS	nih_2017-reich_pat4	nihReich
+sub-nihReich035	F	n/a	unknown	unknown	n/a	2016-06-22	MS	nih_2017-reich_pat5	nihReich
+sub-nwuGmChallenge001	n/a	n/a	n/a	n/a	n/a	2018-05-13	n/a	nwu_gm-challenge_20180513	nwuGmChallenge
+sub-nwuHaleh001	n/a	n/a	unknown	unknown	n/a	n/a	HC	nwu_20161121-haleh_Subject-1	nwuHaleh
+sub-nwuHaleh002	n/a	n/a	unknown	unknown	n/a	n/a		nwu_20161121-haleh_Subject-2	nwuHaleh
+sub-nwuHaleh003	n/a	n/a	unknown	unknown	n/a	n/a		nwu_20161121-haleh_Subject-3	nwuHaleh
+sub-nwuHaleh004	n/a	n/a	unknown	unknown	n/a	n/a	n/a	nwu_20180124-haleh_C-05-LH	nwuHaleh
+sub-nwuHaleh005	n/a	n/a	unknown	unknown	n/a	n/a	n/a	nwu_20180124-haleh_C-06-IS	nwuHaleh
+sub-nwuHaleh006	n/a	n/a	unknown	unknown	n/a	n/a	n/a	nwu_20180124-haleh_C-07-GH	nwuHaleh
+sub-nwuHaleh007	n/a	n/a	unknown	unknown	n/a	n/a	n/a	nwu_20180124-haleh_C-08-WB	nwuHaleh
+sub-nwuHaleh008	n/a	n/a	unknown	unknown	n/a	n/a	n/a	nwu_20180124-haleh_C-09-MC	nwuHaleh
+sub-nwuHaleh009	n/a	n/a	unknown	unknown	n/a	n/a	n/a	nwu_20180124-haleh_C-10-MPP	nwuHaleh
+sub-nwuHaleh010	n/a	n/a	unknown	unknown	n/a	n/a	n/a	nwu_20180124-haleh_C-11-RSh	nwuHaleh
+sub-nwuHaleh011	n/a	n/a	unknown	unknown	n/a	n/a	n/a	nwu_20180124-haleh_C-14-RP	nwuHaleh
+sub-nwuHaleh012	n/a	n/a	unknown	unknown	n/a	n/a	n/a	nwu_20180124-haleh_C-15-JH	nwuHaleh
+sub-nwuHaleh013	n/a	n/a	unknown	unknown	n/a	n/a	n/a	nwu_20180124-haleh_C-17-KMM	nwuHaleh
+sub-nwuHaleh014	n/a	n/a	unknown	unknown	n/a	n/a	n/a	nwu_20180124-haleh_C-18-RT	nwuHaleh
+sub-nwuHaleh015	n/a	n/a	unknown	unknown	n/a	n/a	n/a	nwu_20180124-haleh_S-07-AH-2	nwuHaleh
+sub-nwuHaleh016	n/a	n/a	unknown	unknown	n/a	n/a	n/a	nwu_20180124-haleh_S-11-WS	nwuHaleh
+sub-nwuHaleh017	n/a	n/a	unknown	unknown	n/a	n/a	n/a	nwu_20180124-haleh_S-14-ShD	nwuHaleh
+sub-nwuHaleh018	n/a	n/a	unknown	unknown	n/a	n/a	n/a	nwu_20180124-haleh_S-15-EM	nwuHaleh
+sub-paris2017Pradat001	n/a	n/a	unknown	unknown	n/a	n/a	n/a	paris_2017-pradat_Ctrl-001	paris2017Pradat
+sub-paris2017Pradat002	n/a	n/a	unknown	unknown	n/a	n/a	n/a	paris_2017-pradat_Ctrl-002	paris2017Pradat
+sub-paris2017Pradat003	n/a	n/a	unknown	unknown	n/a	n/a	n/a	paris_2017-pradat_Ctrl-015	paris2017Pradat
+sub-paris2017Pradat004	n/a	n/a	unknown	unknown	n/a	n/a	n/a	paris_2017-pradat_Ctrl-016	paris2017Pradat
+sub-paris2017Pradat005	n/a	n/a	unknown	unknown	n/a	n/a	n/a	paris_2017-pradat_Ctrl-033	paris2017Pradat
+sub-paris2017Pradat006	n/a	n/a	unknown	unknown	n/a	n/a	n/a	paris_2017-pradat_Ctrl-034	paris2017Pradat
+sub-paris2017Pradat007	n/a	n/a	unknown	unknown	n/a	n/a	n/a	paris_2017-pradat_Ctrl-035	paris2017Pradat
+sub-paris2017Pradat008	n/a	n/a	unknown	unknown	n/a	n/a	n/a	paris_2017-pradat_Ctrl-036	paris2017Pradat
+sub-paris2017Pradat009	n/a	n/a	unknown	unknown	n/a	n/a	n/a	paris_2017-pradat_Ctrl-037	paris2017Pradat
+sub-paris2017Pradat010	n/a	n/a	unknown	unknown	n/a	n/a	n/a	paris_2017-pradat_Ctrl-039	paris2017Pradat
+sub-paris2017Pradat011	n/a	n/a	unknown	unknown	n/a	n/a	n/a	paris_2017-pradat_Ctrl-040	paris2017Pradat
+sub-paris2017Pradat012	F	n/a	unknown	unknown	1991-01-01	n/a	n/a	paris_2017-pradat_Ctrl-041	paris2017Pradat
+sub-paris2017Pradat013	n/a	n/a	unknown	unknown	n/a	n/a	n/a	paris_2017-pradat_Ctrl-042	paris2017Pradat
+sub-paris2017Pradat014	n/a	n/a	unknown	unknown	n/a	n/a	n/a	paris_2017-pradat_Ctrl-043	paris2017Pradat
+sub-paris2017Pradat015	n/a	n/a	unknown	unknown	n/a	n/a	n/a	paris_2017-pradat_Ctrl-044	paris2017Pradat
+sub-paris2017Pradat016	n/a	n/a	unknown	unknown	n/a	n/a	n/a	paris_2017-pradat_Ctrl-045	paris2017Pradat
+sub-paris2017Pradat017	n/a	n/a	unknown	unknown	n/a	n/a	n/a	paris_2017-pradat_Ctrl-046	paris2017Pradat
+sub-paris2017Pradat018	n/a	n/a	unknown	unknown	n/a	n/a	n/a	paris_2017-pradat_Ctrl-046-bis	paris2017Pradat
+sub-paris2017Pradat019	n/a	n/a	unknown	unknown	n/a	n/a	n/a	paris_2017-pradat_Ctrl-047	paris2017Pradat
+sub-paris2017Pradat020	n/a	n/a	unknown	unknown	n/a	n/a	n/a	paris_2017-pradat_Ctrl-048	paris2017Pradat
+sub-paris2017Pradat021	n/a	n/a	unknown	unknown	n/a	n/a	n/a	paris_2017-pradat_Ctrl-049	paris2017Pradat
+sub-paris2017Pradat022	n/a	n/a	unknown	unknown	n/a	n/a	n/a	paris_2017-pradat_Ctrl-050	paris2017Pradat
+sub-paris2017Pradat023	M	n/a	unknown	unknown	1979-01-01	n/a	n/a	paris_2017-pradat_SMA-003	paris2017Pradat
+sub-paris2017Pradat024	M	n/a	unknown	unknown	1970-01-01	n/a	n/a	paris_2017-pradat_SMA-004	paris2017Pradat
+sub-paris2017Pradat025	M	n/a	unknown	unknown	1954-01-01	n/a	n/a	paris_2017-pradat_SMA-005	paris2017Pradat
+sub-paris2017Pradat026	F	n/a	unknown	unknown	1975-01-01	n/a	n/a	paris_2017-pradat_SMA-006	paris2017Pradat
+sub-paris2017Pradat027	F	n/a	unknown	unknown	1961-01-01	n/a	n/a	paris_2017-pradat_SMA-007	paris2017Pradat
+sub-paris2017Pradat028	F	n/a	unknown	unknown	1970-01-01	n/a	n/a	paris_2017-pradat_SMA-008	paris2017Pradat
+sub-paris2017Pradat029	M	n/a	unknown	unknown	1990-01-01	n/a	n/a	paris_2017-pradat_SMA-010	paris2017Pradat
+sub-paris2017Pradat030	F	n/a	unknown	unknown	1985-01-01	n/a	n/a	paris_2017-pradat_SMA-011	paris2017Pradat
+sub-paris2017Pradat031	F	n/a	unknown	unknown	1970-01-01	n/a	n/a	paris_2017-pradat_SMA-013	paris2017Pradat
+sub-paris2017Pradat032	F	n/a	unknown	unknown	1960-01-01	n/a	n/a	paris_2017-pradat_SMA-017	paris2017Pradat
+sub-paris2017Pradat033	F	n/a	unknown	unknown	1957-01-01	n/a	n/a	paris_2017-pradat_SMA-018	paris2017Pradat
+sub-paris2017Pradat034	F	n/a	unknown	unknown	1980-01-01	n/a	n/a	paris_2017-pradat_SMA-019	paris2017Pradat
+sub-paris2017Pradat035	M	n/a	unknown	unknown	1989-01-01	n/a	n/a	paris_2017-pradat_SMA-020	paris2017Pradat
+sub-paris2017Pradat036	F	n/a	unknown	unknown	1993-01-01	n/a	n/a	paris_2017-pradat_SMA-022	paris2017Pradat
+sub-paris2017Pradat037	M	n/a	unknown	unknown	1984-01-01	n/a	n/a	paris_2017-pradat_SMA-023	paris2017Pradat
+sub-paris2017Pradat038	M	n/a	unknown	unknown	1995-01-01	n/a	n/a	paris_2017-pradat_SMA-024	paris2017Pradat
+sub-paris2017Pradat039	M	n/a	unknown	unknown	1970-01-01	n/a	n/a	paris_2017-pradat_SMA-025	paris2017Pradat
+sub-paris2017Pradat040	F	n/a	unknown	unknown	1966-01-01	n/a	n/a	paris_2017-pradat_SMA-026	paris2017Pradat
+sub-paris2017Pradat041	M	n/a	unknown	unknown	2000-01-01	n/a	n/a	paris_2017-pradat_SMA-027	paris2017Pradat
+sub-paris2017Pradat042	M	n/a	unknown	unknown	1979-01-01	n/a	n/a	paris_2017-pradat_SMA-028	paris2017Pradat
+sub-paris2017Pradat043	M	n/a	unknown	unknown	1978-01-01	n/a	n/a	paris_2017-pradat_SMA-029	paris2017Pradat
+sub-paris2017Pradat044	F	n/a	unknown	unknown	1982-01-01	n/a	n/a	paris_2017-pradat_SMA-030	paris2017Pradat
+sub-paris2017Pradat045	M	n/a	unknown	unknown	1987-01-01	n/a	n/a	paris_2017-pradat_SMA-031	paris2017Pradat
+sub-paris2017Pradat046	M	n/a	unknown	unknown	1952-01-01	n/a	n/a	paris_2017-pradat_SMA-032	paris2017Pradat
+sub-parisPradat001	n/a	n/a	unknown	unknown	n/a	n/a	HC	paris_pradat_05	parisPradat
+sub-parisPradat002	n/a	n/a	unknown	unknown	n/a	n/a	HC	paris_pradat_06	parisPradat
+sub-parisPradat003	M	n/a	unknown	unknown	n/a	2010-09-30	ALS	paris_pradat_100	parisPradat
+sub-parisPradat004	F	n/a	unknown	unknown	n/a	2010-10-04	ALS	paris_pradat_101	parisPradat
+sub-parisPradat005	F	n/a	unknown	unknown	n/a	n/a	HC	paris_pradat_112	parisPradat
+sub-parisPradat006	M	n/a	unknown	unknown	n/a	n/a	HC	paris_pradat_115	parisPradat
+sub-parisPradat007	F	n/a	unknown	unknown	n/a	n/a	HC	paris_pradat_116	parisPradat
+sub-parisPradat008	F	n/a	unknown	unknown	n/a	n/a	HC	paris_pradat_117	parisPradat
+sub-parisPradat009	M	n/a	unknown	unknown	n/a	2010-12-02	ALS	paris_pradat_119	parisPradat
+sub-parisPradat010	M	n/a	unknown	unknown	n/a	2011-02-03	ALS	paris_pradat_123	parisPradat
+sub-parisPradat011	F	n/a	unknown	unknown	n/a	2011-02-17	ALS	paris_pradat_124	parisPradat
+sub-parisPradat012	F	n/a	unknown	unknown	n/a	n/a	HC	paris_pradat_143	parisPradat
+sub-parisPradat013	n/a	n/a	unknown	unknown	n/a	n/a	HC	paris_pradat_15	parisPradat
+sub-parisPradat014	n/a	n/a	unknown	unknown	n/a	n/a	HC	paris_pradat_16	parisPradat
+sub-parisPradat015	n/a	n/a	unknown	unknown	n/a	n/a	HC	paris_pradat_17	parisPradat
+sub-parisPradat016	n/a	n/a	unknown	unknown	n/a	n/a	HC	paris_pradat_18	parisPradat
+sub-parisPradat017	M	n/a	unknown	unknown	n/a	n/a	HC	paris_pradat_20	parisPradat
+sub-parisPradat018	n/a	n/a	unknown	unknown	n/a	n/a	HC	paris_pradat_38	parisPradat
+sub-parisPradat019	F	n/a	unknown	unknown	n/a	n/a	HC	paris_pradat_39	parisPradat
+sub-parisPradat020	F	n/a	unknown	unknown	n/a	n/a	HC	paris_pradat_41	parisPradat
+sub-parisPradat021	n/a	n/a	unknown	unknown	n/a	n/a	HC	paris_pradat_42	parisPradat
+sub-parisPradat022	M	n/a	unknown	unknown	n/a	n/a	HC	paris_pradat_43	parisPradat
+sub-parisPradat023	F	n/a	unknown	unknown	n/a	n/a	HC	paris_pradat_44	parisPradat
+sub-parisPradat024	n/a	n/a	unknown	unknown	n/a	n/a	HC	paris_pradat_45	parisPradat
+sub-parisPradat025	n/a	n/a	unknown	unknown	n/a	n/a	HC	paris_pradat_46	parisPradat
+sub-parisPradat026	n/a	n/a	unknown	unknown	n/a	n/a	HC	paris_pradat_47	parisPradat
+sub-parisPradat027	n/a	n/a	unknown	unknown	n/a	n/a		paris_pradat_49	parisPradat
+sub-parisPradat028	n/a	n/a	unknown	unknown	n/a	n/a		paris_pradat_50	parisPradat
+sub-parisPradat029	n/a	n/a	unknown	unknown	n/a	n/a		paris_pradat_53	parisPradat
+sub-parisPradat030	n/a	n/a	unknown	unknown	n/a	n/a		paris_pradat_54	parisPradat
+sub-parisPradat031	n/a	n/a	unknown	unknown	n/a	n/a		paris_pradat_57	parisPradat
+sub-parisPradat032	n/a	n/a	unknown	unknown	n/a	n/a		paris_pradat_58	parisPradat
+sub-parisPradat033	n/a	n/a	unknown	unknown	n/a	n/a		paris_pradat_59	parisPradat
+sub-parisPradat034	n/a	n/a	unknown	unknown	n/a	n/a		paris_pradat_60	parisPradat
+sub-parisPradat035	M	n/a	unknown	unknown	n/a	n/a	HC	paris_pradat_61	parisPradat
+sub-parisPradat036	M	n/a	unknown	unknown	n/a	n/a	HC	paris_pradat_62	parisPradat
+sub-parisPradat037	M	n/a	unknown	unknown	n/a	n/a	HC	paris_pradat_63	parisPradat
+sub-parisPradat038	n/a	n/a	unknown	unknown	n/a	n/a		paris_pradat_64	parisPradat
+sub-parisPradat039	n/a	n/a	unknown	unknown	n/a	n/a		paris_pradat_65	parisPradat
+sub-parisPradat040	M	n/a	unknown	unknown	n/a	n/a	HC	paris_pradat_66	parisPradat
+sub-parisPradat041	M	n/a	unknown	unknown	n/a	n/a	HC	paris_pradat_67	parisPradat
+sub-parisPradat042	F	n/a	unknown	unknown	n/a	n/a	HC	paris_pradat_68	parisPradat
+sub-parisPradat043	M	n/a	unknown	unknown	n/a	n/a	HC	paris_pradat_69	parisPradat
+sub-parisPradat044	M	n/a	unknown	unknown	n/a	2010-02-20	ALS	paris_pradat_70	parisPradat
+sub-parisPradat045	M	n/a	unknown	unknown	n/a	2010-02-22	ALS	paris_pradat_71	parisPradat
+sub-parisPradat046	M	n/a	unknown	unknown	n/a	2010-03-06	ALS	paris_pradat_73	parisPradat
+sub-parisPradat047	M	n/a	unknown	unknown	n/a	2010-03-15	ALS	paris_pradat_74	parisPradat
+sub-parisPradat048	M	n/a	unknown	unknown	n/a	2010-03-29	ALS	paris_pradat_76	parisPradat
+sub-parisPradat049	M	n/a	unknown	unknown	n/a	2010-05-29	ALS	paris_pradat_77	parisPradat
+sub-parisPradat050	M	n/a	unknown	unknown	n/a	2010-05-29	ALS	paris_pradat_78	parisPradat
+sub-parisPradat051	M	n/a	unknown	unknown	n/a	2010-05-29	ALS	paris_pradat_79	parisPradat
+sub-parisPradat052	M	n/a	unknown	unknown	n/a	n/a	HC	paris_pradat_80	parisPradat
+sub-parisPradat053	M	n/a	unknown	unknown	n/a	2010-06-21	ALS	paris_pradat_81	parisPradat
+sub-parisPradat054	M	n/a	unknown	unknown	n/a	n/a	HC	paris_pradat_82	parisPradat
+sub-parisPradat055	F	n/a	unknown	unknown	n/a	n/a	HC	paris_pradat_83	parisPradat
+sub-parisPradat056	F	n/a	unknown	unknown	n/a	n/a	HC	paris_pradat_84	parisPradat
+sub-parisPradat057	M	n/a	unknown	unknown	n/a	2010-07-05	ALS	paris_pradat_85	parisPradat
+sub-parisPradat058	M	n/a	unknown	unknown	n/a	2010-07-05	ALS	paris_pradat_86	parisPradat
+sub-parisPradat059	F	n/a	unknown	unknown	n/a	n/a	HC	paris_pradat_87	parisPradat
+sub-parisPradat060	M	n/a	unknown	unknown	n/a	2010-09-04	ALS	paris_pradat_88	parisPradat
+sub-parisPradat061	M	n/a	unknown	unknown	n/a	2010-09-04	ALS	paris_pradat_89	parisPradat
+sub-parisPradat062	M	n/a	unknown	unknown	n/a	2010-09-04	ALS	paris_pradat_90	parisPradat
+sub-parisPradat063	F	n/a	unknown	unknown	n/a	2010-09-10	ALS	paris_pradat_91	parisPradat
+sub-parisPradat064	F	n/a	unknown	unknown	n/a	2010-09-11	ALS	paris_pradat_92	parisPradat
+sub-parisPradat065	M	n/a	unknown	unknown	n/a	2010-09-11	ALS	paris_pradat_93	parisPradat
+sub-parisPradat066	M	n/a	unknown	unknown	n/a	2010-09-11	ALS	paris_pradat_94	parisPradat
+sub-parisPradat067	F	n/a	unknown	unknown	n/a	2010-09-12	ALS	paris_pradat_95	parisPradat
+sub-parisPradat068	F	n/a	unknown	unknown	n/a	2010-09-12	ALS	paris_pradat_96	parisPradat
+sub-parisPradat069	F	n/a	unknown	unknown	n/a	2010-09-20	ALS	paris_pradat_97	parisPradat
+sub-parisPradat070	M	n/a	unknown	unknown	n/a	2010-09-27	ALS	paris_pradat_98	parisPradat
+sub-rennesElise001	n/a	n/a	unknown	unknown	n/a	n/a	MS	rennes_20161206_elise	rennesElise
+sub-rennesMS001	F	n/a	unknown	unknown	n/a	n/a	MS	rennes_20170112_01	rennesMS
+sub-rennesMS002	M	n/a	unknown	unknown	n/a	n/a	MS	rennes_20170112_03	rennesMS
+sub-rennesMS003	F	n/a	unknown	unknown	n/a	n/a	MS	rennes_20170112_04	rennesMS
+sub-rennesMS004	M	n/a	unknown	unknown	n/a	n/a	MS	rennes_20170112_05	rennesMS
+sub-rennesMS005	F	n/a	unknown	unknown	n/a	n/a	MS	rennes_20170112_06	rennesMS
+sub-rennesMS008	M	n/a	unknown	unknown	n/a	n/a	MS	rennes_20170112_10	rennesMS
+sub-rennesMS009	F	n/a	unknown	unknown	n/a	n/a	MS	rennes_20170112_12	rennesMS
+sub-rennesMS013	F	n/a	unknown	unknown	n/a	n/a	MS	rennes_20170112_16	rennesMS
+sub-rennesMS015	F	n/a	unknown	unknown	n/a	n/a	MS	rennes_20170112_18	rennesMS
+sub-rennesMS016	F	n/a	unknown	unknown	n/a	n/a	MS	rennes_20170112_19	rennesMS
+sub-rennesMS017	F	n/a	unknown	unknown	n/a	n/a	MS	rennes_20170112_21	rennesMS
+sub-rennesMS018	M	n/a	unknown	unknown	n/a	n/a	MS	rennes_20170112_23	rennesMS
+sub-rennesMS019	F	n/a	unknown	unknown	n/a	n/a	MS	rennes_20170112_26	rennesMS
+sub-rennesMS020	F	n/a	unknown	unknown	n/a	n/a	MS	rennes_20170112_27	rennesMS
+sub-rennesMS021	M	n/a	unknown	unknown	n/a	n/a	MS	rennes_20170112_28	rennesMS
+sub-rennesMS023	F	n/a	unknown	unknown	n/a	n/a	MS	rennes_20170112_30	rennesMS
+sub-rennesMS025	M	n/a	unknown	unknown	n/a	n/a	MS	rennes_20170112_33	rennesMS
+sub-rennesMS026	F	n/a	unknown	unknown	n/a	n/a	MS	rennes_20170112_34	rennesMS
+sub-rennesMS027	F	n/a	unknown	unknown	n/a	n/a	MS	rennes_20170112_35	rennesMS
+sub-rennesMS028	F	n/a	unknown	unknown	n/a	n/a	MS	rennes_20170112_36	rennesMS
+sub-rennesMS029	F	n/a	unknown	unknown	n/a	n/a	MS	rennes_20170112_37	rennesMS
+sub-rennesMS031	F	n/a	unknown	unknown	n/a	n/a	MS	rennes_20170112_39	rennesMS
+sub-rennesMS032	F	n/a	unknown	unknown	n/a	n/a	MS	rennes_20170112_41	rennesMS
+sub-rennesMS033	F	n/a	unknown	unknown	n/a	n/a	MS	rennes_20170112_45	rennesMS
+sub-rennesMS034	F	n/a	unknown	unknown	n/a	n/a	MS	rennes_20170112_46	rennesMS
+sub-rennesMS035	F	n/a	unknown	unknown	n/a	n/a	MS	rennes_20170112_47	rennesMS
+sub-rennesMS036	F	n/a	unknown	unknown	n/a	n/a	MS	rennes_20170112_48	rennesMS
+sub-rennesMS037	F	n/a	unknown	unknown	n/a	n/a	MS	rennes_20170112_49	rennesMS
+sub-rennesMS038	M	n/a	unknown	unknown	n/a	n/a	MS	rennes_20170112_50	rennesMS
+sub-rennesMS039	M	n/a	unknown	unknown	n/a	n/a	MS	rennes_20170112_51	rennesMS
+sub-rennesMS041	M	n/a	unknown	unknown	n/a	n/a	MS	rennes_20170112_54	rennesMS
+sub-rennesMS043	M	n/a	unknown	unknown	n/a	n/a	MS	rennes_20170112_56	rennesMS
+sub-rennesMS044	F	n/a	unknown	unknown	n/a	n/a	MS	rennes_20170112_58	rennesMS
+sub-rennesMS046	F	n/a	unknown	unknown	n/a	n/a	MS	rennes_20170112_60	rennesMS
+sub-rennesMS047	M	n/a	unknown	unknown	n/a	n/a	MS	rennes_20170112_61	rennesMS
+sub-rennesMS048	F	n/a	unknown	unknown	n/a	n/a	MS	rennes_20170112_62	rennesMS
+sub-rennesMS049	M	n/a	unknown	unknown	n/a	n/a	MS	rennes_20170112_63	rennesMS
+sub-rennesMS050	M	n/a	unknown	unknown	n/a	n/a	MS	rennes_20170112_64	rennesMS
+sub-rennesMS053	F	n/a	unknown	unknown	n/a	n/a	MS	rennes_20170112_67	rennesMS
+sub-rennesMS054	n/a	n/a	unknown	unknown	n/a	n/a	n/a	rennes_20170112_68	rennesMS
+sub-rennesMS055	F	n/a	unknown	unknown	n/a	n/a	MS	rennes_20170112_69	rennesMS
+sub-rennesMS056	M	n/a	unknown	unknown	n/a	n/a	MS	rennes_20170112_71	rennesMS
+sub-rennesMS057	F	n/a	unknown	unknown	n/a	n/a	MS	rennes_20170112_72	rennesMS
+sub-rennesMS058	F	n/a	unknown	unknown	n/a	n/a	MS	rennes_20170112_73	rennesMS
+sub-rennesMS059	F	n/a	unknown	unknown	n/a	n/a	MS	rennes_20170112_74	rennesMS
+sub-rennesMS060	M	n/a	unknown	unknown	n/a	n/a	MS	rennes_20170112_75	rennesMS
+sub-rennesMS061	F	n/a	unknown	unknown	n/a	n/a	MS	rennes_20170112_76	rennesMS
+sub-rennesMS062	F	n/a	unknown	unknown	n/a	n/a	MS	rennes_20170112_77	rennesMS
+sub-rennesMS063	M	n/a	unknown	unknown	n/a	n/a	MS	rennes_20170112_78	rennesMS
+sub-rennesMS064	F	n/a	unknown	unknown	n/a	n/a	MS	rennes_20170112_79	rennesMS
+sub-rennesMS065	M	n/a	unknown	unknown	n/a	n/a	MS	rennes_20170112_80	rennesMS
+sub-rennesMS066	F	n/a	unknown	unknown	n/a	n/a	MS	rennes_20170112_81	rennesMS
+sub-rennesMS067	F	n/a	unknown	unknown	n/a	n/a	MS	rennes_20170112_82	rennesMS
+sub-rennesMS068	F	n/a	unknown	unknown	n/a	n/a	MS	rennes_20170112_83	rennesMS
+sub-rennesMS069	M	n/a	unknown	unknown	n/a	n/a	MS	rennes_20170112_84	rennesMS
+sub-rennesMS070	M	n/a	unknown	unknown	n/a	n/a	MS	rennes_20170112_85	rennesMS
+sub-rennesMS071	n/a	n/a	unknown	unknown	n/a	n/a	HC	rennes_20170112_H1	rennesMS
+sub-rennesMS072	n/a	n/a	unknown	unknown	n/a	n/a	HC	rennes_20170112_H2	rennesMS
+sub-rennesMS073	n/a	n/a	unknown	unknown	n/a	n/a	HC	rennes_20170112_H3	rennesMS
+sub-rennesOfsep001	M	n/a	unknown	unknown	n/a	n/a		rennes_ofsep_0010016	rennesOfsep
+sub-rennesOfsep002	M	n/a	unknown	unknown	n/a	n/a		rennes_ofsep_0010029	rennesOfsep
+sub-rennesOfsep003	M	n/a	unknown	unknown	n/a	n/a		rennes_ofsep_0010031	rennesOfsep
+sub-rennesOfsep004	F	n/a	unknown	unknown	n/a	n/a		rennes_ofsep_0010034	rennesOfsep
+sub-rennesOfsep005	F	n/a	unknown	unknown	n/a	n/a		rennes_ofsep_0010039	rennesOfsep
+sub-rennesOfsep006	M	n/a	unknown	unknown	n/a	n/a		rennes_ofsep_0010044	rennesOfsep
+sub-rennesOfsep007	M	n/a	unknown	unknown	n/a	n/a		rennes_ofsep_0010050	rennesOfsep
+sub-rennesOfsep008	F	n/a	unknown	unknown	n/a	n/a		rennes_ofsep_0010053	rennesOfsep
+sub-rennesOfsep009	F	n/a	unknown	unknown	n/a	n/a		rennes_ofsep_0010056	rennesOfsep
+sub-rennesOfsep010	F	n/a	unknown	unknown	n/a	n/a		rennes_ofsep_0010067	rennesOfsep
+sub-rennesOfsep011	M	n/a	unknown	unknown	n/a	n/a		rennes_ofsep_0010069	rennesOfsep
+sub-rennesOfsep012	F	n/a	unknown	unknown	n/a	n/a		rennes_ofsep_0010079	rennesOfsep
+sub-rennesOfsep013	M	n/a	unknown	unknown	n/a	n/a		rennes_ofsep_0010080	rennesOfsep
+sub-rennesOfsep014	F	n/a	unknown	unknown	n/a	n/a		rennes_ofsep_0010085	rennesOfsep
+sub-rennesOfsep015	F	n/a	unknown	unknown	n/a	n/a		rennes_ofsep_0010086	rennesOfsep
+sub-rennesOfsep016	F	n/a	unknown	unknown	n/a	n/a		rennes_ofsep_0010091	rennesOfsep
+sub-rennesOfsep017	F	n/a	unknown	unknown	n/a	n/a		rennes_ofsep_0010115	rennesOfsep
+sub-rennesOfsep018	F	n/a	unknown	unknown	n/a	n/a		rennes_ofsep_0010119	rennesOfsep
+sub-rennesOfsep019	F	n/a	unknown	unknown	n/a	n/a		rennes_ofsep_0010121	rennesOfsep
+sub-rennesOfsep020	F	n/a	unknown	unknown	n/a	n/a		rennes_ofsep_0010128	rennesOfsep
+sub-rennesOfsep021	F	n/a	unknown	unknown	n/a	n/a		rennes_ofsep_0010132	rennesOfsep
+sub-rennesOfsep022	F	n/a	unknown	unknown	n/a	n/a		rennes_ofsep_0010133	rennesOfsep
+sub-rennesOfsep023	F	n/a	unknown	unknown	n/a	n/a		rennes_ofsep_0010141	rennesOfsep
+sub-rennesOfsep024	M	n/a	unknown	unknown	n/a	n/a		rennes_ofsep_0010144	rennesOfsep
+sub-rennesOfsep025	F	n/a	unknown	unknown	n/a	n/a		rennes_ofsep_0010154	rennesOfsep
+sub-rennesOfsep026	F	n/a	unknown	unknown	n/a	n/a		rennes_ofsep_0010157	rennesOfsep
+sub-rennesOfsep027	F	n/a	unknown	unknown	n/a	n/a		rennes_ofsep_0010163	rennesOfsep
+sub-rennesOfsep028	F	n/a	unknown	unknown	n/a	n/a		rennes_ofsep_0010167	rennesOfsep
+sub-rennesOfsep029	n/a	n/a	unknown	unknown	n/a	n/a		rennes_ofsep_01001CEBR	rennesOfsep
+sub-rennesOfsep030	n/a	n/a	unknown	unknown	n/a	n/a		rennes_ofsep_01004FRRO	rennesOfsep
+sub-rennesOfsep031	n/a	n/a	unknown	unknown	n/a	n/a		rennes_ofsep_01007YSDU	rennesOfsep
+sub-rennesOfsep032	n/a	n/a	unknown	unknown	n/a	n/a		rennes_ofsep_01008BRDR	rennesOfsep
+sub-rennesOfsep033	n/a	n/a	unknown	unknown	n/a	n/a		rennes_ofsep_01011CEHE	rennesOfsep
+sub-rennesOfsep034	n/a	n/a	unknown	unknown	n/a	n/a		rennes_ofsep_01012BEHO	rennesOfsep
+sub-rennesOfsep035	n/a	n/a	unknown	unknown	n/a	n/a		rennes_ofsep_01013THCH	rennesOfsep
+sub-rennesOfsep036	n/a	n/a	unknown	unknown	n/a	n/a		rennes_ofsep_01015DRFA	rennesOfsep
+sub-rennesOfsep037	n/a	n/a	unknown	unknown	n/a	n/a		rennes_ofsep_01019AUAR	rennesOfsep
+sub-rennesOfsep038	n/a	n/a	unknown	unknown	n/a	n/a		rennes_ofsep_01020LEMO	rennesOfsep
+sub-rennesOfsep039	n/a	n/a	unknown	unknown	n/a	n/a		rennes_ofsep_01022OLME	rennesOfsep
+sub-rennesOfsep040	n/a	n/a	unknown	unknown	n/a	n/a		rennes_ofsep_01026DEME	rennesOfsep
+sub-rennesOfsep041	n/a	n/a	unknown	unknown	n/a	n/a		rennes_ofsep_01027CEBA	rennesOfsep
+sub-rennesOfsep042	n/a	n/a	unknown	unknown	n/a	n/a		rennes_ofsep_01029STJE	rennesOfsep
+sub-rennesOfsep043	n/a	n/a	unknown	unknown	n/a	n/a		rennes_ofsep_01030AUME	rennesOfsep
+sub-rennesOfsep044	n/a	n/a	unknown	unknown	n/a	n/a		rennes_ofsep_01033ISCO	rennesOfsep
+sub-rennesOfsep045	n/a	n/a	unknown	unknown	n/a	n/a		rennes_ofsep_01034STGU	rennesOfsep
+sub-rennesOfsep046	n/a	n/a	unknown	unknown	n/a	n/a		rennes_ofsep_01035MENI	rennesOfsep
+sub-rennesOfsep047	n/a	n/a	unknown	unknown	n/a	n/a		rennes_ofsep_01037ISDU	rennesOfsep
+sub-rennesOfsep048	n/a	n/a	unknown	unknown	n/a	n/a		rennes_ofsep_01038PAGU	rennesOfsep
+sub-rennesOfsep049	n/a	n/a	unknown	unknown	n/a	n/a		rennes_ofsep_01043HECA	rennesOfsep
+sub-rennesOfsep050	n/a	n/a	unknown	unknown	n/a	n/a		rennes_ofsep_01045BRPO	rennesOfsep
+sub-rennesOfsep051	n/a	n/a	unknown	unknown	n/a	n/a		rennes_ofsep_01048ODAU	rennesOfsep
+sub-rennesOfsep052	n/a	n/a	unknown	unknown	n/a	n/a		rennes_ofsep_01050ANSO	rennesOfsep
+sub-rennesOfsep053	n/a	n/a	unknown	unknown	n/a	n/a		rennes_ofsep_01051STBO	rennesOfsep
+sub-rennesOfsep054	n/a	n/a	unknown	unknown	n/a	n/a		rennes_ofsep_01054MIHE	rennesOfsep
+sub-rennesOfsep055	n/a	n/a	unknown	unknown	n/a	n/a		rennes_ofsep_01056NIBI	rennesOfsep
+sub-rennesOfsep056	n/a	n/a	unknown	unknown	n/a	n/a		rennes_ofsep_01057JUMA	rennesOfsep
+sub-rennesOfsep057	n/a	n/a	unknown	unknown	n/a	n/a		rennes_ofsep_01058MHGH	rennesOfsep
+sub-rennesOfsep058	n/a	n/a	unknown	unknown	n/a	n/a		rennes_ofsep_01060CHCA	rennesOfsep
+sub-rennesOfsep059	n/a	n/a	unknown	unknown	n/a	n/a		rennes_ofsep_01061ERCO	rennesOfsep
+sub-rennesOfsep060	n/a	n/a	unknown	unknown	n/a	n/a		rennes_ofsep_01063NATU	rennesOfsep
+sub-rennesOfsep061	n/a	n/a	unknown	unknown	n/a	n/a		rennes_ofsep_01070MYSC	rennesOfsep
+sub-rennesOfsep062	n/a	n/a	unknown	unknown	n/a	n/a		rennes_ofsep_01073YOJA	rennesOfsep
+sub-rennesOfsep063	n/a	n/a	unknown	unknown	n/a	n/a		rennes_ofsep_01075CARE	rennesOfsep
+sub-rennesOfsep064	n/a	n/a	unknown	unknown	n/a	n/a		rennes_ofsep_01077DICR	rennesOfsep
+sub-rennesOfsep065	n/a	n/a	unknown	unknown	n/a	n/a		rennes_ofsep_01078PIBR	rennesOfsep
+sub-rennesOfsep066	n/a	n/a	unknown	unknown	n/a	n/a		rennes_ofsep_01081CYLE	rennesOfsep
+sub-rennesOfsep067	n/a	n/a	unknown	unknown	n/a	n/a		rennes_ofsep_01085COTA	rennesOfsep
+sub-rennesOfsep068	n/a	n/a	unknown	unknown	n/a	n/a		rennes_ofsep_01086CHTA	rennesOfsep
+sub-rennesOfsep069	n/a	n/a	unknown	unknown	n/a	n/a		rennes_ofsep_01090FRBE	rennesOfsep
+sub-rennesOfsep070	n/a	n/a	unknown	unknown	n/a	n/a		rennes_ofsep_01093JELE	rennesOfsep
+sub-rennesOfsep071	n/a	n/a	unknown	unknown	n/a	n/a		rennes_ofsep_01094SYFR	rennesOfsep
+sub-rennesOfsep072	n/a	n/a	unknown	unknown	n/a	n/a		rennes_ofsep_01095RIHI	rennesOfsep
+sub-rennesOfsep073	n/a	n/a	unknown	unknown	n/a	n/a		rennes_ofsep_01096CLLE	rennesOfsep
+sub-rennesOfsep074	n/a	n/a	unknown	unknown	n/a	n/a		rennes_ofsep_01097MALA	rennesOfsep
+sub-rennesOfsep075	n/a	n/a	unknown	unknown	n/a	n/a		rennes_ofsep_01099VILE	rennesOfsep
+sub-rennesOfsep076	n/a	n/a	unknown	unknown	n/a	n/a		rennes_ofsep_01102FLSA	rennesOfsep
+sub-rennesOfsep077	n/a	n/a	unknown	unknown	n/a	n/a		rennes_ofsep_01103AMAM	rennesOfsep
+sub-rennesOfsep078	n/a	n/a	unknown	unknown	n/a	n/a		rennes_ofsep_01106JELE	rennesOfsep
+sub-rennesOfsep079	n/a	n/a	unknown	unknown	n/a	n/a		rennes_ofsep_01108BELE	rennesOfsep
+sub-rennesOfsep080	n/a	n/a	unknown	unknown	n/a	n/a		rennes_ofsep_01109FRRI	rennesOfsep
+sub-rennesOfsep081	n/a	n/a	unknown	unknown	n/a	n/a		rennes_ofsep_01110RORO	rennesOfsep
+sub-sctUsers001	n/a	n/a	unknown	unknown	n/a	n/a		mevis_sct-users_08	sctUsers
+sub-sctUsers002	n/a	n/a	unknown	unknown	n/a	n/a		mevis_sct-users_14	sctUsers
+sub-sctUsers003	n/a	n/a	unknown	unknown	n/a	n/a		prague_sct-users_01	sctUsers
+sub-sctUsers004	n/a	n/a	n/a	n/a	n/a	n/a	n/a	prague_sct-users_20180518	sctUsers
+sub-sctUsers005	n/a	n/a	n/a	n/a	n/a	n/a	n/a	sapienza_sct-users_mauro-01	sctUsers
+sub-sctUsers006	n/a	n/a	unknown	unknown	n/a	n/a	HC	ubc_sct-users_20151025-emil	sctUsers
+sub-sctUsers007	n/a	n/a	unknown	unknown	n/a	n/a	HC	unknown_sct-users_20160830-jison	sctUsers
+sub-sctUsers008	n/a	n/a	unknown	unknown	n/a	n/a		unknown_sct-users_20170203-jisun	sctUsers
+sub-sctUsers009	n/a	n/a	unknown	unknown	n/a	n/a	HC	unknown_sct-users_20170213-tom	sctUsers
+sub-sctUsers010	n/a	n/a	unknown	unknown	n/a	n/a		unknown_sct-users_20170217-kelsey	sctUsers
+sub-sctUsers011	n/a	n/a	n/a	n/a	n/a	n/a	n/a	unknown_sct-users_20180518	sctUsers
+sub-sctUsers012	n/a	n/a	unknown	unknown	n/a	n/a		unknown_sct-users_wang-01	sctUsers
+sub-sctUsers013	n/a	n/a	unknown	unknown	n/a	n/a		unknown_sct-users_wang-02	sctUsers
+sub-sctUsers014	n/a	n/a	unknown	unknown	n/a	n/a		unknown_sct-users_wang-03	sctUsers
+sub-sctUsers015	n/a	n/a	unknown	unknown	n/a	n/a		unknown_sct-users_wang-04	sctUsers
+sub-sctUsers016	n/a	n/a	unknown	unknown	n/a	n/a		unknown_sct-users_wang-05	sctUsers
+sub-sctUsers017	n/a	n/a	unknown	unknown	n/a	n/a	HC	vanderbilt_sct-users_20150910-joshua	sctUsers
+sub-sherbrookeBiospective001	n/a	n/a	unknown	unknown	n/a	n/a	HC	sherbrooke_biospective_100-001	sherbrookeBiospective
+sub-sherbrookeBiospective002	n/a	n/a	unknown	unknown	n/a	n/a	HC	sherbrooke_biospective_100-002	sherbrookeBiospective
+sub-sherbrookeBiospective003	M	n/a	unknown	unknown	1984-01-01	n/a	HC	sherbrooke_biospective_100-004-s1	sherbrookeBiospective
+sub-sherbrookeBiospective004	F	n/a	unknown	unknown	1984-01-01	n/a	HC	sherbrooke_biospective_100-005-s1	sherbrookeBiospective
+sub-sherbrookeBiospective005	M	n/a	unknown	unknown	1991-01-01	n/a	HC	sherbrooke_biospective_100-006-s1	sherbrookeBiospective
+sub-sherbrookeBiospective006	M	n/a	unknown	unknown	1982-01-01	n/a	HC	sherbrooke_biospective_100-009-s1	sherbrookeBiospective
+sub-sherbrookeBiospective007	M	n/a	unknown	unknown	1985-01-01	n/a	HC	sherbrooke_biospective_100-010-s1	sherbrookeBiospective
+sub-sherbrookeBiospective008	M	n/a	unknown	unknown	1982-01-01	n/a	HC	sherbrooke_biospective_100-011-s1	sherbrookeBiospective
+sub-sherbrookeBiospective009	M	n/a	unknown	unknown	1985-01-01	n/a	HC	sherbrooke_biospective_100-012-s1	sherbrookeBiospective
+sub-spineGeneric001	n/a	n/a	unknown	unknown	n/a	n/a	n/a	chum_spine-generic_20170411	spineGeneric
+sub-spineGeneric002	n/a	n/a	unknown	unknown	n/a	n/a	n/a	douglas_spine-generic_20171127	spineGeneric
+sub-spineGeneric003	n/a	n/a	unknown	unknown	n/a	n/a	n/a	glen_spine-generic_20170707	spineGeneric
+sub-spineGeneric004	n/a	n/a	unknown	unknown	n/a	n/a	n/a	glen_spine-generic_20171128	spineGeneric
+sub-spineGeneric005	M	n/a	Cohen-Adad	Julien	1979-11-06	n/a	HC	juntendo_spine-generic_20180509	spineGeneric
+sub-spineGeneric006	M	n/a	Cohen-Adad	Julien	1979-11-06	n/a	HC	juntendo_spine-generic_20180523	spineGeneric
+sub-spineGeneric007	M	n/a	Cohen-Adad	Julien	1979-11-06	n/a	HC	juntendo_spine-generic_20180524	spineGeneric
+sub-spineGeneric008	M	n/a	Cohen-Adad	Julien	1979-11-06	n/a	HC	juntendo_spine-generic_20180529	spineGeneric
+sub-spineGeneric009	n/a	n/a	n/a	n/a	n/a	n/a	n/a	mgh-3t_spine-generic_20171201	spineGeneric
+sub-spineGeneric010	n/a	n/a	unknown	unknown	n/a	n/a	n/a	mgh-bay3_spine-generic_20171129	spineGeneric
+sub-spineGeneric011	M	n/a	Cohen-Adad	Julien	1979-11-06	n/a	HC	mgh-bay3_spine-generic_20171201	spineGeneric
+sub-spineGeneric012	M	n/a	Cohen-Adad	Julien	1979-11-06	n/a	HC	oxford-3t_spine-generic_20171209	spineGeneric
+sub-spineGeneric013	n/a	n/a	n/a	n/a	n/a	n/a	n/a	perform_spine-generic_20170710	spineGeneric
+sub-spineGeneric014	n/a	n/a	unknown	unknown	n/a	n/a	n/a	perform_spine-generic_20171011	spineGeneric
+sub-spineGeneric015	n/a	n/a	unknown	unknown	n/a	n/a	n/a	poly_spine-generic_20171123	spineGeneric
+sub-spineGeneric016	M	n/a	Cohen-Adad	Julien	1979-11-06	n/a	HC	poly_spine-generic_20171221	spineGeneric
+sub-spineGeneric017	n/a	n/a	unknown	unknown	n/a	n/a	n/a	ucl_spine-generic_20171207	spineGeneric
+sub-stetienneOfsep001	n/a	n/a	unknown	unknown	n/a	n/a		stetienne_ofsep_015002	stetienneOfsep
+sub-stetienneOfsep002	n/a	n/a	unknown	unknown	n/a	n/a		stetienne_ofsep_016001	stetienneOfsep
+sub-stetienneOfsep003	n/a	n/a	unknown	unknown	n/a	n/a		stetienne_ofsep_016002	stetienneOfsep
+sub-strasbourgOfsep001	F	n/a	unknown	unknown	n/a	n/a		strasbourg_ofsep_0050021	strasbourgOfsep
+sub-strasbourgOfsep002	F	n/a	unknown	unknown	n/a	n/a		strasbourg_ofsep_0050024	strasbourgOfsep
+sub-strasbourgOfsep003	F	n/a	unknown	unknown	n/a	n/a		strasbourg_ofsep_0050026	strasbourgOfsep
+sub-twh001	F	n/a	unknown	unknown	n/a	2013-02-10		twh_allan_e19849	twh
+sub-twh002	M	n/a	unknown	unknown	n/a	2014-08-10	HC	twh_allan_e23102	twh
+sub-twh003	F	n/a	unknown	unknown	n/a	2014-10-16	HC	twh_allan_e23185	twh
+sub-twh004	F	n/a	unknown	unknown	n/a	2014-10-16	HC	twh_allan_e23186	twh
+sub-twh005	F	n/a	unknown	unknown	n/a	2014-10-22	HC	twh_allan_e23234	twh
+sub-twh006	M	n/a	unknown	unknown	n/a	n/a	DCM	twh_allan_e23242	twh
+sub-twh007	M	n/a	unknown	unknown	n/a	n/a	DCM	twh_allan_e23309	twh
+sub-twh008	M	n/a	unknown	unknown	n/a	n/a	DCM	twh_allan_e23393	twh
+sub-twh009	M	n/a	unknown	unknown	n/a	2014-05-11	HC	twh_allan_e23394	twh
+sub-twh010	M	n/a	unknown	unknown	n/a	2014-05-11	HC	twh_allan_e23395	twh
+sub-twh011	F	n/a	unknown	unknown	n/a	2014-12-11	HC	twh_allan_e23474	twh
+sub-twh012	M	n/a	unknown	unknown	n/a	2014-11-19	HC	twh_allan_e23541	twh
+sub-twh013	F	n/a	unknown	unknown	n/a	n/a	DCM	twh_allan_e23542	twh
+sub-twh014	M	n/a	unknown	unknown	n/a	n/a	DCM	twh_allan_e23623	twh
+sub-twh015	M	n/a	unknown	unknown	n/a	n/a	DCM	twh_allan_e23624	twh
+sub-twh016	M	n/a	unknown	unknown	n/a	n/a	DCM	twh_allan_e23699	twh
+sub-twh017	F	n/a	unknown	unknown	n/a	n/a	HC	twh_allan_e23700	twh
+sub-twh018	F	n/a	unknown	unknown	n/a	n/a	DCM	twh_allan_e23779	twh
+sub-twh019	M	n/a	unknown	unknown	n/a	2014-10-12	HC	twh_allan_e23780	twh
+sub-twh020	F	n/a	unknown	unknown	n/a	n/a	DCM	twh_allan_e23872	twh
+sub-twh021	M	n/a	unknown	unknown	n/a	2014-12-17	HC	twh_allan_e23873	twh
+sub-twh022	F	n/a	unknown	unknown	n/a	n/a	DCM	twh_allan_e24011	twh
+sub-twh023	M	n/a	unknown	unknown	n/a	2015-07-01	HC	twh_allan_e24012	twh
+sub-twh024	F	n/a	unknown	unknown	n/a	n/a	DCM	twh_allan_e24122	twh
+sub-twh025	F	n/a	unknown	unknown	n/a	n/a	DCM	twh_allan_e24220	twh
+sub-twh026	F	n/a	unknown	unknown	n/a	n/a	DCM	twh_allan_e24221	twh
+sub-twh027	M	n/a	unknown	unknown	n/a	n/a	DCM	twh_allan_e24304	twh
+sub-twh028	M	n/a	unknown	unknown	n/a	2015-01-28	HC	twh_allan_e24305	twh
+sub-twh029	M	n/a	unknown	unknown	n/a	n/a	DCM	twh_allan_e24394	twh
+sub-twh030	F	n/a	unknown	unknown	n/a	2015-04-02	HC	twh_allan_e24395	twh
+sub-twh031	M	n/a	unknown	unknown	n/a	n/a	DCM	twh_allan_e24408	twh
+sub-twh032	F	n/a	unknown	unknown	n/a	n/a	DCM	twh_allan_e24490	twh
+sub-twh033	M	n/a	unknown	unknown	n/a	2015-11-02	HC	twh_allan_e24491	twh
+sub-twh034	M	n/a	unknown	unknown	n/a	n/a	DCM	twh_allan_e24551	twh
+sub-twh035	F	n/a	unknown	unknown	n/a	2015-02-18	HC	twh_allan_e24552	twh
+sub-twh036	M	n/a	unknown	unknown	n/a	n/a	DCM	twh_allan_e24648	twh
+sub-twh037	F	n/a	unknown	unknown	n/a	2015-02-25	HC	twh_allan_e24649	twh
+sub-twh038	M	n/a	unknown	unknown	n/a	2015-04-03	HC	twh_allan_e24750	twh
+sub-twh039	F	n/a	unknown	unknown	n/a	n/a	DCM	twh_allan_e24751	twh
+sub-twh040	F	n/a	unknown	unknown	n/a	2015-11-03	HC	twh_allan_e24829	twh
+sub-twh041	F	n/a	unknown	unknown	n/a	n/a	DCM	twh_allan_e24910	twh
+sub-twh042	F	n/a	unknown	unknown	n/a	2015-03-18	HC	twh_allan_e24911	twh
+sub-twh043	M	n/a	unknown	unknown	n/a	n/a	DCM	twh_allan_e24974	twh
+sub-twh044	F	n/a	unknown	unknown	n/a	n/a	DCM	twh_allan_e25182	twh
+sub-twh045	M	n/a	unknown	unknown	n/a	n/a	DCM	twh_allan_e25284	twh
+sub-twh046	F	n/a	unknown	unknown	n/a	n/a	HC	twh_allan_e25285	twh
+sub-twh047	M	n/a	unknown	unknown	n/a	n/a	DCM	twh_allan_e25427	twh
+sub-twh048	M	n/a	unknown	unknown	n/a	n/a	HC	twh_allan_e25428	twh
+sub-twh049	F	n/a	unknown	unknown	n/a	n/a	DCM	twh_allan_e25506	twh
+sub-twh050	M	n/a	unknown	unknown	n/a	2015-05-27	HC	twh_allan_e25507	twh
+sub-twh051	M	n/a	unknown	unknown	n/a	2015-03-06	HC	twh_allan_e25561	twh
+sub-twh052	M	n/a	unknown	unknown	n/a	2015-03-06	HC	twh_allan_e25562	twh
+sub-twh053	F	n/a	unknown	unknown	n/a	2015-10-06	HC	twh_allan_e25638	twh
+sub-twh054	M	n/a	unknown	unknown	n/a	2015-10-06	HC	twh_allan_e25639	twh
+sub-twh055	M	n/a	unknown	unknown	n/a	n/a	DCM	twh_allan_e25712	twh
+sub-twh056	F	n/a	unknown	unknown	n/a	2015-06-17	HC	twh_allan_e25713	twh
+sub-twh057	F	n/a	unknown	unknown	n/a	n/a	DCM	twh_allan_e25811	twh
+sub-twh058	F	n/a	unknown	unknown	n/a	2015-06-24	HC	twh_allan_e25812	twh
+sub-twh059	M	n/a	unknown	unknown	n/a	n/a	DCM	twh_allan_e25949	twh
+sub-twh060	F	n/a	unknown	unknown	n/a	2015-08-07	HC	twh_allan_e25950	twh
+sub-twh061	F	n/a	unknown	unknown	n/a	2015-07-15	HC	twh_allan_e26022	twh
+sub-twh062	F	n/a	unknown	unknown	n/a	2015-07-15	HC	twh_allan_e26023	twh
+sub-twh063	F	n/a	unknown	unknown	n/a	n/a	DCM	twh_allan_e26071	twh
+sub-twh064	F	n/a	unknown	unknown	n/a	2015-07-22	HC	twh_allan_e26072	twh
+sub-twh065	M	n/a	unknown	unknown	n/a	n/a	DCM	twh_allan_e26135	twh
+sub-twh066	M	n/a	unknown	unknown	n/a	n/a	DCM	twh_allan_e26136	twh
+sub-twh067	M	n/a	unknown	unknown	n/a	n/a	DCM	twh_allan_e26183	twh
+sub-twh068	M	n/a	unknown	unknown	n/a	n/a	DCM	twh_allan_e26256	twh
+sub-twh069	M	n/a	unknown	unknown	n/a	2015-12-08	DCM	twh_allan_e26257	twh
+sub-twh070	F	n/a	unknown	unknown	n/a	n/a	DCM	twh_allan_e26406	twh
+sub-twh071	M	n/a	unknown	unknown	n/a	2015-08-26	DCM	twh_allan_e26407	twh
+sub-twh072	M	n/a	unknown	unknown	n/a	2015-02-09	DCM	twh_allan_e26486	twh
+sub-twh073	F	n/a	unknown	unknown	n/a	2015-09-16	DCM	twh_allan_e26602	twh
+sub-twh074	F	n/a	unknown	unknown	n/a	2015-09-16	DCM	twh_allan_e26603	twh
+sub-twh075	M	n/a	unknown	unknown	n/a	2015-09-23	DCM	twh_allan_e26679	twh
+sub-twh076	F	n/a	unknown	unknown	n/a	2015-07-10	DCM	twh_allan_e26840	twh
+sub-twh077	M	n/a	unknown	unknown	n/a	2015-07-10	DCM	twh_allan_e26841	twh
+sub-twh078	M	n/a	unknown	unknown	n/a	2015-10-14	DCM	twh_allan_e26906	twh
+sub-twh079	M	n/a	unknown	unknown	n/a	2015-10-14	DCM	twh_allan_e26907	twh
+sub-twh080	F	n/a	unknown	unknown	n/a	2015-10-28	DCM	twh_allan_e27055	twh
+sub-twh081	F	n/a	unknown	unknown	n/a	2015-04-11	DCM	twh_allan_e27115	twh
+sub-twh082	M	n/a	unknown	unknown	n/a	2015-04-11	DCM	twh_allan_e27116	twh
+sub-twh083	M	n/a	unknown	unknown	n/a	2015-11-25	DCM	twh_allan_e27342	twh
+sub-twh084	F	n/a	unknown	unknown	n/a	n/a	DCM	twh_allan_e27715	twh
+sub-twh085	F	n/a	unknown	unknown	n/a	2016-06-01	DCM	twh_allan_e27716	twh
+sub-twh086	M	n/a	unknown	unknown	n/a	2016-01-20	DCM	twh_allan_e27871	twh
+sub-twh087	M	n/a	unknown	unknown	n/a	2016-03-02	DCM	twh_allan_e28022	twh
+sub-twh088	M	n/a	unknown	unknown	n/a	2016-12-10	HC	twh_allan_e31412	twh
+sub-twh089	F	n/a	unknown	unknown	n/a	2016-10-19	HC	twh_allan_e31493	twh
+sub-twh090	M	n/a	unknown	unknown	n/a	2016-10-19	HC	twh_allan_e31494	twh
+sub-ucl001	M	n/a	Grussu	Francesco	n/a	n/a	HC	ucl_2017-grussu_01	ucl
+sub-uclCiccarelli001	F	n/a	unknown	unknown	n/a	n/a	MS	ucl_2017-ciccarelli_B0034312-2011-01247	uclCiccarelli
+sub-uclCiccarelli002	M	n/a	unknown	unknown	n/a	n/a	MS	ucl_2017-ciccarelli_B0185306-2013-02676	uclCiccarelli
+sub-uclCiccarelli003	F	n/a	unknown	unknown	n/a	n/a	MS	ucl_2017-ciccarelli_B0319395-2012-01905	uclCiccarelli
+sub-uclCiccarelli004	F	n/a	unknown	unknown	n/a	n/a	MS	ucl_2017-ciccarelli_B0559937-2012-01651	uclCiccarelli
+sub-uclCiccarelli005	F	n/a	unknown	unknown	n/a	n/a	MS	ucl_2017-ciccarelli_B0748160-2012-01681	uclCiccarelli
+sub-uclCiccarelli006	F	n/a	unknown	unknown	n/a	n/a	MS	ucl_2017-ciccarelli_B0889921-2012-01714	uclCiccarelli
+sub-uclCiccarelli007	F	n/a	unknown	unknown	n/a	n/a	MS	ucl_2017-ciccarelli_B1178416-2013-02514	uclCiccarelli
+sub-uclCiccarelli008	F	n/a	unknown	unknown	n/a	n/a	MS	ucl_2017-ciccarelli_B1215262-2012-01467	uclCiccarelli
+sub-uclCiccarelli009	F	n/a	unknown	unknown	n/a	n/a	MS	ucl_2017-ciccarelli_B1455967-2012-01816	uclCiccarelli
+sub-uclCiccarelli010	F	n/a	unknown	unknown	n/a	n/a	MS	ucl_2017-ciccarelli_B1727604-2013-02663	uclCiccarelli
+sub-uclCiccarelli011	F	n/a	unknown	unknown	n/a	n/a	MS	ucl_2017-ciccarelli_B2151697-2013-02430	uclCiccarelli
+sub-uclCiccarelli012	M	n/a	unknown	unknown	n/a	n/a	MS	ucl_2017-ciccarelli_B2286706-2013-02341	uclCiccarelli
+sub-uclCiccarelli013	M	n/a	unknown	unknown	n/a	n/a	MS	ucl_2017-ciccarelli_B2507296-2012-01501	uclCiccarelli
+sub-uclCiccarelli014	F	n/a	unknown	unknown	n/a	n/a	MS	ucl_2017-ciccarelli_B3202063-2011-01276	uclCiccarelli
+sub-uclCiccarelli015	M	n/a	unknown	unknown	n/a	n/a	MS	ucl_2017-ciccarelli_B3300301-2013-02299	uclCiccarelli
+sub-uclCiccarelli016	F	n/a	unknown	unknown	n/a	n/a	MS	ucl_2017-ciccarelli_B3697765-2013-02541	uclCiccarelli
+sub-uclCiccarelli017	M	n/a	unknown	unknown	n/a	n/a	MS	ucl_2017-ciccarelli_B3915251-2013-02611	uclCiccarelli
+sub-uclCiccarelli018	F	n/a	unknown	unknown	n/a	n/a	MS	ucl_2017-ciccarelli_B4151766-2011-01085	uclCiccarelli
+sub-uclCiccarelli019	M	n/a	unknown	unknown	n/a	n/a	MS	ucl_2017-ciccarelli_B4784742-2012-02179	uclCiccarelli
+sub-uclCiccarelli020	M	n/a	unknown	unknown	n/a	n/a	MS	ucl_2017-ciccarelli_B5067441-2012-01837	uclCiccarelli
+sub-uclCiccarelli021	F	n/a	unknown	unknown	n/a	n/a	MS	ucl_2017-ciccarelli_B5205544-2012-02166	uclCiccarelli
+sub-uclCiccarelli022	M	n/a	unknown	unknown	n/a	n/a	MS	ucl_2017-ciccarelli_B5367133-2012-01349	uclCiccarelli
+sub-uclCiccarelli023	M	n/a	unknown	unknown	n/a	n/a	MS	ucl_2017-ciccarelli_B5525225-2013-02399	uclCiccarelli
+sub-uclCiccarelli024	M	n/a	unknown	unknown	n/a	n/a	MS	ucl_2017-ciccarelli_B5551244-2012-01885	uclCiccarelli
+sub-uclCiccarelli025	F	n/a	unknown	unknown	n/a	n/a	MS	ucl_2017-ciccarelli_B5840292-2012-01661	uclCiccarelli
+sub-uclCiccarelli026	F	n/a	unknown	unknown	n/a	n/a	MS	ucl_2017-ciccarelli_B6542262-2012-02064	uclCiccarelli
+sub-uclCiccarelli027	F	n/a	unknown	unknown	n/a	n/a	MS	ucl_2017-ciccarelli_B6632753-2013-02597	uclCiccarelli
+sub-uclCiccarelli028	F	n/a	unknown	unknown	n/a	n/a	MS	ucl_2017-ciccarelli_B6716894-2011-01310	uclCiccarelli
+sub-uclCiccarelli029	F	n/a	unknown	unknown	n/a	n/a	MS	ucl_2017-ciccarelli_B7033991-2012-01421	uclCiccarelli
+sub-uclCiccarelli030	M	n/a	unknown	unknown	n/a	n/a	MS	ucl_2017-ciccarelli_B7605217-2012-01525	uclCiccarelli
+sub-uclCiccarelli031	F	n/a	unknown	unknown	n/a	n/a	MS	ucl_2017-ciccarelli_B7839313-2012-01727	uclCiccarelli
+sub-uclCiccarelli032	F	n/a	unknown	unknown	n/a	n/a	MS	ucl_2017-ciccarelli_B7893857-2013-02521	uclCiccarelli
+sub-uclCiccarelli033	F	n/a	unknown	unknown	n/a	n/a	MS	ucl_2017-ciccarelli_B8223417-2012-01623	uclCiccarelli
+sub-uclCiccarelli034	F	n/a	unknown	unknown	n/a	n/a	MS	ucl_2017-ciccarelli_B8223483-2013-02713	uclCiccarelli
+sub-uclCiccarelli035	F	n/a	unknown	unknown	n/a	n/a	MS	ucl_2017-ciccarelli_B8255287-2012-02020	uclCiccarelli
+sub-uclCiccarelli036	M	n/a	unknown	unknown	n/a	n/a	MS	ucl_2017-ciccarelli_B8389816-2012-01382	uclCiccarelli
+sub-uclCiccarelli037	F	n/a	unknown	unknown	n/a	n/a	MS	ucl_2017-ciccarelli_B9181327-2013-02522	uclCiccarelli
+sub-uclCiccarelli038	F	n/a	unknown	unknown	n/a	n/a	MS	ucl_2017-ciccarelli_B9437635-2013-02656	uclCiccarelli
+sub-uclCiccarelli039	M	n/a	unknown	unknown	n/a	n/a	MS	ucl_2017-ciccarelli_B9518578-2012-01361	uclCiccarelli
+sub-uclGmsegChallenge001	n/a	n/a	unknown	unknown	n/a	n/a	HC	ucl_gmsegChallenge16_01	uclGmsegChallenge
+sub-uclGmsegChallenge002	n/a	n/a	unknown	unknown	n/a	n/a	HC	ucl_gmsegChallenge16_02	uclGmsegChallenge
+sub-uclGmsegChallenge003	n/a	n/a	unknown	unknown	n/a	n/a	HC	ucl_gmsegChallenge16_03	uclGmsegChallenge
+sub-uclGmsegChallenge004	n/a	n/a	unknown	unknown	n/a	n/a	HC	ucl_gmsegChallenge16_04	uclGmsegChallenge
+sub-uclGmsegChallenge005	n/a	n/a	unknown	unknown	n/a	n/a	HC	ucl_gmsegChallenge16_05	uclGmsegChallenge
+sub-uclGmsegChallenge006	n/a	n/a	unknown	unknown	n/a	n/a	HC	ucl_gmsegChallenge16_06	uclGmsegChallenge
+sub-uclGmsegChallenge007	n/a	n/a	unknown	unknown	n/a	n/a	HC	ucl_gmsegChallenge16_07	uclGmsegChallenge
+sub-uclGmsegChallenge008	n/a	n/a	unknown	unknown	n/a	n/a	HC	ucl_gmsegChallenge16_08	uclGmsegChallenge
+sub-uclGmsegChallenge009	n/a	n/a	unknown	unknown	n/a	n/a	HC	ucl_gmsegChallenge16_09	uclGmsegChallenge
+sub-uclGmsegChallenge010	n/a	n/a	unknown	unknown	n/a	n/a	HC	ucl_gmsegChallenge16_10	uclGmsegChallenge
+sub-ucsfTalbott001	n/a	n/a	unknown	unknown	n/a	n/a	MS	ucsf_2017-talbott_1001	ucsfTalbott
+sub-ucsfTalbott002	n/a	n/a	unknown	unknown	n/a	n/a	MS	ucsf_2017-talbott_1002	ucsfTalbott
+sub-ucsfTalbott003	n/a	n/a	unknown	unknown	n/a	n/a	MS	ucsf_2017-talbott_1003	ucsfTalbott
+sub-ucsfTalbott004	n/a	n/a	unknown	unknown	n/a	n/a	MS	ucsf_2017-talbott_1004	ucsfTalbott
+sub-ucsfTalbott005	n/a	n/a	unknown	unknown	n/a	n/a	MS	ucsf_2017-talbott_1005	ucsfTalbott
+sub-ucsfTalbott006	n/a	n/a	unknown	unknown	n/a	n/a	MS	ucsf_2017-talbott_1006	ucsfTalbott
+sub-ucsfTalbott007	n/a	n/a	unknown	unknown	n/a	n/a	MS	ucsf_2017-talbott_1007	ucsfTalbott
+sub-ucsfTalbott008	n/a	n/a	unknown	unknown	n/a	n/a	MS	ucsf_2017-talbott_1008	ucsfTalbott
+sub-ucsfTalbott009	n/a	n/a	unknown	unknown	n/a	n/a	MS	ucsf_2017-talbott_1009	ucsfTalbott
+sub-ucsfTalbott010	n/a	n/a	unknown	unknown	n/a	n/a	MS	ucsf_2017-talbott_1010	ucsfTalbott
+sub-ucsfTalbott011	n/a	n/a	unknown	unknown	n/a	n/a	MS	ucsf_2017-talbott_1011	ucsfTalbott
+sub-ucsfTalbott012	n/a	n/a	unknown	unknown	n/a	n/a	MS	ucsf_2017-talbott_1012	ucsfTalbott
+sub-ucsfTalbott013	n/a	n/a	unknown	unknown	n/a	n/a	MS	ucsf_2017-talbott_1013	ucsfTalbott
+sub-ucsfTalbott014	n/a	n/a	unknown	unknown	n/a	n/a	MS	ucsf_2017-talbott_1014	ucsfTalbott
+sub-ucsfTalbott015	n/a	n/a	unknown	unknown	n/a	n/a	MS	ucsf_2017-talbott_1015	ucsfTalbott
+sub-ucsfTalbott016	n/a	n/a	unknown	unknown	n/a	n/a	MS	ucsf_2017-talbott_1016	ucsfTalbott
+sub-ucsfTalbott017	n/a	n/a	unknown	unknown	n/a	n/a	MS	ucsf_2017-talbott_1017	ucsfTalbott
+sub-ucsfTalbott018	n/a	n/a	unknown	unknown	n/a	n/a	MS	ucsf_2017-talbott_1018	ucsfTalbott
+sub-ucsfTalbott019	n/a	n/a	unknown	unknown	n/a	n/a	MS	ucsf_2017-talbott_1019	ucsfTalbott
+sub-ucsfTalbott020	n/a	n/a	unknown	unknown	n/a	n/a	MS	ucsf_2017-talbott_1020	ucsfTalbott
+sub-ucsfTalbott021	n/a	n/a	unknown	unknown	n/a	n/a	MS	ucsf_2017-talbott_1021	ucsfTalbott
+sub-ucsfTalbott022	n/a	n/a	unknown	unknown	n/a	n/a	MS	ucsf_2017-talbott_1022	ucsfTalbott
+sub-ucsfTalbott023	n/a	n/a	unknown	unknown	n/a	n/a	MS	ucsf_2017-talbott_1023	ucsfTalbott
+sub-ucsfTalbott024	n/a	n/a	unknown	unknown	n/a	n/a	MS	ucsf_2017-talbott_1024	ucsfTalbott
+sub-ucsfTalbott025	n/a	n/a	unknown	unknown	n/a	n/a	MS	ucsf_2017-talbott_1025	ucsfTalbott
+sub-ucsfTalbott026	n/a	n/a	unknown	unknown	n/a	n/a	MS	ucsf_2017-talbott_1026	ucsfTalbott
+sub-ucsfTalbott027	n/a	n/a	unknown	unknown	n/a	n/a	MS	ucsf_2017-talbott_1027	ucsfTalbott
+sub-ucsfTalbott028	n/a	n/a	unknown	unknown	n/a	n/a	MS	ucsf_2017-talbott_1028	ucsfTalbott
+sub-ucsfTalbott029	n/a	n/a	unknown	unknown	n/a	n/a	MS	ucsf_2017-talbott_1029	ucsfTalbott
+sub-ucsfTalbott030	n/a	n/a	unknown	unknown	n/a	n/a	MS	ucsf_2017-talbott_1030	ucsfTalbott
+sub-ucsfTalbott031	n/a	n/a	unknown	unknown	n/a	n/a	MS	ucsf_2017-talbott_1031	ucsfTalbott
+sub-ucsfTalbott032	n/a	n/a	unknown	unknown	n/a	n/a	MS	ucsf_2017-talbott_1032	ucsfTalbott
+sub-unfbiospective001	M	n/a	unknown	unknown	1984-01-01	n/a	HC	unf_biospective_200-004-s1	unfbiospective
+sub-unfbiospective002	F	n/a	unknown	unknown	1985-01-01	n/a	HC	unf_biospective_200-005-s1	unfbiospective
+sub-unfbiospective003	n/a	n/a	unknown	unknown	n/a	n/a	HC	unf_biospective_200-005-s2	unfbiospective
+sub-unfbiospective004	M	n/a	unknown	unknown	1991-01-01	n/a	HC	unf_biospective_200-006-s1	unfbiospective
+sub-unfbiospective005	M	n/a	unknown	unknown	1982-01-01	n/a	HC	unf_biospective_200-009-s1	unfbiospective
+sub-unfbiospective006	M	n/a	unknown	unknown	1985-01-01	n/a	HC	unf_biospective_200-010-s1	unfbiospective
+sub-unfbiospective007	M	n/a	unknown	unknown	1982-01-01	n/a	HC	unf_biospective_200-011-s1	unfbiospective
+sub-unfbiospective008	M	n/a	unknown	unknown	1985-01-01	n/a	HC	unf_biospective_200-012-s1	unfbiospective
+sub-unfbiospective009	M	n/a	unknown	unknown	1954-01-01	n/a	ALS	unf_biospective_200-013-s1	unfbiospective
+sub-unfbiospective010	M	n/a	unknown	unknown	1969-01-01	n/a	ALS	unf_biospective_200-015-s1	unfbiospective
+sub-unfbiospective011	M	n/a	unknown	unknown	1965-01-01	n/a	ALS	unf_biospective_200-016-s1	unfbiospective
+sub-unfbiospective012	M	n/a	unknown	unknown	1966-01-01	n/a	ALS	unf_biospective_200-017-s1	unfbiospective
+sub-unfbiospective013	M	n/a	unknown	unknown	1981-01-01	n/a	ALS	unf_biospective_200-018-s1	unfbiospective
+sub-unfErssm001	F	n/a	Roy	Audrey	n/a	2013-03-18	HC	unf_errsm_01	unfErssm
+sub-unfErssm002	F	n/a	unknown	Jeanne	n/a	2013-03-20	HC	unf_errsm_02	unfErssm
+sub-unfErssm003	M	n/a	unknown	Eduardo	n/a	2013-05-04	HC	unf_errsm_03	unfErssm
+sub-unfErssm004	F	n/a	unknown	Andrea	n/a	2013-11-04	HC	unf_errsm_04	unfErssm
+sub-unfErssm005	F	n/a	Koop	Laurel	n/a	2013-04-30	HC	unf_errsm_05	unfErssm
+sub-unfErssm006	F	n/a	unknown	Martine	n/a	2013-06-13	SCI	unf_errsm_07	unfErssm
+sub-unfErssm007	F	n/a	unknown	Marie-Eve	n/a	2013-06-24	SCI	unf_errsm_08	unfErssm
+sub-unfErssm008	F	n/a	unknown	Ashlea	n/a	2013-06-26	HC	unf_errsm_09	unfErssm
+sub-unfErssm009	F	n/a	unknown	Adriana	n/a	2013-06-27	HC	unf_errsm_10	unfErssm
+sub-unfErssm010	M	n/a	Mangeat	Gabriel	n/a	2013-06-27	HC	unf_errsm_11	unfErssm
+sub-unfErssm011	F	n/a	unknown	Soufia	n/a	2013-02-07	HC	unf_errsm_12	unfErssm
+sub-unfErssm012	M	n/a	Duval	Tanguy	n/a	2013-03-07	HC	unf_errsm_13	unfErssm
+sub-unfErssm013	F	n/a	unknown	Tanya	n/a	2013-04-07	HC	unf_errsm_14	unfErssm
+sub-unfErssm014	M	n/a	unknown	Alain	n/a	2013-04-07	SCI	unf_errsm_15	unfErssm
+sub-unfErssm015	F	n/a	Shea	Carolann	n/a	2013-07-19	HC	unf_errsm_16	unfErssm
+sub-unfErssm016	F	n/a	Ullmann	Eugenie	n/a	2013-07-25	HC	unf_errsm_17	unfErssm
+sub-unfErssm017	M	n/a	Barron	Olivier	n/a	2013-07-26	HC	unf_errsm_18	unfErssm
+sub-unfErssm018	M	n/a	unknown	Alain	n/a	2013-08-22	SCI	unf_errsm_19	unfErssm
+sub-unfErssm019	M	n/a	Leveque	Geoffrey	n/a	2013-10-23	HC	unf_errsm_20	unfErssm
+sub-unfErssm020	M	n/a	De Leener	Benjamin	n/a	2013-10-25	HC	unf_errsm_21	unfErssm
+sub-unfErssm021	F	n/a	Phan	Van	n/a	2013-05-11	HC	unf_errsm_22	unfErssm
+sub-unfErssm022	F	n/a	unknown	Laure	n/a	2013-07-11	HC	unf_errsm_23	unfErssm
+sub-unfErssm023	F	n/a	unknown	Pascale	n/a	2013-07-11	HC	unf_errsm_24	unfErssm
+sub-unfErssm024	M	n/a	Goussard	Yves	n/a	2013-12-17	HC	unf_errsm_25	unfErssm
+sub-unfErssm025	M	n/a	unknown	Marc	n/a	2014-04-29	SCI	unf_errsm_27	unfErssm
+sub-unfErssm026	M	n/a	Naaman	Charles	n/a	2014-07-14	HC	unf_errsm_30	unfErssm
+sub-unfErssm027	M	n/a	touati	Julien	n/a	2014-06-08	HC	unf_errsm_31	unfErssm
+sub-unfErssm028	M	n/a	Vion	Jeremy	n/a	2014-06-08	HC	unf_errsm_32	unfErssm
+sub-unfErssm029	M	n/a	Roux	Augustin	n/a	2014-12-12	HC	unf_errsm_34	unfErssm
+sub-unfErssm030	M	n/a	Topfer	Ryan	n/a	2015-10-03	HC	unf_errsm_35	unfErssm
+sub-unfErssm031	M	n/a	Pinaud	Willis	n/a	2015-08-18	HC	unf_errsm_36	unfErssm
+sub-unfErssm032	F	n/a	unknown	Alexandra	n/a	2015-08-26	HC	unf_errsm_37	unfErssm
+sub-unfErssm033	F	n/a	unknown	Emilie	n/a	2015-09-14	HC	unf_errsm_40	unfErssm
+sub-unfErssm034	M	n/a	Levy	Simon	n/a	2015-09-18	HC	unf_errsm_42	unfErssm
+sub-unfErssm035	M	n/a	Frigo	Jean-Baptiste	n/a	2015-02-10	HC	unf_errsm_44	unfErssm
+sub-unfPain001	M	n/a	Gill	Louis-Nascan	n/a	2015-02-07	HC	unf_d-sp-pain_01	unfPain
+sub-unfPain002	M	n/a	Khatibi	Ali	n/a	2015-02-07	HC	unf_d-sp-pain_02	unfPain
+sub-unfPain003	M	n/a	Cloutier	Marc-Andre	n/a	2015-07-13	HC	unf_d-sp-pain_03	unfPain
+sub-unfPain004	F	n/a	Anok	Stephanie	n/a	2015-07-17	HC	unf_d-sp-pain_04	unfPain
+sub-unfPain005	F	n/a	Perraud	Blanche	n/a	2015-07-21	SYR	unf_d-sp-pain_05	unfPain
+sub-unfPain006	F	n/a	Marcotte	Denise	n/a	2015-07-24	HC	unf_d-sp-pain_06	unfPain
+sub-unfPain007	F	n/a	Aurousseau	Kristina	n/a	2015-07-28	HC	unf_d-sp-pain_07	unfPain
+sub-unfPain008	M	n/a	Deblois-Beaucage	Felix	n/a	2015-07-30	HC	unf_d-sp-pain_08	unfPain
+sub-unfPain009	M	n/a	Tremblay	Benoit	n/a	2015-07-31	HC	unf_d-sp-pain_09	unfPain
+sub-unfPain010	M	n/a	Khoobrelass	Prithy	n/a	2015-03-08	HC	unf_d-sp-pain_10	unfPain
+sub-unfPain011	F	n/a	Beauregard	Caroline	n/a	2015-03-08	HC	unf_d-sp-pain_11	unfPain
+sub-unfPain012	M	n/a	Dostie-Guindon	Paul-Antoine	n/a	2015-03-08	HC	unf_d-sp-pain_12	unfPain
+sub-unfPain013	F	n/a	Grandbois	Jo_lle	n/a	2015-04-08	HC	unf_d-sp-pain_13	unfPain
+sub-unfPain014	M	n/a	Allard	Normand	n/a	2015-10-09	HC	unf_d-sp-pain_14	unfPain
+sub-unfPain015	M	n/a	Vallet	Guillaume	n/a	2015-11-09	HC	unf_d-sp-pain_15	unfPain
+sub-unfPain016	F	n/a	Elie	Suzanne	n/a	2015-09-15	HC	unf_d-sp-pain_16	unfPain
+sub-unfPain017	F	n/a	Riechelmann	Eva	n/a	2015-09-16	HC	unf_d-sp-pain_17	unfPain
+sub-unfPain018	M	n/a	Benassila	Badr	n/a	2015-09-18	HC	unf_d-sp-pain_18	unfPain
+sub-unfPain019	M	n/a	Rouleau	Pierre	n/a	2015-09-23	HC	unf_d-sp-pain_19	unfPain
+sub-unfPain020	M	n/a	Lauzon	Yves	n/a	2015-09-24	HC	unf_d-sp-pain_20	unfPain
+sub-unfPain021	F	n/a	Daigle	Diane	n/a	2015-09-30	HC	unf_d-sp-pain_21	unfPain
+sub-unfPain022	F	n/a	Dorion	Claire	n/a	2015-09-30	HC	unf_d-sp-pain_22	unfPain
+sub-unfPain023	F	n/a	Fortin	Emilie	n/a	2015-09-30	HC	unf_d-sp-pain_23	unfPain
+sub-unfPain024	F	n/a	Nagati	Cindy	n/a	2015-02-10	HC	unf_d-sp-pain_24	unfPain
+sub-unfPain025	M	n/a	Benoit	Florent	n/a	2015-06-10	HC	unf_d-sp-pain_25	unfPain
+sub-unfPain026	F	n/a	Clement	Louise	n/a	2015-06-10	HC	unf_d-sp-pain_26	unfPain
+sub-unfPain027	M	n/a	Labreche	Reynald	n/a	2015-08-10	HC	unf_d-sp-pain_27	unfPain
+sub-unfPain028	F	n/a	Masson-Trottier	Michele	n/a	2015-08-10	HC	unf_d-sp-pain_28	unfPain
+sub-unfPain029	F	n/a	Piche	Marilou	n/a	2015-09-10	HC	unf_d-sp-pain_29	unfPain
+sub-unfPain030	M	n/a	Hardy	Andre	n/a	2015-10-15	HC	unf_d-sp-pain_30	unfPain
+sub-unfPain031	M	n/a	Trottier	Richard	n/a	2015-11-24	HC	unf_d-sp-pain_31	unfPain
+sub-unfPain032	M	n/a	Khatibi	Ali	n/a	2014-09-30	HC	unf_d-sp-pain_pilot1	unfPain
+sub-unfPain033	M	n/a	Vallet	Guillaume	n/a	2014-09-30	HC	unf_d-sp-pain_pilot2	unfPain
+sub-unfPain034	F	n/a	Streff	Anouk	n/a	2014-07-10	HC	unf_d-sp-pain_pilot3	unfPain
+sub-unfPain035	M	n/a	Magnan	Tanguy	n/a	2015-04-28	HC	unf_d-sp-pain_pilot4	unfPain
+sub-unfPain036	M	n/a	Brun-Cosme-Bruny	Marvin	n/a	2015-05-19	HC	unf_d-sp-pain_pilot7	unfPain
+sub-unfPain037	F	n/a	Dupont	Sara	n/a	2015-05-19	HC	unf_d-sp-pain_pilot8	unfPain
+sub-unfSCT001	F	n/a	Boppe	Ines	n/a	2015-09-10	HC	unf_sct_001	unfSCT
+sub-unfSCT002	F	n/a	Dupont	Sara	n/a	2015-09-10	HC	unf_sct_002	unfSCT
+sub-unfSCT003	F	n/a	Badji	Atef	n/a	2016-02-12	HC	unf_sct_004	unfSCT
+sub-unfSCT004	F	n/a	Thoux	Anne-Laurence	n/a	2016-09-12	HC	unf_sct_005	unfSCT
+sub-unfSCT005	F	n/a	Kronovsek	Justine	n/a	2016-09-12	HC	unf_sct_006	unfSCT
+sub-unfSCT006	M	n/a	Peristerakis	Georges	n/a	2016-12-30	HC	unf_sct_007	unfSCT
+sub-unfSCT007	M	n/a	Antonsanti	Pierre-Louis	n/a	2017-02-14	HC	unf_sct_008	unfSCT
+sub-unfSCT008	F	n/a	Morozov	Darya	n/a	2017-02-14	HC	unf_sct_009	unfSCT
+sub-unfSCT009	M	n/a	Lopez-Rios	Nibardo	n/a	2017-02-17	HC	unf_sct_010	unfSCT
+sub-unfSCT010	F	n/a	Eden	Dominique	n/a	2017-02-21	HC	unf_sct_011	unfSCT
+sub-unfSCT011	M	n/a	Rance	Tino	n/a	2017-02-22	HC	unf_sct_013	unfSCT
+sub-unfSCT012	n/a	n/a	unknown	unknown	n/a	2017-02-26	HC	unf_sct_014	unfSCT
+sub-unfSCT013	n/a	n/a	unknown	unknown	n/a	2017-02-26	HC	unf_sct_015	unfSCT
+sub-unfSCT014	n/a	n/a	n/a	n/a	n/a	2017-04-20	n/a	unf_sct_019	unfSCT
+sub-unfSCT015	M	n/a	Foias	Alexandru	n/a	2017-12-15	n/a	unf_sct_025	unfSCT
+sub-unfSCT016	n/a	n/a	n/a	n/a	n/a	n/a	n/a	unf_sct_026	unfSCT
+sub-unfSCT017	n/a	n/a	unknown	unknown	n/a	n/a	HC	unf_sct_example-data	unfSCT
+sub-unfSpinalMSL001	n/a	n/a	unknown	unknown	n/a	n/a		unf_spinal-MSL_10	unfSpinalMSL
+sub-unfSpinalMSL002	n/a	n/a	unknown	unknown	n/a	n/a		unf_spinal-MSL_12	unfSpinalMSL
+sub-unfSpinalMSL003	n/a	n/a	unknown	unknown	n/a	n/a		unf_spinal-MSL_14	unfSpinalMSL
+sub-unfSpinalMSL004	n/a	n/a	unknown	unknown	n/a	n/a		unf_spinal-MSL_15	unfSpinalMSL
+sub-unfSpinalMSL005	n/a	n/a	unknown	unknown	n/a	n/a		unf_spinal-MSL_16	unfSpinalMSL
+sub-unfSpinalMSL006	n/a	n/a	unknown	unknown	n/a	n/a		unf_spinal-MSL_17	unfSpinalMSL
+sub-unfSpinalMSL007	n/a	n/a	unknown	unknown	n/a	n/a		unf_spinal-MSL_18	unfSpinalMSL
+sub-unfSpinalMSL008	n/a	n/a	unknown	unknown	n/a	n/a		unf_spinal-MSL_19	unfSpinalMSL
+sub-unfSpinalMSL009	n/a	n/a	unknown	unknown	n/a	n/a		unf_spinal-MSL_20	unfSpinalMSL
+sub-unfSpinalMSL010	n/a	n/a	unknown	unknown	n/a	n/a		unf_spinal-MSL_21	unfSpinalMSL
+sub-unfSpinalMSL011	n/a	n/a	unknown	unknown	n/a	n/a		unf_spinal-MSL_22	unfSpinalMSL
+sub-unfSpinalMSL012	n/a	n/a	unknown	unknown	n/a	n/a		unf_spinal-MSL_23	unfSpinalMSL
+sub-unfSpinalMSL013	n/a	n/a	unknown	unknown	n/a	n/a		unf_spinal-MSL_24	unfSpinalMSL
+sub-unfSpinalMSL014	n/a	n/a	unknown	unknown	n/a	n/a		unf_spinal-MSL_25	unfSpinalMSL
+sub-unfSpinalMSL015	n/a	n/a	unknown	unknown	n/a	n/a		unf_spinal-MSL_26	unfSpinalMSL
+sub-unfSpinalMSL016	n/a	n/a	unknown	unknown	n/a	n/a		unf_spinal-MSL_27	unfSpinalMSL
+sub-user0000	n/a	n/a	unknown	unknown	n/a	n/a		n/a	mgh-7t
+sub-user0001	n/a	n/a	unknown	unknown	n/a	n/a		n/a	n/a
+sub-user0002	n/a	n/a	unknown	unknown	n/a	n/a		n/a	n/a
+sub-user0003	n/a	n/a	unknown	unknown	n/a	n/a		n/a	n/a
+sub-user0004	n/a	n/a	unknown	unknown	n/a	n/a		n/a	n/a
+sub-user0005	n/a	n/a	unknown	unknown	n/a	n/a		n/a	n/a
+sub-user0006	n/a	n/a	unknown	unknown	n/a	n/a		n/a	n/a
+sub-user0007	n/a	n/a	unknown	unknown	n/a	n/a		n/a	n/a
+sub-user0008	n/a	n/a	unknown	unknown	n/a	n/a		n/a	n/a
+sub-user0009	n/a	n/a	unknown	unknown	n/a	n/a		n/a	n/a
+sub-user0010	n/a	n/a	unknown	unknown	n/a	n/a		n/a	n/a
+sub-user0011	n/a	n/a	unknown	unknown	n/a	n/a		n/a	n/a
+sub-user0012	n/a	n/a	unknown	unknown	n/a	n/a		n/a	n/a
+sub-user0013	n/a	n/a	unknown	unknown	n/a	n/a		n/a	n/a
+sub-user0014	n/a	n/a	unknown	unknown	n/a	n/a		n/a	n/a
+sub-user0015	n/a	n/a	unknown	unknown	n/a	n/a		n/a	n/a
+sub-user0016	n/a	n/a	unknown	unknown	n/a	n/a		n/a	n/a
+sub-user0017	n/a	n/a	unknown	unknown	n/a	n/a		n/a	n/a
+sub-vanderbiltGmChallenge001	n/a	n/a	unknown	unknown	n/a	n/a	HC	vanderbilt_gmsegChallenge16_01	vanderbiltGmsegChallenge
+sub-vanderbiltGmChallenge002	n/a	n/a	unknown	unknown	n/a	n/a	HC	vanderbilt_gmsegChallenge16_02	vanderbiltGmsegChallenge
+sub-vanderbiltGmChallenge003	n/a	n/a	unknown	unknown	n/a	n/a	HC	vanderbilt_gmsegChallenge16_03	vanderbiltGmsegChallenge
+sub-vanderbiltGmChallenge004	n/a	n/a	unknown	unknown	n/a	n/a	HC	vanderbilt_gmsegChallenge16_04	vanderbiltGmsegChallenge
+sub-vanderbiltGmChallenge005	n/a	n/a	unknown	unknown	n/a	n/a	HC	vanderbilt_gmsegChallenge16_05	vanderbiltGmsegChallenge
+sub-vanderbiltGmChallenge006	n/a	n/a	unknown	unknown	n/a	n/a	HC	vanderbilt_gmsegChallenge16_06	vanderbiltGmsegChallenge
+sub-vanderbiltGmChallenge007	n/a	n/a	unknown	unknown	n/a	n/a	HC	vanderbilt_gmsegChallenge16_07	vanderbiltGmsegChallenge
+sub-vanderbiltGmChallenge008	n/a	n/a	unknown	unknown	n/a	n/a	HC	vanderbilt_gmsegChallenge16_08	vanderbiltGmsegChallenge
+sub-vanderbiltGmChallenge009	n/a	n/a	unknown	unknown	n/a	n/a	HC	vanderbilt_gmsegChallenge16_09	vanderbiltGmsegChallenge
+sub-vanderbiltGmChallenge010	n/a	n/a	unknown	unknown	n/a	n/a	HC	vanderbilt_gmsegChallenge16_10	vanderbiltGmsegChallenge
+sub-vanderbiltGmChallenge011	n/a	n/a	unknown	unknown	n/a	n/a	HC	vanderbilt_gmsegChallenge16_11	vanderbiltGmsegChallenge
+sub-vanderbiltGmChallenge012	n/a	n/a	unknown	unknown	n/a	n/a	HC	vanderbilt_gmsegChallenge16_12	vanderbiltGmsegChallenge
+sub-vanderbiltGmChallenge013	n/a	n/a	unknown	unknown	n/a	n/a	HC	vanderbilt_gmsegChallenge16_13	vanderbiltGmsegChallenge
+sub-vanderbiltGmChallenge014	n/a	n/a	unknown	unknown	n/a	n/a	HC	vanderbilt_gmsegChallenge16_14	vanderbiltGmsegChallenge
+sub-vanderbiltGmChallenge015	n/a	n/a	unknown	unknown	n/a	n/a	HC	vanderbilt_gmsegChallenge16_15	vanderbiltGmsegChallenge
+sub-vanderbiltGmChallenge016	n/a	n/a	unknown	unknown	n/a	n/a	HC	vanderbilt_gmsegChallenge16_16	vanderbiltGmsegChallenge
+sub-vanderbiltGmChallenge017	n/a	n/a	unknown	unknown	n/a	n/a	HC	vanderbilt_gmsegChallenge16_17	vanderbiltGmsegChallenge
+sub-vanderbiltGmChallenge018	n/a	n/a	unknown	unknown	n/a	n/a	HC	vanderbilt_gmsegChallenge16_18	vanderbiltGmsegChallenge
+sub-vanderbiltGmChallenge019	n/a	n/a	unknown	unknown	n/a	n/a	HC	vanderbilt_gmsegChallenge16_19	vanderbiltGmsegChallenge
+sub-vanderbiltGmChallenge020	n/a	n/a	unknown	unknown	n/a	n/a	HC	vanderbilt_gmsegChallenge16_20	vanderbiltGmsegChallenge
+sub-vanderbiltSeth001	M	n/a	unknown	unknown	n/a	n/a	MS	vanderbilt_2017-seth_126737	vanderbiltSeth
+sub-vanderbiltSeth002	F	n/a	unknown	unknown	n/a	n/a	MS	vanderbilt_2017-seth_214401	vanderbiltSeth
+sub-vanderbiltSeth003	M	n/a	unknown	unknown	n/a	n/a	MS	vanderbilt_2017-seth_216226	vanderbiltSeth
+sub-vanderbiltSeth004	F	n/a	unknown	unknown	n/a	n/a	MS	vanderbilt_2017-seth_216351	vanderbiltSeth
+sub-vanderbiltSeth005	F	n/a	unknown	unknown	n/a	n/a	MS	vanderbilt_2017-seth_216472	vanderbiltSeth
+sub-vanderbiltSeth006	F	n/a	unknown	unknown	n/a	n/a	MS	vanderbilt_2017-seth_216492	vanderbiltSeth
+sub-vanderbiltSeth007	M	n/a	unknown	unknown	n/a	n/a	MS	vanderbilt_2017-seth_226764	vanderbiltSeth
+sub-vanderbiltSeth008	F	n/a	unknown	unknown	n/a	n/a	MS	vanderbilt_2017-seth_226811	vanderbiltSeth
+sub-vanderbiltSeth009	F	n/a	unknown	unknown	n/a	n/a	MS	vanderbilt_2017-seth_226988	vanderbiltSeth
+sub-vanderbiltSeth010	F	n/a	unknown	unknown	n/a	n/a	MS	vanderbilt_2017-seth_226993	vanderbiltSeth
+sub-vanderbiltSeth011	F	n/a	unknown	unknown	n/a	n/a	MS	vanderbilt_2017-seth_226996	vanderbiltSeth
+sub-vanderbiltSeth012	F	n/a	unknown	unknown	n/a	n/a	MS	vanderbilt_2017-seth_227055	vanderbiltSeth
+sub-vanderbiltSeth013	M	n/a	unknown	unknown	n/a	n/a	MS	vanderbilt_2017-seth_227181	vanderbiltSeth
+sub-vanderbiltSeth014	F	n/a	unknown	unknown	n/a	n/a	MS	vanderbilt_2017-seth_227242	vanderbiltSeth
+sub-vanderbiltSeth015	F	n/a	unknown	unknown	n/a	n/a	MS	vanderbilt_2017-seth_227276	vanderbiltSeth
+sub-vanderbiltSeth016	M	n/a	unknown	unknown	n/a	n/a	MS	vanderbilt_2017-seth_227300	vanderbiltSeth
+sub-vanderbiltSeth017	M	n/a	unknown	unknown	n/a	n/a	MS	vanderbilt_2017-seth_227538	vanderbiltSeth
+sub-vanderbiltSeth018	M	n/a	unknown	unknown	n/a	n/a	MS	vanderbilt_2017-seth_227552	vanderbiltSeth
+sub-vanderbiltSeth019	M	n/a	unknown	unknown	n/a	n/a	MS	vanderbilt_2017-seth_227809	vanderbiltSeth
+sub-vanderbiltSeth020	F	n/a	unknown	unknown	n/a	n/a	MS	vanderbilt_2017-seth_227860	vanderbiltSeth
+sub-vanderbiltSeth021	F	n/a	unknown	unknown	n/a	n/a	MS	vanderbilt_2017-seth_229153	vanderbiltSeth
+sub-vanderbiltSeth022	F	n/a	unknown	unknown	n/a	n/a	MS	vanderbilt_2017-seth_229409	vanderbiltSeth
+sub-vanderbiltSeth023	F	n/a	unknown	unknown	n/a	n/a	MS	vanderbilt_2017-seth_229901	vanderbiltSeth
+sub-xuanwuChenxi001	n/a	n/a	unknown	unknown	n/a	n/a	MS	xuanwu_chenxi_01	xuanwuChenxi
+sub-xuanwuChenxi002	n/a	n/a	unknown	unknown	n/a	n/a	MS	xuanwu_chenxi_02	xuanwuChenxi
+sub-xuanwuYaou001	n/a	n/a	unknown	unknown	n/a	n/a	CIS	xuanwu_20160624-yaou_CIS001	xuanwuYaou
+sub-xuanwuYaou002	n/a	n/a	unknown	unknown	n/a	n/a	MS	xuanwu_20160624-yaou_MS002	xuanwuYaou
+sub-xuanwuYaou003	n/a	n/a	unknown	unknown	n/a	n/a	MS	xuanwu_20160624-yaou_MS003	xuanwuYaou
+sub-xuanwuYaou004	n/a	n/a	unknown	unknown	n/a	n/a	MS	xuanwu_20160624-yaou_MS004	xuanwuYaou
+sub-xuanwuYaou005	n/a	n/a	unknown	unknown	n/a	n/a	MS	xuanwu_20160624-yaou_MS005	xuanwuYaou
+sub-xuanwuYaou006	n/a	n/a	unknown	unknown	n/a	n/a	MS	xuanwu_20160624-yaou_MS013	xuanwuYaou
+sub-xuanwuYaou007	n/a	n/a	unknown	unknown	n/a	n/a	MS	xuanwu_20160624-yaou_MS015	xuanwuYaou
+sub-xuanwuYaou008	n/a	n/a	unknown	unknown	n/a	n/a	MS	xuanwu_20160624-yaou_MS018	xuanwuYaou
+sub-xuanwuYaou009	n/a	n/a	unknown	unknown	n/a	n/a	MS	xuanwu_20160624-yaou_MS019	xuanwuYaou
+sub-xuanwuYaou010	n/a	n/a	unknown	unknown	n/a	n/a	MS	xuanwu_20160624-yaou_MS023	xuanwuYaou
+sub-xuanwuYaou011	n/a	n/a	unknown	unknown	n/a	n/a	MS	xuanwu_20160624-yaou_MS029	xuanwuYaou
+sub-xuanwuYaou012	n/a	n/a	unknown	unknown	n/a	n/a	MS	xuanwu_20160624-yaou_MS030	xuanwuYaou
+sub-xuanwuYaou013	n/a	n/a	unknown	unknown	n/a	n/a	MS	xuanwu_20160624-yaou_MS040	xuanwuYaou
+sub-xuanwuYaou014	n/a	n/a	unknown	unknown	n/a	n/a	MS	xuanwu_20160624-yaou_MS044	xuanwuYaou
+sub-xuanwuYaou015	n/a	n/a	unknown	unknown	n/a	n/a	MS	xuanwu_20160624-yaou_MS046	xuanwuYaou
+sub-xuanwuYaou016	n/a	n/a	unknown	unknown	n/a	n/a	MS	xuanwu_20160624-yaou_MS047	xuanwuYaou
+sub-xuanwuYaou017	n/a	n/a	unknown	unknown	n/a	n/a	NC	xuanwu_20160624-yaou_NC001	xuanwuYaou
+sub-xuanwuYaou018	n/a	n/a	unknown	unknown	n/a	n/a	NC	xuanwu_20160624-yaou_NC002	xuanwuYaou
+sub-xuanwuYaou019	n/a	n/a	unknown	unknown	n/a	n/a	HC	xuanwu_20160624-yaou_NC003	xuanwuYaou
+sub-xuanwuYaou020	n/a	n/a	unknown	unknown	n/a	n/a	NC	xuanwu_20160624-yaou_NC004	xuanwuYaou
+sub-xuanwuYaou021	n/a	n/a	unknown	unknown	n/a	n/a	HC	xuanwu_20160624-yaou_NC005	xuanwuYaou
+sub-xuanwuYaou022	n/a	n/a	unknown	unknown	n/a	n/a	HC	xuanwu_20160624-yaou_NC006	xuanwuYaou
+sub-xuanwuYaou023	n/a	n/a	unknown	unknown	n/a	n/a	HC	xuanwu_20160624-yaou_NC007	xuanwuYaou
+sub-xuanwuYaou024	n/a	n/a	unknown	unknown	n/a	n/a	HC	xuanwu_20160624-yaou_NC008	xuanwuYaou
+sub-xuanwuYaou025	n/a	n/a	unknown	unknown	n/a	n/a	HC	xuanwu_20160624-yaou_NC009	xuanwuYaou
+sub-xuanwuYaou026	n/a	n/a	unknown	unknown	n/a	n/a	HC	xuanwu_20160624-yaou_NC010	xuanwuYaou
+sub-xuanwuYaou027	n/a	n/a	unknown	unknown	n/a	n/a	HC	xuanwu_20160624-yaou_NC011	xuanwuYaou
+sub-xuanwuYaou028	n/a	n/a	unknown	unknown	n/a	n/a	NC	xuanwu_20160624-yaou_NC012	xuanwuYaou
+sub-xuanwuYaou029	n/a	n/a	unknown	unknown	n/a	n/a	HC	xuanwu_20160624-yaou_NC013	xuanwuYaou
+sub-xuanwuYaou030	n/a	n/a	unknown	unknown	n/a	n/a	HC	xuanwu_20160624-yaou_NC014	xuanwuYaou
+sub-xuanwuYaou031	n/a	n/a	unknown	unknown	n/a	n/a	HC	xuanwu_20160624-yaou_NC018	xuanwuYaou
+sub-xuanwuYaou032	n/a	n/a	unknown	unknown	n/a	n/a	HC	xuanwu_20160624-yaou_NC021	xuanwuYaou
+sub-xuanwuYaou033	n/a	n/a	unknown	unknown	n/a	n/a	NMO	xuanwu_20160624-yaou_NMO001	xuanwuYaou
+sub-xuanwuYaou034	n/a	n/a	unknown	unknown	n/a	n/a	NMO	xuanwu_20160624-yaou_NMO002	xuanwuYaou
+sub-xuanwuYaou035	n/a	n/a	unknown	unknown	n/a	n/a	NMO	xuanwu_20160624-yaou_NMO004	xuanwuYaou
+sub-xuanwuYaou036	n/a	n/a	unknown	unknown	n/a	n/a	NMO	xuanwu_20160624-yaou_NMO012	xuanwuYaou
+sub-xuanwuYaou037	n/a	n/a	unknown	unknown	n/a	n/a	NMO	xuanwu_20160624-yaou_NMO019	xuanwuYaou
+sub-xuanwuYaou038	n/a	n/a	unknown	unknown	n/a	n/a	NMO	xuanwu_20160624-yaou_NMO029	xuanwuYaou
+sub-xuanwuYaou039	n/a	n/a	unknown	unknown	n/a	n/a	NMO	xuanwu_20160624-yaou_NMO031	xuanwuYaou
+sub-xuanwuYaou040	n/a	n/a	unknown	unknown	n/a	n/a	NMO	xuanwu_20160624-yaou_NMO032	xuanwuYaou
+sub-xuanwuYaou041	n/a	n/a	unknown	unknown	n/a	n/a	NMO	xuanwu_20160624-yaou_NMO033	xuanwuYaou
+sub-xuanwuYaou042	n/a	n/a	unknown	unknown	n/a	n/a	NMO	xuanwu_20160624-yaou_NMO034	xuanwuYaou
+sub-xuanwuYaou043	n/a	n/a	unknown	unknown	n/a	n/a	NMO	xuanwu_20160624-yaou_NMO035	xuanwuYaou
+sub-xuanwuYaou044	n/a	n/a	unknown	unknown	n/a	n/a	NMO	xuanwu_20160624-yaou_NMO037	xuanwuYaou
+sub-xuanwuYaou045	n/a	n/a	unknown	unknown	n/a	n/a	NMO	xuanwu_20160624-yaou_NMO038	xuanwuYaou
+sub-xuanwuYaou046	n/a	n/a	unknown	unknown	n/a	n/a	NMO	xuanwu_20160624-yaou_NMO043	xuanwuYaou
+sub-xuanwuYaou047	n/a	n/a	unknown	unknown	n/a	n/a	NMO	xuanwu_20160624-yaou_NMO044	xuanwuYaou
+sub-xuanwuYaou048	n/a	n/a	unknown	unknown	n/a	n/a	NMO	xuanwu_20160624-yaou_NMO047	xuanwuYaou
+sub-xuanwuYaou049	n/a	n/a	unknown	unknown	n/a	n/a	NMO	xuanwu_20160624-yaou_NMO048	xuanwuYaou
+sub-xuanwuYaou050	n/a	n/a	unknown	unknown	n/a	n/a	NMO	xuanwu_20160624-yaou_NMO050	xuanwuYaou
+sub-xuanwuYaou051	n/a	n/a	unknown	unknown	n/a	n/a	NMO	xuanwu_20160624-yaou_NMO051	xuanwuYaou
+sub-zurich001	n/a	n/a	unknown	unknown	n/a	n/a	HC	zurich_-_20170210	zurich
+sub-zurich002	n/a	n/a	n/a	n/a	n/a	n/a	n/a	zurich_inspired_004	zurich
+sub-zurichGmsegChallenge001	n/a	n/a	unknown	unknown	n/a	n/a	HC	zurich_gmsegChallenge16_01	zurichGmsegChallenge
+sub-zurichGmsegChallenge002	n/a	n/a	unknown	unknown	n/a	n/a	HC	zurich_gmsegChallenge16_02	zurichGmsegChallenge
+sub-zurichGmsegChallenge003	n/a	n/a	unknown	unknown	n/a	n/a	HC	zurich_gmsegChallenge16_03	zurichGmsegChallenge
+sub-zurichGmsegChallenge004	n/a	n/a	unknown	unknown	n/a	n/a	HC	zurich_gmsegChallenge16_04	zurichGmsegChallenge
+sub-zurichGmsegChallenge005	n/a	n/a	unknown	unknown	n/a	n/a	HC	zurich_gmsegChallenge16_05	zurichGmsegChallenge
+sub-zurichGmsegChallenge006	n/a	n/a	unknown	unknown	n/a	n/a	HC	zurich_gmsegChallenge16_06	zurichGmsegChallenge
+sub-zurichGmsegChallenge007	n/a	n/a	unknown	unknown	n/a	n/a	HC	zurich_gmsegChallenge16_07	zurichGmsegChallenge
+sub-zurichGmsegChallenge008	n/a	n/a	unknown	unknown	n/a	n/a	HC	zurich_gmsegChallenge16_08	zurichGmsegChallenge
+sub-zurichGmsegChallenge009	n/a	n/a	unknown	unknown	n/a	n/a	HC	zurich_gmsegChallenge16_09	zurichGmsegChallenge
+sub-zurichGmsegChallenge010	n/a	n/a	unknown	unknown	n/a	n/a	HC	zurich_gmsegChallenge16_10	zurichGmsegChallenge
+sub-zurichGmsegChallenge011	n/a	n/a	unknown	unknown	n/a	n/a	HC	zurich_gmsegChallenge16_11	zurichGmsegChallenge
+sub-zurichGmsegChallenge012	n/a	n/a	unknown	unknown	n/a	n/a	HC	zurich_gmsegChallenge16_12	zurichGmsegChallenge
+sub-zurichGmsegChallenge013	n/a	n/a	unknown	unknown	n/a	n/a	HC	zurich_gmsegChallenge16_13	zurichGmsegChallenge
+sub-zurichGmsegChallenge014	n/a	n/a	unknown	unknown	n/a	n/a	HC	zurich_gmsegChallenge16_14	zurichGmsegChallenge
+sub-zurichGmsegChallenge015	n/a	n/a	unknown	unknown	n/a	n/a	HC	zurich_gmsegChallenge16_15	zurichGmsegChallenge
+sub-zurichGmsegChallenge016	n/a	n/a	unknown	unknown	n/a	n/a	HC	zurich_gmsegChallenge16_16	zurichGmsegChallenge
+sub-zurichGmsegChallenge017	n/a	n/a	unknown	unknown	n/a	n/a	HC	zurich_gmsegChallenge16_17	zurichGmsegChallenge
+sub-zurichGmsegChallenge018	n/a	n/a	unknown	unknown	n/a	n/a	HC	zurich_gmsegChallenge16_18	zurichGmsegChallenge
+sub-zurichGmsegChallenge019	n/a	n/a	unknown	unknown	n/a	n/a	HC	zurich_gmsegChallenge16_19	zurichGmsegChallenge
+sub-zurichGmsegChallenge020	n/a	n/a	unknown	unknown	n/a	n/a	HC	zurich_gmsegChallenge16_20	zurichGmsegChallenge
+sub-zurichMPM01_ses-01	n/a	n/a	unknown	unknown	n/a	n/a		zurichMPM/sub-01_ses-01	zurichMPM
+sub-zurichMPM01_ses-02	n/a	n/a	unknown	unknown	n/a	n/a		zurichMPM/sub-01_ses-02	zurichMPM
+sub-zurichMPM02_ses-01	n/a	n/a	unknown	unknown	n/a	n/a		zurichMPM/sub-02_ses-01	zurichMPM
+sub-zurichMPM02_ses-02	n/a	n/a	unknown	unknown	n/a	n/a		zurichMPM/sub-02_ses-02	zurichMPM
+sub-zurichMPM03_ses-01	n/a	n/a	unknown	unknown	n/a	n/a		zurichMPM/sub-03_ses-01	zurichMPM
+sub-zurichMPM03_ses-02	n/a	n/a	unknown	unknown	n/a	n/a		zurichMPM/sub-03_ses-02	zurichMPM
+sub-zurichMPM04_ses-01	n/a	n/a	unknown	unknown	n/a	n/a		zurichMPM/sub-04_ses-01	zurichMPM
+sub-zurichMPM04_ses-02	n/a	n/a	unknown	unknown	n/a	n/a		zurichMPM/sub-04_ses-02	zurichMPM
+sub-zurichMPM05_ses-01	n/a	n/a	unknown	unknown	n/a	n/a		zurichMPM/sub-05_ses-01	zurichMPM
+sub-zurichMPM05_ses-02	n/a	n/a	unknown	unknown	n/a	n/a		zurichMPM/sub-05_ses-02	zurichMPM
