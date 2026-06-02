@@ -188,53 +188,50 @@ def main():
     results = []
     for model_name, cache_dir in MODELS.items():
         cache = Path(cache_dir)
-        # find embedding cache files
         npy_files = list(cache.glob(f"embeddings_*{ORIENT_SLUG}.npy"))
         if not npy_files:
             print(f"[{model_name}] No embedding cache found in {cache} — skipping")
             continue
         emb_path  = npy_files[0]
         meta_path = cache / emb_path.name.replace("embeddings_", "metadata_").replace(".npy", ".csv")
+        pm_path   = cache / emb_path.name.replace("embeddings_", "patch_mean_")
 
-        print(f"\n[{model_name}] Loading {emb_path.name} …")
-        emb_all  = np.load(emb_path)
         meta_all = pd.read_csv(meta_path)
+        mask     = meta_all["dataset"] == DATASET
+        meta     = meta_all[mask].reset_index(drop=True)
 
-        # filter to our dataset
-        mask = meta_all["dataset"] == DATASET
-        emb  = emb_all[mask]
-        meta = meta_all[mask].reset_index(drop=True)
-        print(f"  {len(meta)} slices for {DATASET}")
-
-        # match with label index
-        keys     = meta["path"].apply(path_to_key)
+        keys       = meta["path"].apply(path_to_key)
         has_lesion = keys.map(label_index)
-        valid    = has_lesion.notna()
-        print(f"  Matched: {valid.sum()} / {len(meta)} slices")
+        valid      = has_lesion.notna()
+        labels     = has_lesion[valid].astype(int).values
+        groups     = meta["subject"][valid].values
+        n_pos      = labels.sum()
+        majority_acc = max(n_pos, len(labels) - n_pos) / len(labels)
+        print(f"\n[{model_name}]  Matched: {valid.sum()} / {len(meta)}  "
+              f"pos={n_pos} ({100*n_pos/len(labels):.1f}%)")
 
-        emb    = emb[valid.values]
-        labels = has_lesion[valid].astype(int).values
-        groups = meta["subject"][valid].values
+        for emb_type, path in [("cls", emb_path), ("patch_mean", pm_path)]:
+            if not path.exists():
+                print(f"  {emb_type}: not found — skipping")
+                continue
+            print(f"  [{emb_type}] Loading …")
+            emb_all = np.load(path)
+            emb     = emb_all[mask][valid.values]
 
-        n_pos = labels.sum()
-        n_neg = len(labels) - n_pos
-        majority_acc = max(n_pos, n_neg) / len(labels)
-        print(f"  Positive: {n_pos} ({100*n_pos/len(labels):.1f}%)  Negative: {n_neg}  Majority-class acc: {majority_acc:.3f}  Bal-acc chance: 0.500")
+            mean_acc, std_acc, fold_scores = probe(emb, labels, groups)
+            print(f"  [{emb_type}] → Balanced acc: {mean_acc:.3f} ± {std_acc:.3f}")
 
-        mean_acc, std_acc, fold_scores = probe(emb, labels, groups)
-        print(f"  → Balanced acc: {mean_acc:.3f} ± {std_acc:.3f}")
-
-        results.append({
-            "model":           model_name,
-            "n_slices":        len(labels),
-            "n_positive":      int(n_pos),
-            "prevalence":      round(n_pos / len(labels), 3),
-            "majority_acc":    round(majority_acc, 3),
-            "bal_acc_chance":  0.500,
-            "bal_acc_mean":    round(mean_acc, 4),
-            "bal_acc_std":     round(std_acc, 4),
-            "fold_scores":     fold_scores,
-        })
+            results.append({
+                "model":          model_name,
+                "emb_type":       emb_type,
+                "n_slices":       len(labels),
+                "n_positive":     int(n_pos),
+                "majority_acc":   round(majority_acc, 3),
+                "bal_acc_chance": 0.500,
+                "bal_acc_mean":   round(mean_acc, 4),
+                "bal_acc_std":    round(std_acc, 4),
+                "fold_scores":    fold_scores,
+            })
 
     from scipy.stats import ttest_rel
 
