@@ -1,0 +1,27 @@
+model:
+  model_name: "/home/ge.polymtl.ca/p123239/.cache/huggingface/hub/models--raidium--curia/snapshots/9657dc56276bc6c9503ef6f8d060879c8bee482f"
+  num_classes: 3
+  head_type: "linear"
+
+data_dir: "/home/ge.polymtl.ca/p123239/data/RSNA_patches_scs"
+fold_split_csv: "/home/ge.polymtl.ca/p123239/fold_split_RSNA.json"
+fold_column: "regime_all_split_1_set"
+
+epochs: 50
+batch_size: 32
+learning_rate: 0.0001       # head LR (scaled: 0.0001 * 32/256 = 1.25e-5)
+backbone_lr: 0.00001        # backbone LR (10x smaller than head)
+weight_decay: 0.0001
+num_workers: 4
+eval_steps: 4
+
+freeze_backbone: false
+use_feature_caching: false
+use_pretrained_head: false
+crop_cm: 4.0
+
+gradient_accumulation_steps: 1
+
+task: "scs"
+log_dir: "/home/ge.polymtl.ca/p123239/SpineFoundation/classification_hf/logs"
+output_dir: "/home/ge.polymtl.ca/p123239/SpineFoundation/outputs_cls/rsna_scs_crop4cm_finetune"

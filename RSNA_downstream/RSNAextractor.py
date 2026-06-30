@@ -87,6 +87,7 @@ def _process_volume_group(job: tuple) -> list[str]:
     try:
         img_ras = nib.as_closest_canonical(nib.load(str(vol_path)))
         img = img_ras.get_fdata(dtype=np.float32)
+        zooms = img_ras.header.get_zooms()  # (through-plane, H, W) after canonical
     except Exception as e:
         return [f"[ERROR] load vol {vol_path.name}: {e}"]
 
@@ -105,12 +106,16 @@ def _process_volume_group(job: tuple) -> list[str]:
 
             if slice_axis == 0:
                 # Sagittal: (Y=A→P, Z=I→S) → transpose to (Z, Y)
+                # In-plane axes are 1 (A→P) and 2 (I→S); after .T rows=Z=axis2, cols=Y=axis1
                 img_2d  = np.ascontiguousarray(img[idx,  :, :].T)
                 mask_2d = np.ascontiguousarray(mask[idx, :, :].T)
+                spacing_mm = np.float32((float(zooms[1]) + float(zooms[2])) / 2.0)
             elif slice_axis == 2:
                 # Axial: (X=R→L, Y=A→P) → transpose to (Y, X)
+                # In-plane axes are 0 (R→L) and 1 (A→P); after .T rows=Y=axis1, cols=X=axis0
                 img_2d  = np.ascontiguousarray(img[:,  :, idx].T)
                 mask_2d = np.ascontiguousarray(mask[:, :, idx].T)
+                spacing_mm = np.float32((float(zooms[0]) + float(zooms[1])) / 2.0)
             else:
                 raise ValueError(f"Unsupported slice_axis={slice_axis}")
 
@@ -125,7 +130,7 @@ def _process_volume_group(job: tuple) -> list[str]:
 
             out_path = class_dir / label_path.name.replace(".nii.gz", ".npz")
             # savez (uncompressed) is much faster than savez_compressed
-            np.savez(out_path, slice=img_2d, mask=mask_2d)
+            np.savez(out_path, slice=img_2d, mask=mask_2d, spacing_mm=spacing_mm)
 
         except Exception as e:
             errors.append(f"[ERROR] {vol_path.name} + {label_path.name}: {e}")

@@ -15,7 +15,9 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Train classifier with OmegaConf config")
     parser.add_argument("--config", type=str, required=True, help="Path to config.yaml")
     parser.add_argument("--set", nargs="*", default=[],
-                        help="Key=value overrides, e.g. --set dilation_radius=4 task=nfn_dil4")
+                        help="Key=value overrides, e.g. --set task=nfn cache_suffix=custom")
+    parser.add_argument("--eval_only", type=str, default=None, metavar="RUN_DIR",
+                        help="Skip training — load head.pt from RUN_DIR and run final eval only.")
     args = parser.parse_args()
 
     config_path = Path(args.config)
@@ -25,4 +27,9 @@ if __name__ == "__main__":
     config = OmegaConf.load(config_path)
     if args.set:
         config = OmegaConf.merge(config, OmegaConf.from_dotlist(args.set))
-    main(config)
+
+    if args.eval_only:
+        from .trainer import eval_only
+        eval_only(config, args.eval_only)
+    else:
+        main(config)

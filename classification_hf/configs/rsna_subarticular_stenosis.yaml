@@ -15,7 +15,6 @@ weight_decay: 0.0001          # L2 regularisation on the linear head
 num_workers: 8
 eval_steps: 30
 
-dilation_radius: 0           # mask dilation radius (pixels, at crop_size resolution)
 use_feature_caching: true     # use pre-cached patch_tokens from NPZ — no backbone reload
 
 task: "ss"

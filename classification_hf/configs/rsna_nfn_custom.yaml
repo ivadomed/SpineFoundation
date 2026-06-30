@@ -15,7 +15,6 @@ weight_decay: 0.0001          # L2 regularisation on the linear head
 num_workers: 8
 eval_steps: 4
 
-dilation_radius: 0            # must match the radius used when running cache_patch_tokens --suffix custom
 use_feature_caching: true     # loads pooled_features_custom_dil0.pt
 
 cache_suffix: "custom"        # → pooled_features_custom_dil0.pt

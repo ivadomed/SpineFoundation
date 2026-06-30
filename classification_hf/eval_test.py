@@ -37,8 +37,12 @@ import torch
 from sklearn.metrics import (
     ConfusionMatrixDisplay,
     accuracy_score,
+    balanced_accuracy_score,
     classification_report,
+    cohen_kappa_score,
     confusion_matrix,
+    f1_score,
+    matthews_corrcoef,
     roc_auc_score,
 )
 
@@ -82,14 +86,25 @@ def evaluate(logits: np.ndarray, labels: np.ndarray, task: str, out_dir: Path) -
     proba = torch.softmax(torch.tensor(logits, dtype=torch.float32), dim=-1).numpy()
     preds = np.argmax(logits, axis=-1)
 
-    ce   = cross_entropy_loss(logits, labels)
-    acc  = accuracy_score(labels, preds)
+    ce  = cross_entropy_loss(logits, labels)
+    acc = accuracy_score(labels, preds)
+    bal = balanced_accuracy_score(labels, preds)
+    f1m = f1_score(labels, preds, average="macro",    zero_division=0)
+    f1w = f1_score(labels, preds, average="weighted", zero_division=0)
+    qwk = cohen_kappa_score(labels, preds, weights="quadratic")
+    kap = cohen_kappa_score(labels, preds)
+    mcc = matthews_corrcoef(labels, preds)
 
     try:
         auc_macro    = roc_auc_score(labels, proba, multi_class="ovr", average="macro")
         auc_weighted = roc_auc_score(labels, proba, multi_class="ovr", average="weighted")
+        auc_per_class = [
+            roc_auc_score((labels == c).astype(int), proba[:, c])
+            for c in range(proba.shape[1])
+        ]
     except ValueError:
         auc_macro = auc_weighted = float("nan")
+        auc_per_class = [float("nan")] * proba.shape[1]
 
     report = classification_report(
         labels, preds,
@@ -101,10 +116,18 @@ def evaluate(logits: np.ndarray, labels: np.ndarray, task: str, out_dir: Path) -
     # ── Console output ────────────────────────────────────────────────────────
     print(f"\n{'='*60}")
     print(f"Task : {task}   |   n={len(labels)}")
-    print(f"  Cross-entropy loss : {ce:.4f}")
-    print(f"  Accuracy           : {acc:.4f}")
-    print(f"  AUC OvR macro      : {auc_macro:.4f}")
-    print(f"  AUC OvR weighted   : {auc_weighted:.4f}")
+    print(f"  Cross-entropy     : {ce:.4f}")
+    print(f"  Accuracy          : {acc:.4f}")
+    print(f"  Balanced accuracy : {bal:.4f}")
+    print(f"  F1 macro          : {f1m:.4f}")
+    print(f"  F1 weighted       : {f1w:.4f}")
+    print(f"  QWK               : {qwk:.4f}")
+    print(f"  Kappa             : {kap:.4f}")
+    print(f"  MCC               : {mcc:.4f}")
+    print(f"  AUC OvR macro     : {auc_macro:.4f}")
+    print(f"  AUC OvR weighted  : {auc_weighted:.4f}")
+    for c, a in enumerate(auc_per_class):
+        print(f"    AUC {CLASS_NAMES[c]:<12}: {a:.4f}")
     print(f"\n{report}")
 
     # ── Confusion matrices ────────────────────────────────────────────────────
@@ -136,8 +159,15 @@ def evaluate(logits: np.ndarray, labels: np.ndarray, task: str, out_dir: Path) -
         "n_samples":          int(len(labels)),
         "cross_entropy_loss": round(ce,           4),
         "accuracy":           round(acc,          4),
+        "balanced_accuracy":  round(bal,          4),
+        "f1_macro":           round(f1m,          4),
+        "f1_weighted":        round(f1w,          4),
+        "qwk":                round(qwk,          4),
+        "kappa":              round(kap,          4),
+        "mcc":                round(mcc,          4),
         "auc_ovr_macro":      round(auc_macro,    4),
         "auc_ovr_weighted":   round(auc_weighted, 4),
+        "auc_per_class":      {CLASS_NAMES[c]: round(a, 4) for c, a in enumerate(auc_per_class)},
         "confusion_matrix_counts":     cm_counts.tolist(),
         "confusion_matrix_normalised": [[round(v, 4) for v in row] for row in cm_norm.tolist()],
         "classification_report":       report,

@@ -355,6 +355,8 @@ class NpzSegmentationDataset(Dataset):
         token_key: str = "patch_tokens",
         augment: bool = False,
         preload: bool = True,
+        max_preload_samples: int = 2000,
+        verbose: bool = True,
     ):
         self.data_dir   = Path(data_dir)
         self.image_size = image_size
@@ -387,19 +389,21 @@ class NpzSegmentationDataset(Dataset):
         # NPZ loading entirely and read straight from shared RAM.
         self._tokens_cache: list | None = None
         self._masks_cache:  list | None = None
-        if preload and self.has_tokens:
+        if preload and self.has_tokens and len(self.npz_paths) <= max_preload_samples:
             import hashlib, os
-            cache_key = hashlib.md5(f"{self.data_dir}|{token_key}|{image_size}".encode()).hexdigest()[:12]
-            shm_path  = Path(f"/dev/shm/npz_cache_{cache_key}.pt")
+            cache_key  = hashlib.md5(f"{self.data_dir}|{token_key}|{image_size}".encode()).hexdigest()[:12]
+            cache_dir  = Path(os.environ.get("NPZ_CACHE_DIR", Path.home() / ".cache" / "npz_tokens"))
+            cache_dir.mkdir(parents=True, exist_ok=True)
+            shm_path   = cache_dir / f"npz_cache_{cache_key}.pt"
 
             if shm_path.exists():
-                print(f"[NpzDataset] Loading cache from /dev/shm ({shm_path.name}) …", flush=True)
+                if verbose: print(f"[NpzDataset] Loading cache from {shm_path} …", flush=True)
                 cached = torch.load(shm_path, map_location="cpu", weights_only=False)
                 self._tokens_cache = cached["tokens"]
                 self._masks_cache  = cached["masks"]
-                print(f"[NpzDataset] Cache loaded ({len(self._tokens_cache)} samples).", flush=True)
+                if verbose: print(f"[NpzDataset] Cache loaded ({len(self._tokens_cache)} samples).", flush=True)
             else:
-                print(f"[NpzDataset] Preloading {len(self.npz_paths)} samples into RAM …", flush=True)
+                if verbose: print(f"[NpzDataset] Preloading {len(self.npz_paths)} samples into RAM …", flush=True)
                 tokens_list, masks_list = [], []
                 for p in self.npz_paths:
                     npz = np.load(p)
@@ -412,9 +416,9 @@ class NpzSegmentationDataset(Dataset):
                     masks_list.append(mask_t)
                 self._tokens_cache = tokens_list
                 self._masks_cache  = masks_list
-                print(f"[NpzDataset] Saving cache to /dev/shm …", flush=True)
+                if verbose: print(f"[NpzDataset] Saving cache to {shm_path} …", flush=True)
                 torch.save({"tokens": tokens_list, "masks": masks_list}, shm_path)
-                print(f"[NpzDataset] Cache saved ({shm_path.name}).", flush=True)
+                if verbose: print(f"[NpzDataset] Cache saved ({shm_path.name}).", flush=True)
 
     def __len__(self) -> int:
         return len(self.npz_paths)
@@ -462,32 +466,36 @@ class NpzSegmentationDataset(Dataset):
         return image_t, mask_t
 
 
-def build_npz_datasets(cfg: "TrainConfig") -> Tuple[NpzSegmentationDataset, NpzSegmentationDataset]:
+def build_npz_datasets(cfg: "TrainConfig", verbose: bool = True) -> Tuple[NpzSegmentationDataset, NpzSegmentationDataset]:
     """Build train/val NPZ-backed datasets from cfg.npz_train_dir / cfg.npz_val_dir."""
     train_ds = NpzSegmentationDataset(
         data_dir=cfg.npz_train_dir,
         image_size=cfg.image_size,
         token_key=cfg.patch_token_key,
         augment=cfg.augment,
+        max_preload_samples=cfg.max_preload_samples,
+        verbose=verbose,
     )
     val_ds = NpzSegmentationDataset(
         data_dir=cfg.npz_val_dir,
         image_size=cfg.image_size,
         token_key=cfg.patch_token_key,
         augment=False,
+        max_preload_samples=cfg.max_preload_samples,
+        verbose=verbose,
     )
     return train_ds, val_ds
 
 
 def build_npz_train_dataloader(cfg: "TrainConfig", train_ds: NpzSegmentationDataset) -> DataLoader:
     preloaded = train_ds._tokens_cache is not None
-    nw = 0 if preloaded else cfg.num_workers
+    nw = 0  # workers fork parent RAM → memory pressure; disk reads are fast enough without workers
     return DataLoader(
         train_ds,
         batch_size=cfg.batch_size,
         shuffle=True,
         num_workers=nw,
-        pin_memory=True,
+        pin_memory=not preloaded,
         drop_last=False,
         persistent_workers=(nw > 0),
         prefetch_factor=(4 if nw > 0 else None),
@@ -496,13 +504,13 @@ def build_npz_train_dataloader(cfg: "TrainConfig", train_ds: NpzSegmentationData
 
 def build_npz_val_dataloader(cfg: "TrainConfig", val_ds: NpzSegmentationDataset) -> DataLoader:
     preloaded = val_ds._tokens_cache is not None
-    nw = 0 if preloaded else cfg.num_workers
+    nw = 0  # workers fork parent RAM → memory pressure; disk reads are fast enough without workers
     return DataLoader(
         val_ds,
         batch_size=cfg.batch_size,
         shuffle=False,
         num_workers=nw,
-        pin_memory=True,
+        pin_memory=not preloaded,
         drop_last=False,
         persistent_workers=(nw > 0),
         prefetch_factor=(4 if nw > 0 else None),

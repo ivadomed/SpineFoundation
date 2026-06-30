@@ -33,12 +33,15 @@ class TrainConfig:
     npz_train_dir: str | None = None
     npz_val_dir: str | None = None
     patch_token_key: str = "patch_tokens"
+    in_channels: int | None = None  # override hidden_size for non-HF backbones
+    max_preload_samples: int = 99999  # disable RAM preloading above this threshold
 
     seg_head_channels: int = 256
     seg_head_dropout: float = 0.0
     seg_head_norm: str = "batch"
     seg_head_nonlin: str = "gelu"
     seg_head_depth: int = 4
+    use_scheduler: bool = True
     init_seg_head: str | None = None
     finetune_backbone: bool = False
     backbone_lr_scale: float = 0.1
@@ -117,6 +120,8 @@ def parse_args() -> TrainConfig:
                         help="Flat directory of NPZ files for validation (fast path).")
     parser.add_argument("--patch_token_key", type=str, default="patch_tokens",
                         help="NPZ key for pre-cached patch tokens (default: 'patch_tokens').")
+    parser.add_argument("--in_channels", type=int, default=None,
+                        help="Override backbone hidden size (for non-HF backbones, e.g. MRICore=256).")
 
     parser.set_defaults(use_wandb=False)
     parser.add_argument("--wandb", dest="use_wandb", action="store_true", help="Enable Weights & Biases logging")
@@ -169,6 +174,7 @@ def parse_args() -> TrainConfig:
         npz_train_dir=args.npz_train_dir,
         npz_val_dir=args.npz_val_dir,
         patch_token_key=args.patch_token_key,
+        in_channels=args.in_channels,
         output_dir=args.output_dir,
         image_size=args.image_size,
         only_sagittal=args.only_sagittal,

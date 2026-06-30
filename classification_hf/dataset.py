@@ -48,10 +48,10 @@ def _get_crop_size(processor) -> int:
     return int(cs)
 
 
-def resize_mask(mask_np: np.ndarray, target_size: int, dilation_radius: int = 8) -> torch.Tensor:
+def resize_mask(mask_np: np.ndarray, target_size: int) -> torch.Tensor:
     """
     Map a sparse binary mask from its original resolution to target_size×target_size
-    using vectorised coordinate mapping followed by morphological dilation.
+    using vectorised coordinate mapping.
 
     Returns: (1, 1, target_size, target_size) float32 tensor.
     """
@@ -62,8 +62,6 @@ def resize_mask(mask_np: np.ndarray, target_size: int, dilation_radius: int = 8)
         ys_out = np.clip((ys * target_size / H).astype(np.int32), 0, target_size - 1)
         xs_out = np.clip((xs * target_size / W).astype(np.int32), 0, target_size - 1)
         t[0, 0, ys_out, xs_out] = 1.0
-    if dilation_radius > 0:
-        t = F.max_pool2d(t, kernel_size=2 * dilation_radius + 1, stride=1, padding=dilation_radius)
     return t  # (1, 1, target_size, target_size)
 
 
@@ -284,14 +282,44 @@ def load_local_dataset(data_dir: str, val_split: float = 0.15, seed: int = 42) -
 
 # ── Preprocessing: mirror curia's preprocess_function ─────────────────────────
 
-def preprocess_function(examples: Dict, processor) -> Dict:
+
+def _crop_region(img: np.ndarray, mask: np.ndarray,
+                 spacing_mm: float, crop_cm: float):
+    """Crop img and mask to crop_cm×crop_cm centred on the mask centroid."""
+    crop_px = int(round(crop_cm * 10.0 / spacing_mm))
+    half    = crop_px // 2
+    ys, xs  = np.where(mask > 0) if mask is not None and mask.any() else ([], [])
+    H, W    = img.shape
+    cy = int(ys[0]) if len(ys) > 0 else H // 2
+    cx = int(xs[0]) if len(xs) > 0 else W // 2
+    y0, y1 = cy - half, cy - half + crop_px
+    x0, x1 = cx - half, cx - half + crop_px
+    pad_top = max(0, -y0); pad_bot = max(0, y1 - H)
+    pad_lft = max(0, -x0); pad_rgt = max(0, x1 - W)
+
+    def _cp(arr):
+        c = arr[max(0, y0):min(H, y1), max(0, x0):min(W, x1)]
+        if pad_top or pad_bot or pad_lft or pad_rgt:
+            c = np.pad(c, ((pad_top, pad_bot), (pad_lft, pad_rgt)), constant_values=0)
+        return c
+
+    img_c  = _cp(img)
+    mask_c = _cp(mask) if mask is not None else None
+    return img_c, mask_c
+
+
+def preprocess_function(examples: Dict, processor, crop_cm: float | None = None) -> Dict:
     """
     Load images (PNG or NPZ) from disk, run through AutoImageProcessor (bicubic
     resize + per-image z-score), return pixel_values + labels (+ mask if NPZ).
 
-    For NPZ files the binary mask is resized and dilated to match the processor's
-    crop_size, then returned as a (1, crop_size, crop_size) tensor per sample so
-    the HF Trainer can pass it directly to model(pixel_values=…, mask=…).
+    For NPZ files the binary mask is resized to match the processor's crop_size,
+    then returned as a (1, crop_size, crop_size) tensor per sample so the HF
+    Trainer can pass it directly to model(pixel_values=…, mask=…).
+
+    If crop_cm is given, each NPZ slice is cropped to crop_cm×crop_cm (in cm)
+    centred on the mask centroid before running the processor (requires
+    'spacing_mm' in the NPZ).
     """
     images_as_np: list = []
     masks: list = []
@@ -302,10 +330,15 @@ def preprocess_function(examples: Dict, processor) -> Dict:
         p = Path(path)
         if p.suffix.lower() == _NPZ_EXT:
             d = np.load(path)
-            images_as_np.append(d["slice"].astype(np.float32))
-            if "mask" in d:
-                mask_t = resize_mask(d["mask"], crop_size)  # (1, 1, S, S)
-                masks.append(mask_t.squeeze(0))              # (1, S, S)
+            img      = d["slice"].astype(np.float32)
+            mask_np  = d["mask"] if "mask" in d.files else None
+            if crop_cm is not None and "spacing_mm" in d.files:
+                spacing = float(d["spacing_mm"])
+                img, mask_np = _crop_region(img, mask_np, spacing, crop_cm)
+            images_as_np.append(img)
+            if mask_np is not None:
+                mask_t = resize_mask(mask_np, crop_size)  # (1, 1, S, S)
+                masks.append(mask_t.squeeze(0))            # (1, S, S)
             else:
                 masks.append(None)
         else:
@@ -329,7 +362,7 @@ def preprocess_function(examples: Dict, processor) -> Dict:
 
 # ── Feature extraction: mirror curia's extract_features (2-D, with mask) ──────
 
-def extract_features_fn(examples: Dict, processor, backbone, dilation_radius: int = 8) -> Dict:
+def extract_features_fn(examples: Dict, processor, backbone) -> Dict:
     """
     Return backbone features for a batch of samples as "pixel_values".
 
@@ -361,7 +394,7 @@ def extract_features_fn(examples: Dict, processor, backbone, dilation_radius: in
                     N_tok = tokens.shape[0]
                     grid = int(N_tok ** 0.5)
                     token_crop_size = grid * _DINO_PATCH
-                    mask_t = resize_mask(d["mask"], token_crop_size, dilation_radius)  # (1, 1, S, S)
+                    mask_t = resize_mask(d["mask"], token_crop_size)  # (1, 1, S, S)
                     pooled = _masked_avg_pool_tokens(
                         tokens.unsqueeze(0), mask_t.squeeze(0).unsqueeze(0)
                     )                                                  # (1, D)
@@ -407,11 +440,9 @@ def extract_features_fn(examples: Dict, processor, backbone, dilation_radius: in
     with torch.no_grad():
         outputs = backbone(pixel_values=pixel_values, output_hidden_states=False)
 
-    # Use the actual pixel_values size for mask resizing;
-    # _masked_avg_pool_tokens now infers patch_size from mask.shape / token count
     actual_size = processed["pixel_values"].shape[-1]
     mask_tensors = [
-        resize_mask(m, actual_size, dilation_radius) if m is not None else None
+        resize_mask(m, actual_size) if m is not None else None
         for m in masks_np
     ]
 
@@ -439,12 +470,11 @@ class PatchTokenDataset(torch.utils.data.Dataset):
     the vectorised resize_mask).
     """
 
-    def __init__(self, paths: List[str], labels: List[int], dilation_radius: int = 8,
+    def __init__(self, paths: List[str], labels: List[int],
                  token_key: str = "patch_tokens"):
-        self.paths           = paths
-        self.labels          = labels
-        self.dilation_radius = dilation_radius
-        self.token_key       = token_key
+        self.paths     = paths
+        self.labels    = labels
+        self.token_key = token_key
 
     def __len__(self) -> int:
         return len(self.paths)
@@ -460,7 +490,7 @@ class PatchTokenDataset(torch.utils.data.Dataset):
         token_crop_size = grid * _DINO_PATCH
 
         if "mask" in d:
-            mask_t = resize_mask(d["mask"], token_crop_size, self.dilation_radius)  # (1,1,S,S)
+            mask_t = resize_mask(d["mask"], token_crop_size)  # (1,1,S,S)
             pooled = _masked_avg_pool_tokens(
                 tokens.unsqueeze(0), mask_t.squeeze(0).unsqueeze(0)
             ).squeeze(0)                                      # (D,)
@@ -473,7 +503,7 @@ class PatchTokenDataset(torch.utils.data.Dataset):
         }
 
 
-def _pool_npz_list(paths: List[str], labels: List[int], dilation_radius: int,
+def _pool_npz_list(paths: List[str], labels: List[int],
                    token_key: str = "patch_tokens") -> torch.utils.data.TensorDataset:
     """
     Load all NPZ files, apply masked-avg-pooling, and return a TensorDataset
@@ -487,7 +517,7 @@ def _pool_npz_list(paths: List[str], labels: List[int], dilation_radius: int,
         grid  = int(N_tok ** 0.5)
         token_crop_size = grid * _DINO_PATCH
         if "mask" in d:
-            mask_t = resize_mask(d["mask"], token_crop_size, dilation_radius)  # (1,1,S,S)
+            mask_t = resize_mask(d["mask"], token_crop_size)  # (1,1,S,S)
             pooled = _masked_avg_pool_tokens(
                 tokens.unsqueeze(0), mask_t.squeeze(0).unsqueeze(0)
             ).squeeze(0)                                      # (D,)
@@ -502,7 +532,6 @@ def _pool_npz_list(paths: List[str], labels: List[int], dilation_radius: int,
 def build_patch_token_datasets(
     hf_train: Dataset,
     hf_val: Dataset,
-    dilation_radius: int = 8,
     data_dir: str = "",
     cache_suffix: str = "",
     token_key: str = "patch_tokens",
@@ -510,18 +539,16 @@ def build_patch_token_datasets(
     """
     Pool all patch_tokens into RAM tensors.  No disk I/O during training.
 
-    Fast path: if {data_dir}/pooled_features[_{suffix}]_dil{N}.pt exists (written by
-    cache_pooled_features.py), load it instantly and split into train/val by path.
-    The cache_suffix parameter disambiguates caches from different backbones,
-    e.g. cache_suffix="custom" → pooled_features_custom_dil8.pt.
+    Fast path: if ~/.cache/classification_hf/pooled_features_{basename}[_{suffix}].pt
+    exists (written by cache_pooled_features.py), load it instantly.
 
-    Slow path: read every NPZ, pool on the fly, stack into tensors (~1-3 min on NFS).
+    Slow path: read every NPZ, pool on the fly (~1-3 min on NFS).
     Run cache_pooled_features.py once to avoid this on subsequent runs.
     """
     # ── Fast path: pre-computed .pt cache ─────────────────────────────────────
     suffix_part = f"_{cache_suffix}" if cache_suffix else ""
-    pt_name = f"pooled_features{suffix_part}_dil{dilation_radius}.pt"
-    pt_path = Path(data_dir) / pt_name if data_dir else None
+    cache_root = Path.home() / ".cache" / "classification_hf"
+    pt_path = cache_root / f"pooled_features_{Path(data_dir).name}{suffix_part}.pt" if data_dir else None
     if pt_path and pt_path.exists():
         print(f"[cache] Loading pooled features from {pt_path}", flush=True)
         cache = torch.load(pt_path, weights_only=True)
@@ -546,9 +573,9 @@ def build_patch_token_datasets(
     print("[cache] Pre-loading features into RAM (NPZ slow path)...", flush=True)
     suffix_flag = f" --cache_suffix {cache_suffix}" if cache_suffix else ""
     print("[cache] Tip: run  python -m classification_hf.cache_pooled_features "
-          f"--data_dir {data_dir} --dilation_radius {dilation_radius}{suffix_flag}  to speed this up.", flush=True)
-    train_tensor = _pool_npz_list(hf_train["path"], hf_train["target"], dilation_radius, token_key)
-    val_tensor   = _pool_npz_list(hf_val["path"],   hf_val["target"],   dilation_radius, token_key)
+          f"--data_dir {data_dir}{suffix_flag}  to speed this up.", flush=True)
+    train_tensor = _pool_npz_list(hf_train["path"], hf_train["target"], token_key)
+    val_tensor   = _pool_npz_list(hf_val["path"],   hf_val["target"],   token_key)
     n_train, D = train_tensor.tensors[0].shape
     n_val       = val_tensor.tensors[0].shape[0]
     print(f"[cache] {n_train} train + {n_val} val features loaded ({D}d, "
@@ -565,3 +592,76 @@ class _DictDataset(torch.utils.data.Dataset):
     def __getitem__(self, idx):
         features, label = self._ds[idx]
         return {"pixel_values": features, "labels": label}
+
+
+class CropTokenDataset(torch.utils.data.Dataset):
+    """
+    Returns the full (un-pooled) patch token grid for each sample.
+
+    Used with TokenGridClassifier, which applies its own spatial CNN pooling.
+    Each item is {"pixel_values": (N, D) float32, "labels": int64}.
+
+    token_key must match the suffix passed to cache_patch_tokens.py
+    (e.g. "patch_tokens_crop4cm" for --suffix crop4cm --crop_cm 4).
+
+    If preload=True (default), all tokens are loaded into RAM at init time.
+    This eliminates NFS reads during training and saturates the GPU on small
+    models like TokenGridClassifier (~690k params, <1ms forward per batch).
+    9555 samples × 3MB ≈ 30 GB float32, or 15 GB float16.
+    """
+
+    def __init__(self, paths: List[str], labels: List[int],
+                 token_key: str = "patch_tokens_crop4cm",
+                 preload: bool = True):
+        self.paths     = list(paths)
+        self.labels    = list(labels)
+        self.token_key = token_key
+        self.tokens    = None  # set if preload=True
+
+        if preload:
+            from concurrent.futures import ThreadPoolExecutor, as_completed as _as_completed
+            n = len(paths)
+            d0 = np.load(paths[0])
+            if token_key not in d0.files:
+                raise KeyError(f"Key '{token_key}' not found in {paths[0]}.")
+            shape = d0[token_key].shape
+            buf = np.empty((n, *shape), dtype=np.float16)
+            gb = buf.nbytes / 1e9
+            print(f"[CropTokenDataset] Preloading {n} samples → {gb:.1f} GB float16 "
+                  f"(key={token_key}, 8 threads)...", flush=True)
+
+            def _load_one(args):
+                i, p = args
+                d = np.load(p)
+                if token_key not in d.files:
+                    raise KeyError(f"Key '{token_key}' not found in {p}.")
+                buf[i] = d[token_key].astype(np.float16)
+
+            with ThreadPoolExecutor(max_workers=8) as ex:
+                futs = {ex.submit(_load_one, (i, p)): i for i, p in enumerate(self.paths)}
+                for fut in tqdm(_as_completed(futs), total=n,
+                                desc="Preload", unit="file", leave=True):
+                    fut.result()
+
+            self.tokens = torch.from_numpy(buf)
+            print(f"[CropTokenDataset] Preloaded — {gb:.1f} GB in RAM", flush=True)
+
+    def __len__(self) -> int:
+        return len(self.paths)
+
+    def __getitem__(self, idx: int) -> Dict[str, torch.Tensor]:
+        if self.tokens is not None:
+            tokens = self.tokens[idx]  # reste float16, converti en batch dans le training loop
+        else:
+            d = np.load(self.paths[idx])
+            if self.token_key not in d.files:
+                raise KeyError(
+                    f"Key '{self.token_key}' not found in {self.paths[idx]}.\n"
+                    f"Run: python -m classification_hf.cache_patch_tokens "
+                    f"--suffix <suffix> --crop_cm 4.0 ..."
+                )
+            tokens = torch.from_numpy(d[self.token_key].copy())
+        return {
+            "pixel_values": tokens,
+            "labels": torch.tensor(self.labels[idx], dtype=torch.long),
+        }

@@ -11,8 +11,7 @@ Bootstrap evaluation — two modes:
 Usage — trained mode:
     python -m classification_hf.bootstrap_eval \
         --task nfn \
-        --dilation-radius 8 \
-        --runs-dir /home/ge.polymtl.ca/p123239/SpineFoundation/outputs_cls/rsna_nfn_dil8
+        --runs-dir /home/ge.polymtl.ca/p123239/SpineFoundation/outputs_cls/rsna_nfn_fold
 
 Usage — pretrained mode:
     python -m classification_hf.bootstrap_eval \
@@ -22,7 +21,6 @@ Usage — pretrained mode:
     python -m classification_hf.bootstrap_eval \
         --mode pretrained \
         --task scs \
-        --dilation-radius 8 \
         --model-name raidium/curia
 """
 
@@ -127,13 +125,15 @@ def _load_and_pool(pred_files: list[Path]) -> tuple[np.ndarray, np.ndarray]:
 # ── Pretrained mode: load cached pooled features + frozen classifier ──────────
 
 
-def _load_pooled_features(data_dir: Path, dilation_radius: int) -> tuple[torch.Tensor, np.ndarray]:
+def _load_pooled_features(data_dir: Path, cache_suffix: str = "") -> tuple[torch.Tensor, np.ndarray]:
     """Load pooled features and labels from cache_pooled_features output."""
-    cache_path = data_dir / f"pooled_features_dil{dilation_radius}.pt"
+    suffix_part = f"_{cache_suffix}" if cache_suffix else ""
+    cache_root = Path.home() / ".cache" / "classification_hf"
+    cache_path = cache_root / f"pooled_features_{data_dir.name}{suffix_part}.pt"
     if not cache_path.exists():
         raise FileNotFoundError(
             f"Pooled features cache not found: {cache_path}\n"
-            "Run cache_pooled_features.py first (called automatically by run_dilation_study.sh)."
+            "Run: python -m classification_hf.cache_pooled_features --data_dir ..."
         )
     print(f"Loading pooled features from {cache_path}")
     cached = torch.load(cache_path, map_location="cpu", weights_only=True)
@@ -170,11 +170,10 @@ def _rebuild_csv(csv_path: Path, fieldnames: list, new_row: dict, log_dir: Path,
         if d.get("mode") != mode:
             continue
         row = {
-            "timestamp":       d["timestamp"],
-            "task":            d["task"],
-            "dilation_radius": d["dilation_radius"],
-            "n_samples":       d["n_samples"],
-            "n_bootstrap":     d["n_bootstrap"],
+            "timestamp":   d["timestamp"],
+            "task":        d["task"],
+            "n_samples":   d["n_samples"],
+            "n_bootstrap": d["n_bootstrap"],
         }
         if mode == "trained":
             row["n_runs"] = d.get("n_runs", "")
@@ -184,10 +183,10 @@ def _rebuild_csv(csv_path: Path, fieldnames: list, new_row: dict, log_dir: Path,
             row[f"{col}_mean"]    = round(b["mean"],    6)
             row[f"{col}_ci_low"]  = round(b["ci_low"],  6)
             row[f"{col}_ci_high"] = round(b["ci_high"], 6)
-        rows_by_key[(d["task"], d["dilation_radius"])] = row
+        rows_by_key[d["task"]] = row
 
     # New row takes priority
-    rows_by_key[(new_row["task"], new_row["dilation_radius"])] = new_row
+    rows_by_key[new_row["task"]] = new_row
 
     with csv_path.open("w", newline="", encoding="utf-8") as fh:
         fcntl.flock(fh, fcntl.LOCK_EX)
@@ -206,8 +205,8 @@ def main():
     parser = argparse.ArgumentParser(description="Bootstrap evaluation")
     parser.add_argument("--mode",    choices=["trained", "pretrained"], default="trained")
     parser.add_argument("--task",    required=True, choices=["nfn", "ss", "scs"])
-    parser.add_argument("--dilation-radius", type=int, default=0,
-                        help="Dilation radius for this run (used in CSV output)")
+    parser.add_argument("--cache-suffix", type=str, default="",
+                        help="[pretrained] cache_suffix used when running cache_pooled_features.py")
     parser.add_argument("--n-bootstrap", type=int, default=1000)
     parser.add_argument("--seed",    type=int, default=42)
     parser.add_argument("--log-dir", type=Path, default=None,
@@ -223,7 +222,7 @@ def main():
     parser.add_argument("--subfolder",   type=str, default=None,
                         help="[pretrained] Task-specific subfolder (default: from TASK_CONFIG)")
     parser.add_argument("--data-dir",    type=Path, default=None,
-                        help="[pretrained] Directory containing pooled_features_dil{N}.pt")
+                        help="[pretrained] Data directory (basename used to locate ~/.cache/classification_hf/ cache)")
 
     args = parser.parse_args()
 
@@ -249,8 +248,6 @@ def main():
         print(f"Data dir   : {args.data_dir}")
     else:
         print(f"Runs dir   : {args.runs_dir}")
-    if args.dilation_radius > 0:
-        print(f"Dilation   : {args.dilation_radius}px")
     print(f"Bootstraps : {args.n_bootstrap}   seed={args.seed}")
     print(f"{'='*65}\n")
 
@@ -264,7 +261,7 @@ def main():
         logits, labels = _load_and_pool(pred_files)
     else:
         # Pretrained mode — load pre-cached pooled features
-        features, labels = _load_pooled_features(args.data_dir, args.dilation_radius)
+        features, labels = _load_pooled_features(args.data_dir, getattr(args, "cache_suffix", ""))
         print(f"Total: {len(labels)} samples  (class distribution: {np.bincount(labels).tolist()})")
 
         print("Loading classifier...")
@@ -291,7 +288,6 @@ def main():
     result = bootstrap(logits, labels, args.n_bootstrap, args.seed)
 
     # ── Pretty print ──────────────────────────────────────────────────────────
-    dil_str = f" dil={args.dilation_radius}px" if args.dilation_radius > 0 else ""
     header = (
         f"\n{'─'*90}\n"
         f"  {'Task':<12}  {'AUC macro  mean [95% CI]':<28}  "
@@ -299,17 +295,15 @@ def main():
         f"{'─'*90}"
     )
     print(header)
-    print(_print_table_row(args.task, result, extra=dil_str))
+    print(_print_table_row(args.task, result))
     print(f"{'─'*90}\n")
 
     # ── Save JSON ─────────────────────────────────────────────────────────────
-    dil_tag = f"_dil{args.dilation_radius}" if args.dilation_radius > 0 else ""
     summary: dict = {
-        "timestamp":       timestamp,
-        "mode":            args.mode,
-        "task":            args.task,
-        "dilation_radius": args.dilation_radius,
-        "n_samples":       int(len(labels)),
+        "timestamp":   timestamp,
+        "mode":        args.mode,
+        "task":        args.task,
+        "n_samples":   int(len(labels)),
         "n_bootstrap":     args.n_bootstrap,
         "seed":            args.seed,
         "point_estimates": {k: round(v, 6) for k, v in point.items()},
@@ -325,9 +319,9 @@ def main():
         summary["subfolder"] = args.subfolder
 
     json_name = (
-        f"bootstrap_pretrained_{args.task}{dil_tag}.json"
+        f"bootstrap_pretrained_{args.task}.json"
         if args.mode == "pretrained"
-        else f"bootstrap_{args.task}{dil_tag}.json"
+        else f"bootstrap_{args.task}.json"
     )
     json_path = log_dir / json_name
     json_path.write_text(json.dumps(summary, indent=2))
@@ -340,17 +334,16 @@ def main():
         else "bootstrap_results.csv"
     )
     fieldnames = [
-        "timestamp", "task", "dilation_radius", "n_samples", "n_bootstrap",
+        "timestamp", "task", "n_samples", "n_bootstrap",
         "accuracy_mean", "accuracy_ci_low", "accuracy_ci_high",
         "auc_macro_mean", "auc_macro_ci_low", "auc_macro_ci_high",
         "auc_weighted_mean", "auc_weighted_ci_low", "auc_weighted_ci_high",
     ]
     row = {
-        "timestamp":       timestamp,
-        "task":            args.task,
-        "dilation_radius": args.dilation_radius,
-        "n_samples":       len(labels),
-        "n_bootstrap":     args.n_bootstrap,
+        "timestamp":   timestamp,
+        "task":        args.task,
+        "n_samples":   len(labels),
+        "n_bootstrap": args.n_bootstrap,
     }
     if args.mode == "trained":
         fieldnames.insert(4, "n_runs")
@@ -369,17 +362,15 @@ def main():
     # ── Final 3-task summary table ────────────────────────────────────────────
     if csv_path.exists():
         rows = list(csv.DictReader(csv_path.open(encoding="utf-8")))
-        dil_key = str(args.dilation_radius)
         latest: dict = {}
         for r in rows:
-            if r.get("dilation_radius") == dil_key:
-                latest[r["task"]] = r
+            latest[r["task"]] = r
 
         all_tasks = ["nfn", "scs", "ss"]
         if all(t in latest for t in all_tasks):
             print(f"\n{'='*90}")
             label = "pretrained head" if args.mode == "pretrained" else "trained runs"
-            print(f"FINAL SUMMARY ({label} — all 3 tasks  dil={args.dilation_radius}px)")
+            print(f"FINAL SUMMARY ({label} — all 3 tasks)")
             print(f"{'─'*90}")
             print(f"  {'Task':<12}  {'AUC macro  mean [95% CI]':<28}  "
                   f"{'AUC weighted  mean [95% CI]':<28}  Accuracy  mean [95% CI]")

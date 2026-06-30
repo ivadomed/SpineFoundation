@@ -93,26 +93,37 @@ class DeepSegHead(nn.Module):
 
 
 class FrozenBackboneWithSegHead(nn.Module):
-    def __init__(self, model_dir: str, seg_head_channels: int = 256, seg_head_dropout: float = 0.0,
-                 seg_head_norm: str = "batch", seg_head_nonlin: str = "gelu", seg_head_depth: int = 4):
+    def __init__(self, model_dir: str | None, seg_head_channels: int = 256, seg_head_dropout: float = 0.0,
+                 seg_head_norm: str = "batch", seg_head_nonlin: str = "gelu", seg_head_depth: int = 4,
+                 head_only: bool = False, in_channels: int | None = None):
         super().__init__()
 
-        config = AutoConfig.from_pretrained(model_dir, trust_remote_code=True)
-        self.backbone = AutoModel.from_pretrained(model_dir, config=config, trust_remote_code=True)
+        config = None
+        if in_channels is not None:
+            # Non-HF backbone (e.g. MRICore): skip AutoConfig/AutoModel entirely
+            self.backbone = None
+            hidden_size = in_channels
+        else:
+            config = AutoConfig.from_pretrained(model_dir, trust_remote_code=True)
 
-        for p in self.backbone.parameters():
-            p.requires_grad = False
-        self.backbone.eval()
+            if head_only:
+                self.backbone = None
+            else:
+                self.backbone = AutoModel.from_pretrained(model_dir, config=config, trust_remote_code=True)
+                for p in self.backbone.parameters():
+                    p.requires_grad = False
+                self.backbone.eval()
+                if hasattr(self.backbone, "head") and isinstance(self.backbone.head, nn.Module):
+                    for p in self.backbone.head.parameters():
+                        p.requires_grad = False
 
-        if hasattr(self.backbone, "head") and isinstance(self.backbone.head, nn.Module):
-            for p in self.backbone.head.parameters():
-                p.requires_grad = False
+            hidden_size = (getattr(config, "hidden_size", None)
+                           or getattr(config, "embed_dim", None)
+                           or getattr(getattr(config, "vision_config", None), "hidden_size", None))
+            if hidden_size is None:
+                raise ValueError("Cannot infer hidden size from config.")
 
-        hidden_size = getattr(config, "hidden_size", None) or getattr(config, "embed_dim", None)
-        if hidden_size is None:
-            raise ValueError("Cannot infer hidden size from config. Need `hidden_size` or `embed_dim`.")
-
-        self.patch_size = int(getattr(config, "patch_size", 14))
+        self.patch_size = int(getattr(config, "patch_size", 14) if config is not None else 14)
         self.seg_head = DeepSegHead(
             in_channels=hidden_size,
             hidden_channels=seg_head_channels,
@@ -125,7 +136,8 @@ class FrozenBackboneWithSegHead(nn.Module):
     def train(self, mode: bool = True):
         """Keep backbone permanently in eval mode regardless of the training mode flag."""
         super().train(mode)
-        self.backbone.eval()
+        if self.backbone is not None:
+            self.backbone.eval()
         return self
 
     @torch.no_grad()

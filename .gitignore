@@ -81,12 +81,52 @@ dino_segmentation/__pycache__/segmentation_trainer.cpython-312.pyc
 dino_segmentation/__pycache__/segmentation_trainer.cpython-312.pyc
 configs/dino/gazi_fingerprint.yaml
 *.safetensors
-outputs*
+outputs*/
+OUTPUTS/
+LOGS/
 /curia_model/
+downstream_model/
+
+# Checkpoints & modèles
 *.pt
-*.csv
-RSNA_downstream/logs/
-downstream_model
-/classification_hf/logs/
-**/logs*/**
 *.pth
+*.ckpt
+*.bin
+
+# Résultats & logs
+*.csv
+*.log
+logs/
+**/logs*/
+wandb/
+runs/
+results_*.md
+results_*.png
+*.png
+*.jpg
+*.jpeg
+
+# Données & caches
+data/
+*.npz
+*.npy
+*.h5
+*.hdf5
+*.nii
+*.nii.gz
+__pycache__/
+**/__pycache__/
+*.pyc
+.cache/
+
+# Notebooks (outputs)
+*.ipynb
+
+# Optuna
+*.db
+
+# Slurm / jobs
+*.out
+*.err
+slurm-*.txt
+mri_foundation/

@@ -1,5 +1,6 @@
 import random
 import sys
+import time
 import importlib
 from contextlib import nullcontext
 from dataclasses import asdict
@@ -525,7 +526,8 @@ def capture_val_overlays(
     return examples
 
 
-def train(cfg: TrainConfig) -> float:
+def train(cfg: TrainConfig, trial=None) -> float:
+    """Train the segmentation model. Pass an Optuna trial for pruning support."""
     set_seed(cfg.seed)
     output_dir = Path(cfg.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -537,10 +539,11 @@ def train(cfg: TrainConfig) -> float:
     target_hw = (cfg.image_size, cfg.image_size)
 
     if use_npz:
-        train_ds, val_ds = build_npz_datasets(cfg)
+        train_ds, val_ds = build_npz_datasets(cfg, verbose=(trial is None))
         train_loader     = build_npz_train_dataloader(cfg, train_ds)
         fast_path        = train_ds.has_tokens
-        print(f"NPZ dataset: {'fast path (cached tokens)' if fast_path else 'slow path (backbone)'}")
+        if trial is None:
+            print(f"NPZ dataset: {'fast path (cached tokens)' if fast_path else 'slow path (backbone)'}")
     else:
         train_ds, val_ds = build_datasets(cfg)
         train_loader     = build_train_dataloader(cfg, train_ds)
@@ -568,17 +571,16 @@ def train(cfg: TrainConfig) -> float:
             seg_head_norm=cfg.seg_head_norm,
             seg_head_nonlin=cfg.seg_head_nonlin,
             seg_head_depth=cfg.seg_head_depth,
+            head_only=(fast_path and trial is not None),
+            in_channels=cfg.in_channels,
         ).to(device)
         optimizer = torch.optim.AdamW(model.seg_head.parameters(), lr=cfg.lr, weight_decay=cfg.weight_decay)
-    scaler = torch.amp.GradScaler("cuda", enabled=cfg.amp and device.type == "cuda")
+    scaler    = torch.amp.GradScaler("cuda", enabled=cfg.amp and device.type == "cuda")
+    scheduler = (
+        torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=cfg.epochs, eta_min=cfg.lr * 1e-2)
+        if cfg.use_scheduler else None
+    )
 
-    # Compile seg head for faster GPU execution (PyTorch 2+, no-op if unavailable)
-    if device.type == "cuda" and hasattr(torch, "compile"):
-        try:
-            model.seg_head = torch.compile(model.seg_head, mode="reduce-overhead")
-            print("[torch.compile] seg_head compiled successfully.")
-        except Exception as e:
-            print(f"[torch.compile] skipped: {e}")
 
     if cfg.init_seg_head:
         ckpt = torch.load(cfg.init_seg_head, map_location=device, weights_only=False)
@@ -586,6 +588,13 @@ def train(cfg: TrainConfig) -> float:
         seg_head_state = {k.removeprefix("seg_head."): v for k, v in state.items() if k.startswith("seg_head.")}
         missing, unexpected = model.seg_head.load_state_dict(seg_head_state, strict=True)
         print(f"Warm-started seg_head from {cfg.init_seg_head} (missing={missing}, unexpected={unexpected})")
+
+    if trial is None and device.type == "cuda" and hasattr(torch, "compile"):
+        try:
+            model.seg_head = torch.compile(model.seg_head, mode="reduce-overhead")
+            print("[torch.compile] seg_head compiled successfully.")
+        except Exception as e:
+            print(f"[torch.compile] skipped: {e}")
 
     wandb_run = None
     if cfg.use_wandb and cfg.wandb_mode != "disabled":
@@ -606,15 +615,17 @@ def train(cfg: TrainConfig) -> float:
     best_val_dice = -1.0
     history_path = output_dir / "history.csv"
     if not history_path.exists():
-        history_path.write_text("epoch,train_loss,train_dice,val_loss,val_dice\n")
+        history_path.write_text("epoch,train_loss,train_dice,val_loss,val_dice,lr\n")
 
-    print("Training config:")
-    for k, v in asdict(cfg).items():
-        print(f"  {k}: {v}")
-    print(f"  device: {device}")
+    if trial is None:
+        print("Training config:")
+        for k, v in asdict(cfg).items():
+            print(f"  {k}: {v}")
+        print(f"  device: {device}")
 
     try:
         for epoch in range(1, cfg.epochs + 1):
+            t0 = time.perf_counter()
             if fast_path:
                 run_train_epoch_from_tokens(
                     model=model,
@@ -715,14 +726,23 @@ def train(cfg: TrainConfig) -> float:
                 else []
             )
 
-            print(
-                f"Epoch {epoch:03d}/{cfg.epochs:03d} | "
-                f"train_loss={train_loss:.4f} train_dice={train_dice:.4f} | "
-                f"val_loss={val_loss:.4f} val_dice={val_dice:.4f}"
-            )
+            if scheduler is not None:
+                scheduler.step()
+                current_lr = scheduler.get_last_lr()[0]
+            else:
+                current_lr = cfg.lr
+
+            epoch_time = time.perf_counter() - t0
+            if trial is None:
+                print(
+                    f"Epoch {epoch:03d}/{cfg.epochs:03d} | "
+                    f"train_loss={train_loss:.4f} train_dice={train_dice:.4f} | "
+                    f"val_loss={val_loss:.4f} val_dice={val_dice:.4f} | "
+                    f"lr={current_lr:.2e} | {epoch_time:.2f}s"
+                )
 
             with history_path.open("a") as f:
-                f.write(f"{epoch},{train_loss:.6f},{train_dice:.6f},{val_loss:.6f},{val_dice:.6f}\n")
+                f.write(f"{epoch},{train_loss:.6f},{train_dice:.6f},{val_loss:.6f},{val_dice:.6f},{current_lr:.6e}\n")
 
             if wandb_run is not None:
                 payload = {
@@ -755,13 +775,22 @@ def train(cfg: TrainConfig) -> float:
 
                 wandb_run.log(payload)
 
+            # Optuna pruning
+            if trial is not None:
+                trial.report(val_dice, epoch)
+                if trial.should_prune():
+                    import optuna
+                    raise optuna.exceptions.TrialPruned()
+
             if epoch % cfg.save_every == 0:
                 save_checkpoint(output_dir / "last.pt", model, optimizer, epoch, best_val_dice)
 
             if val_dice > best_val_dice:
                 best_val_dice = val_dice
-                save_checkpoint(output_dir / "best.pt", model, optimizer, epoch, best_val_dice)
-                print(f"  New best checkpoint at epoch {epoch} (val_dice={val_dice:.4f})")
+                if trial is None:
+                    save_checkpoint(output_dir / "best.pt", model, optimizer, epoch, best_val_dice)
+                    if trial is None:
+                        print(f"  New best checkpoint at epoch {epoch} (val_dice={val_dice:.4f})")
 
     finally:
         if wandb_run is not None:

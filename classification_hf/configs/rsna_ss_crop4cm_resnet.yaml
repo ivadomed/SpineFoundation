@@ -1,25 +1,27 @@
 model:
   model_name: "/home/ge.polymtl.ca/p123239/.cache/huggingface/hub/models--raidium--curia/snapshots/9657dc56276bc6c9503ef6f8d060879c8bee482f"
-  subfolder: "subarticular_stenosis"
   num_classes: 3
-  attention_cfg: null
+  head_type: "resnet"
+  proj_dim: 128
+  n_blocks: 2
 
 data_dir: "/home/ge.polymtl.ca/p123239/data/RSNA_patches_ss"
-val_split: 0.15
-seed: 42
 
-epochs: 25
-batch_size: 512
+fold_split_csv: "/home/ge.polymtl.ca/p123239/fold_split_RSNA.json"
+fold_column: "regime_all_split_1_set"
+
+epochs: 50
+batch_size: 256
 learning_rate: 0.005
 weight_decay: 0.0001
-num_workers: 8
+num_workers: 0
 eval_steps: 4
 
-use_feature_caching: true
-
-cache_suffix: "iter100k"
+cache_suffix: "curia_crop4cm"
+use_feature_caching: false
+use_class_weights: true
 
 task: "ss"
 log_dir: "/home/ge.polymtl.ca/p123239/SpineFoundation/classification_hf/logs"
-output_dir: "/home/ge.polymtl.ca/p123239/SpineFoundation/outputs_cls/rsna_ss_iter100k"
+output_dir: "/home/ge.polymtl.ca/p123239/SpineFoundation/outputs_cls/rsna_ss_crop4cm_resnet"
 use_pretrained_head: false
