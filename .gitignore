@@ -84,6 +84,8 @@ configs/dino/gazi_fingerprint.yaml
 outputs*/
 OUTPUTS/
 LOGS/
+RESULTS/
+bash/
 /curia_model/
 downstream_model/
 
