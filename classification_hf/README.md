@@ -1,113 +1,167 @@
 # classification_hf
 
-Pipeline d'entraînement et d'évaluation de modèles de classification vertébrale, basé sur HuggingFace Transformers et un backbone DINOv2.
+Classification de sévérité (Normal / Moderate / Severe) sur les données RSNA Lumbar Spine 2024.
 
-## Architecture générale
-
-Le pipeline suit ce flux :
-1. (Optionnel) Pré-calcul et cache des patch tokens du backbone → `cache_patch_tokens.py`
-2. (Optionnel) Pré-calcul des features poolées à différents rayons → `cache_pooled_features.py`
-3. Entraînement du classificateur → `train.py` + `trainer.py`
-4. Évaluation bootstrap sur plusieurs runs → `bootstrap_eval.py`
+Trois conditions : spinal canal stenosis (`scs`), neural foraminal narrowing (`nfn`), subarticular stenosis (`ss`).
 
 ---
 
-## Fichiers Python
+## Pipeline
 
-### `model.py`
-Définit l'architecture du modèle de classification :
-- `SelfAttentionPooling` — pooling par auto-attention sur les patch tokens
-- `CrossAttentionPooling` — pooling par cross-attention guidé par le masque
-- `Classifier` — tête de classification finale (backbone + pooling + MLP)
-
-Architecture reprise verbatim depuis curia/raidium.
-
-### `dataset.py`
-Dataset PyTorch qui charge les patches 2D depuis un répertoire local (structure `split/label/patient_id/*.npz`).
-
-Fonctionnalités :
-- Chargement des patch tokens pré-cachés (NPZ) ou calcul à la volée
-- Redimensionnement et dilation du masque de segmentation
-- Masked average pooling des patch tokens selon le masque
-
-Miroir local du pipeline de curia, sans dépendance HuggingFace Hub.
-
-### `trainer.py`
-Boucle d'entraînement basée sur `transformers.Trainer` :
-- `compute_classification_metrics()` — calcule accuracy, AUC OvR macro et weighted
-- `_merge_into_train_csv()` — écriture thread-safe (fcntl.flock) des résultats dans un CSV partagé
-- `ClassificationTrainer` — sous-classe de Trainer avec loss cross-entropie et logging enrichi
-
-### `train.py`
-Point d'entrée unique : charge la config OmegaConf (YAML) et lance `ClassificationTrainer`.
-
-### `bootstrap_eval.py`
-Évaluation statistique par bootstrap — deux modes via `--mode` :
-
-- **trained** (défaut) : agrège les logits de N runs d'entraînement (`val_predictions.npz` dans les sous-dossiers de `--runs-dir`), rééchantillonne pour estimer les IC à 95%
-- **pretrained** : charge un modèle HuggingFace figé (`--model-name`, `--subfolder`), fait l'inférence sur des patches NPZ pré-cachés, puis bootstrap
-
-Métriques communes : accuracy, AUC OvR macro, AUC OvR weighted.
-
-Exemples :
-```bash
-# Mode trained
-python -m classification_hf.bootstrap_eval --task nfn --runs-dir outputs_cls/rsna_nfn
-
-# Mode pretrained (raidium/curia, avec dilation)
-python -m classification_hf.bootstrap_eval --mode pretrained --task nfn --dilation-radius 4
+```
+data_dir/{0,1,2}/*.npz
+        ↓  cache_patch_tokens.py  (GPU)
+patch_tokens_{suffix} ajouté dans chaque NPZ
+        ↓  cache_pooled_features.py  (CPU)
+~/.cache/classification_hf/pooled_features_*.pt
+        ↓  train.py --config configs/rsna_*.yaml
+Classifier entraîné → outputs_cls/
 ```
 
-### `cache_patch_tokens.py`
-Pré-calcul et mise en cache des patch tokens du backbone DINOv2 pour tous les patches du dataset.
-- Sauvegarde en NPZ (une clé par patch dans un fichier patient)
-- I/O asynchrone avec threads dédiés lecture/écriture pour maximiser le débit disque
-- Reprise possible : saute les patches déjà cachés
+---
 
-### `cache_pooled_features.py`
-Pré-calcul des features poolées (après masked avg pooling) pour une grille de rayons de dilation.
-- Utilisé pour l'étude d'ablation sur le rayon de dilation du masque
-- Sauvegarde un vecteur par (patch, rayon) en NPZ
+## Structure des données
 
-### `plot_dilation_study.py`
-Visualisation des résultats de l'étude d'ablation sur le rayon de dilation :
-- Charge les CSV de résultats par rayon
-- Trace accuracy et AUC en fonction du rayon
+```
+data_dir/
+├── 0/          ← Normal
+│   └── sub-12345_acq-sag_....npz
+├── 1/          ← Moderate
+│   └── ...
+└── 2/          ← Severe
+    └── ...
+```
+
+Chaque NPZ doit contenir :
+
+| Clé | Type | Description |
+|-----|------|-------------|
+| `slice` | float32 (H, W) | Intensité brute de la slice IRM |
+| `mask` | uint8 (H, W) | Masque binaire de la région d'intérêt |
+| `spacing_mm` | float | Espacement in-plane (requis si `crop_cm` activé) |
 
 ---
 
-## Configs YAML
+## Étape 1 — Cacher les patch tokens (GPU)
 
-| Fichier | Description |
-|---|---|
-| `config_foraminal.yaml` | Classification sténose foraminale |
-| `config_subarticular.yaml` | Classification sténose sous-articulaire |
-| `config_central.yaml` | Classification sténose centrale |
-| `config_foraminal_dilation.yaml` | Étude dilation — sténose foraminale |
-| `config_subarticular_dilation.yaml` | Étude dilation — sténose sous-articulaire |
-| `config_central_dilation.yaml` | Étude dilation — sténose centrale |
+```bash
+python -m classification_hf.cache_patch_tokens \
+    --data_dir /path/to/RSNA_patches_scs \
+    --model_name /path/to/backbone \
+    --processor_name /path/to/curia_snapshot \
+    --suffix curia_crop4cm \
+    --crop_cm 4.0 \
+    --batch_size 64
+```
+
+La clé `patch_tokens_curia_crop4cm` est ajoutée dans chaque NPZ. Les fichiers déjà traités sont sautés automatiquement (`--overwrite` pour forcer).
+
+Pour plusieurs splits :
+
+```bash
+for split in train val; do
+  python -m classification_hf.cache_patch_tokens \
+      --data_dir /path/to/RSNA_patches_scs/$split \
+      --model_name /path/to/backbone \
+      --suffix curia_crop4cm \
+      --crop_cm 4.0
+done
+```
 
 ---
 
-## Scripts Shell
+## Étape 2 — Pooler les features (CPU)
 
-| Fichier | Description |
-|---|---|
-| `train.sh` | Lance un entraînement avec une config donnée |
-| `run_dilation_study.sh` | Lance l'étude d'ablation sur plusieurs rayons de dilation |
-| `run_bootstrap_study.sh` | Lance N runs indépendants puis évaluation bootstrap |
+```bash
+python -m classification_hf.cache_pooled_features \
+    --data_dir /path/to/RSNA_patches_scs \
+    --token_key patch_tokens_curia_crop4cm \
+    --cache_suffix curia_crop4cm
+```
+
+Produit `~/.cache/classification_hf/pooled_features_RSNA_patches_scs_curia_crop4cm.pt`.
+
+Cette étape n'est à faire qu'une fois — `train.py` chargera le `.pt` automatiquement au démarrage.
 
 ---
 
-## Relation avec RSNA_downstream
+## Étape 3 — Entraîner
 
-`RSNA_downstream/` contient uniquement le pipeline d'extraction :
-- `RSNAextractor.py` — extraction des patches 2D depuis les volumes NIFTI RSNA
+```bash
+python -m classification_hf.train --config classification_hf/configs/rsna_scs_crop4cm.yaml
+```
 
-Tout ce qui est inférence, évaluation, ou entraînement de modèle vit dans `classification_hf/`. Pour évaluer le modèle pré-entraîné raidium/curia, utiliser `bootstrap_eval.py --mode pretrained`.
+### Configs disponibles
 
-### Dette technique intra classification_hf
+| Config | Tâche | Remarques |
+|--------|-------|-----------|
+| `rsna_scs_crop4cm.yaml` | SCS | crop 4 cm, features cachées |
+| `rsna_nfn_crop4cm_resnet.yaml` | NFN | TokenGridClassifier (CNN spatial) |
+| `rsna_ss_fold.yaml` | SS | fold split sujet-niveau |
+| `rsna_*_fold_curia.yaml` | * | backbone Curia fine-tuné |
+| `rsna_*_mricore.yaml` | * | backbone MRICore |
+| `rsna_*_spine_only.yaml` | * | données spine uniquement |
 
-Ces utilitaires sont dupliqués en interne et pourraient être centralisés dans un `utils.py` :
-- `resize_mask()` / `_make_mask_transform()` — présent dans `dataset.py`, `cache_pooled_features.py`, `bootstrap_eval.py`
-- `_masked_avg_pool()` — présent dans `dataset.py`, `cache_pooled_features.py`, `bootstrap_eval.py`
+Les champs principaux d'un fichier de config :
+
+```yaml
+model:
+  model_name: /path/to/backbone
+  num_classes: 3
+  attention_cfg: null       # null = linear head simple
+
+data_dir: /path/to/RSNA_patches_scs
+fold_split_csv: /path/to/fold_split_RSNA.json
+fold_column: regime_all_split_1_set
+
+epochs: 50
+batch_size: 512
+learning_rate: 0.005
+use_feature_caching: true
+cache_suffix: curia_crop4cm
+```
+
+---
+
+## Étape 4 — Évaluer sur le test set
+
+```bash
+# Un seul run
+python -m classification_hf.eval_test \
+    --pred outputs_cls/rsna_scs_crop4cm \
+    --task scs
+
+# Pooler plusieurs folds (stack des logits)
+python -m classification_hf.eval_test \
+    --pred outputs_cls/rsna_scs_fold/fold_1 outputs_cls/rsna_scs_fold/fold_2 \
+    --task scs
+
+# Toutes les tâches en une commande
+python -m classification_hf.eval_test \
+    --task nfn scs ss \
+    --pred outputs_cls/rsna_nfn_fold outputs_cls/rsna_scs_fold outputs_cls/rsna_ss_fold
+```
+
+Métriques : cross-entropy, macro AUC (OvR), matrice de confusion, bootstrap IC 95%.
+
+---
+
+## Structure des sorties
+
+```
+outputs_cls/rsna_scs_crop4cm/
+├── best.pt                  ← checkpoint meilleur val_loss
+├── last.pt                  ← checkpoint dernière époque
+├── test_predictions.npz     ← logits + labels (pour eval_test.py)
+└── history.csv              ← epoch, train_loss, val_loss, val_acc
+```
+
+---
+
+## Modèles
+
+| Classe | Description |
+|--------|-------------|
+| `Classifier` | Masked avg pool + linear (avec support attention cross/self) |
+| `TokenGridClassifier` | CNN résiduel sur la grille spatiale 2D des patch tokens |
+| `MaskedBackboneClassifier` | Backbone DINOv2 non-figé + masked avg pool + linear |

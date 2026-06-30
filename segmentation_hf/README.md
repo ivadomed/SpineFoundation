@@ -1,109 +1,46 @@
 # segmentation_hf
 
-Pipeline d'entraînement de tête de segmentation sur un backbone DINOv2 figé, avec support du cache de patch tokens pour un entraînement rapide (backbone jamais appelé en train).
+Entraînement d'une tête de segmentation binaire sur un backbone DINOv2 figé.
+Support du cache de patch tokens pour un entraînement sans appel au backbone (fast path).
 
 ---
 
-## Architecture générale
+## Pipeline
 
 ```
-slice_extraction/         ← extraction des slices 2D depuis NIfTI (BIDS)
-        ↓  NPZ (slice + mask)
-segmentation_hf/cache_patch_tokens.py   ← GPU : backbone → patch_tokens dans NPZ
-        ↓  NPZ (slice + mask + patch_tokens)
-segmentation_hf/train_seg_from_hf.py    ← entraînement tête seg (fast path ou slow path)
+slice_extraction/           ← slices 2D (PNG ou NPZ) depuis NIfTI BIDS
+        ↓
+cache_patch_tokens.py       ← GPU : backbone → patch_tokens dans chaque NPZ
+        ↓
+train_seg_from_hf.py        ← entraînement tête de segmentation
 ```
 
 Deux chemins d'entraînement coexistent :
 
-| Chemin | Données | Backbone | Vitesse |
-|--------|---------|----------|---------|
-| **Fast path** (NPZ + tokens cachés) | `--npz_train_dir` | jamais appelé | ~10-50× plus rapide |
-| **Slow path** (NPZ sans tokens) | `--npz_train_dir` | appelé à chaque batch | référence |
-| **Image path** (PNG images+masks) | `--train_images/masks` | appelé à chaque batch | original |
+| Chemin | Données | Backbone appelé | Vitesse |
+|--------|---------|-----------------|---------|
+| **Fast path** (NPZ + tokens cachés) | `--npz_train_dir` | jamais | ~10-50× plus rapide |
+| **Slow path** (NPZ sans tokens) | `--npz_train_dir` | à chaque batch | référence |
+| **Image path** (PNG images+masks) | `--train_images/masks` | à chaque batch | original |
 
 ---
 
-## Fichiers Python
-
-### `model.py`
-- `PatchWiseSegHead` — tête de segmentation Conv2d → GELU → Conv2d (1 canal)
-- `FrozenBackboneWithSegHead` — backbone DINOv2 figé + tête
-  - `extract_patch_tokens()` — extrait les patch tokens (CLS ignoré), reshape en grille spatiale
-  - `forward(x)` — chemin normal : backbone → seg_head → upsample
-  - `forward_from_tokens(patch_tokens, target_hw)` — **fast path** : skip le backbone, reshape les tokens cachés → seg_head → upsample
-
-### `dataset.py`
-Deux datasets :
-
-**`PairedSegmentationDataset`** (chemin image)
-- Lit des fichiers PNG depuis `image_dir/` et `mask_dir/`
-- Support du tiling pour les grandes images (`tile_threshold`, `tile_overlap_pct`)
-- Normalisation z-score de l'image complète avant tiling
-
-**`NpzSegmentationDataset`** (chemin NPZ)
-- Lit des fichiers NPZ depuis un répertoire plat
-- Fast path : si la clé `patch_token_key` est présente → retourne `(patch_tokens: N×D, mask: 1×S×S)`
-- Slow path : retourne `(image: 1×S×S, mask: 1×S×S)` normalisée
-- `load_raw_pair()` compatible avec l'évaluation full-image
-
-### `trainer.py`
-- `run_train_epoch()` — epoch standard (chemin image ou NPZ slow)
-- `run_train_epoch_from_tokens()` — **fast path** : backbone jamais appelé
-- `run_full_image_eval()` — évaluation tile-stitch pour le chemin image
-- `run_full_image_eval_npz()` — évaluation NPZ (fast ou slow selon tokens présents)
-- `predict_full_image_detiled()` — reconstruction full-image depuis les tiles (eval + overlays W&B)
-- `capture_val_overlays()` — génère des overlays RGB pour W&B (GT=vert, pred=rouge, overlap=jaune)
-- `train()` — point d'entrée, détecte automatiquement le chemin (NPZ ou image)
-
-### `cache_patch_tokens.py`
-Pré-calcul des patch tokens du backbone et mise en cache dans les NPZ.
-- Répertoire plat (pas de sous-dossiers de classes, contrairement à `classification_hf`)
-- Écriture atomique (`tempfile` + `os.replace`) — reprise sûre si interruption
-- I/O asynchrone : 16 threads lecture, 8 threads écriture pendant que le GPU traite le batch suivant
-- Idempotent : saute les fichiers déjà traités (contrôlable via `--overwrite`)
-
-### `config.py`
-Dataclass `TrainConfig` + parseur CLI complet. Champs principaux :
-
-| Champ | Description |
-|-------|-------------|
-| `model_dir` | Répertoire du checkpoint backbone (format HuggingFace) |
-| `train_images` / `train_masks` | Répertoires PNG images/masques (chemin image) |
-| `val_images` / `val_masks` | Idem pour la validation |
-| `npz_train_dir` / `npz_val_dir` | Répertoires NPZ (chemin fast path) |
-| `patch_token_key` | Clé NPZ des tokens cachés (défaut : `patch_tokens`) |
-| `image_size` | Taille d'entrée backbone (défaut : 224) |
-| `tile_size` / `tile_overlap_pct` / `tile_threshold` | Paramètres de tiling |
-| `bce_weight` / `dice_weight` | Pondération BCE + Dice |
-| `amp` | Mixed precision |
-
-### `losses.py`
-- `dice_loss_with_logits()` — 1 − Dice
-- `compute_dice_score()` — Dice binarisé (seuil 0.5)
-
----
-
-## Usage
-
-### Étape 0 — Extraire les slices depuis un dataset BIDS
+## Étape 0 — Extraire les slices (si pas déjà fait)
 
 ```bash
 python slice_extraction/05_run_pipeline.py \
-    --repos https://github.com/org/bids-dataset \
-    --input-labels /path/to/derivatives/labels \
+    --input-images /data/images \
+    --input-labels /data/labels \
     --label-suffix _seg \
     --work-root /data/work \
     --no-tiling
 ```
 
-Cela produit `work-root/02_final/image/{train,val}/` et `work-root/02_final/label/{train,val}/`.
-
-Pour le chemin NPZ, convertir ensuite les PNG en NPZ (script externe) ou utiliser directement les PNG avec le chemin image.
+Produit `work-root/02_final/image/{train,val}/` et `work-root/02_final/label/{train,val}/`.
 
 ---
 
-### Étape 1 — Cacher les patch tokens (fast path)
+## Étape 1 — Cacher les patch tokens (fast path)
 
 ```bash
 python -m segmentation_hf.cache_patch_tokens \
@@ -116,20 +53,23 @@ python -m segmentation_hf.cache_patch_tokens \
 
 La clé `patch_tokens_custom` est ajoutée dans chaque NPZ. Les fichiers déjà traités sont sautés automatiquement.
 
-Pour plusieurs répertoires (train + val) :
+Pour plusieurs splits :
+
 ```bash
 for split in train val; do
   python -m segmentation_hf.cache_patch_tokens \
       --data_dir /data/npz/$split \
-      --model_name /path/to/backbone
+      --model_name /path/to/backbone \
+      --suffix custom
 done
 ```
 
 ---
 
-### Étape 2 — Entraîner la tête de segmentation
+## Étape 2 — Entraîner la tête de segmentation
 
-**Fast path (tokens cachés, backbone jamais appelé) :**
+**Fast path (tokens cachés) :**
+
 ```bash
 python -m segmentation_hf.train_seg_from_hf \
     --model_dir /path/to/backbone \
@@ -142,7 +82,8 @@ python -m segmentation_hf.train_seg_from_hf \
     --amp
 ```
 
-**Chemin image (PNG, backbone appelé à chaque batch) :**
+**Image path (PNG, backbone appelé à chaque batch) :**
+
 ```bash
 python -m segmentation_hf.train_seg_from_hf \
     --model_dir /path/to/backbone \
@@ -158,6 +99,7 @@ python -m segmentation_hf.train_seg_from_hf \
 ```
 
 **Avec W&B :**
+
 ```bash
 python -m segmentation_hf.train_seg_from_hf \
     --model_dir /path/to/backbone \
@@ -171,7 +113,7 @@ python -m segmentation_hf.train_seg_from_hf \
 
 ---
 
-## Structure des répertoires de sortie
+## Structure des sorties
 
 ```
 outputs_seg/run01/
@@ -182,7 +124,7 @@ outputs_seg/run01/
 
 ---
 
-## Structure des fichiers NPZ
+## Format des fichiers NPZ
 
 ```
 fichier.npz
@@ -195,14 +137,18 @@ fichier.npz
 
 ---
 
-## Format attendu du backbone
+## Paramètres principaux
 
-Le backbone doit être un répertoire HuggingFace-compatible contenant :
-- `config.json` avec `hidden_size` (ou `embed_dim`) et `patch_size`
-- `model.safetensors` (ou `pytorch_model.bin`)
-- `preprocessor_config.json` (pour `AutoImageProcessor`)
-
-Compatible avec le modèle `raidium/curia` et tout checkpoint DINOv2 fine-tuné.
+| Paramètre | Défaut | Description |
+|-----------|--------|-------------|
+| `--model_dir` | — | Répertoire checkpoint backbone (format HuggingFace) |
+| `--patch_token_key` | `patch_tokens` | Clé NPZ des tokens cachés |
+| `--image_size` | 224 | Taille d'entrée backbone |
+| `--tile_size` / `--tile_overlap_pct` / `--tile_threshold` | — | Paramètres de tiling |
+| `--bce_weight` / `--dice_weight` | 0.5 / 0.5 | Pondération BCE + Dice |
+| `--amp` | false | Mixed precision (recommandé) |
+| `--epochs` | 50 | Nombre d'époques |
+| `--lr` | 1e-4 | Learning rate |
 
 ---
 
@@ -211,9 +157,6 @@ Compatible avec le modèle `raidium/curia` et tout checkpoint DINOv2 fine-tuné.
 | | `classification_hf` | `segmentation_hf` |
 |---|---|---|
 | Tâche | Classification multi-classe | Segmentation binaire |
-| Sortie modèle | vecteur (D,) → logits (C,) | carte spatiale (H, W) |
-| Pooling | masked avg pooling | aucun (spatial préservé) |
-| Cache tokens | `patch_tokens` (N, D) | `patch_tokens` (N, D) |
-| Post-cache | `cache_pooled_features.py` → `.pt` | direct : reshape → seg_head |
+| Cache tokens | `patch_tokens` (N, D) → pooling → (D,) | `patch_tokens` (N, D) → reshape → carte spatiale |
 | Layout données | `class_0/…/img.npz` (sous-dossiers) | `img.npz` (répertoire plat) |
-| Évaluation | bootstrap avec IC 95% | Dice score par époque |
+| Évaluation | AUC / accuracy, bootstrap IC 95% | Dice score par époque |
